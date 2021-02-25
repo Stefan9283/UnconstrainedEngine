@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#include <stb_image.h>
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE

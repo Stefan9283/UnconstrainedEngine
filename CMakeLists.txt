@@ -40,26 +40,28 @@ include_directories(
 					Dependencies/Vendor/glad/include
 					)
 
-file(GLOB VENDORS_SOURCES Dependencies/Vendor/glad/src/glad.c)
-file(GLOB PROJECT_SOURCES Dependencies/Source/*.cpp Dependencies/Source/*.c Dependencies/Vendor/imgui/backends/imgui_impl_opengl3.cpp Dependencies/Vendor/imgui/backends/imgui_impl_glfw.cpp Dependencies/Vendor/imgui/*.cpp)
 
+file(GLOB VENDORS_SOURCES Dependencies/Vendor/glad/src/glad.c Dependencies/Vendor/imgui/backends/imgui_impl_opengl3.cpp Dependencies/Vendor/imgui/backends/imgui_impl_glfw.cpp Dependencies/Vendor/imgui/*.cpp)
+file(GLOB PROJECT_SOURCES Dependencies/Source/*.cpp Dependencies/Source/*.c)
+file(GLOB PROJECT_HEADERS Dependencies/Include/*.hpp Dependencies/Include/*.h)
 
 add_definitions(-DGLFW_INCLUDE_NONE -DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
 
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
+source_group("vendorSrc" FILES ${VENDORS_SOURCES})
+source_group("myInclude" FILES ${PROJECT_HEADERS})
+source_group("mySrc" FILES ${PROJECT_SOURCES})
+
 add_executable(${PROJECT_NAME} 
 							${VENDORS_SOURCES} 
-							${PROJECT_SOURCES} 
-
+							${PROJECT_SOURCES}
 							${PROJECT_HEADERS})
-
 
 target_link_libraries(${PROJECT_NAME}
 								${GLFW_LIBRARIES} 
 								${GLAD_LIBRARIES} 
 								glfw
 								)
-
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
