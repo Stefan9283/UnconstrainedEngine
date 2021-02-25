@@ -21,55 +21,6 @@ float getTriangleArea(float edge1, float edge2, float edge3) {
     return sqrt(p * (p - edge1) * (p - edge2) * (p - edge3));
 }
 
-struct Constants {
-    float c1, c2, c3, c4;
-};
-
-Constants xIsNotConstant(glm::vec3 A, glm::vec3 B, BoundingSphere* bv) {
-    Constants constants;
-
-    float x0 = A.x, y0 = A.y, z0 = A.z;
-    float x1 = B.x, y1 = B.y, z1 = B.z;
-
-    constants.c1 = (y1 - y0) / (x1 - x0);
-    constants.c2 = (x1 * y0 - x0 * y1 + x0 * bv->pos.y - x1 * bv->pos.y) / (x1 - x0);
-
-    constants.c3 = (z1 - z0) / (x1 - x0);
-    constants.c4 = (x1 * z0 - x0 * z1 + x0 * bv->pos.z - x1 * bv->pos.z) / (x1 - x0);
-
-    return constants;
-}
-
-Constants yIsNotConstant(glm::vec3 A, glm::vec3 B, BoundingSphere* bv) {
-    Constants constants;
-
-    float x0 = A.x, y0 = A.y, z0 = A.z;
-    float x1 = B.x, y1 = B.y, z1 = B.z;
-
-    constants.c1 = (x1 - x0) / (y1 - y0);
-    constants.c2 = (y1 * x0 - y0 * x1 + y0 * bv->pos.x - y1 * bv->pos.x) / (y1 - y0);
-
-    constants.c3 = (z1 - z0) / (y1 - y0);
-    constants.c4 = (y1 * z0 - y0 * z1 + y0 * bv->pos.z - y1 * bv->pos.z) / (y1 - y0);
-
-    return constants;
-}
-
-Constants zIsNotConstant(glm::vec3 A, glm::vec3 B, BoundingSphere* bv) {
-    Constants constants;
-
-    float x0 = A.x, y0 = A.y, z0 = A.z;
-    float x1 = B.x, y1 = B.y, z1 = B.z;
-
-    constants.c1 = (x1 - x0) / (z1 - z0);
-    constants.c2 = (z1 * x0 - z0 * x1 + z0 * bv->pos.x - z1 * bv->pos.x) / (z1 - z0);
-
-    constants.c3 = (y1 - y0) / (z1 - z0);
-    constants.c4 = (z1 * y0 - z0 * y1 + z0 * bv->pos.y - z1 * bv->pos.y) / (z1 - z0);
-
-    return constants;
-}
-
 struct Solutions {
     float x, y, z;
 };
@@ -395,25 +346,38 @@ bool Ray::checkCollision(TriangleMesh *col) {
 bool Ray::checkCollision(BoundingSphere* bv) {
     glm::vec3 A = this->origin, B = this->origin - this->direction;
 
-    Constants constants;
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
+
+    float c1, c2, c3, c4;
 
     // Pick an axis which the line is not parallel to
-    if (A.x != B.x)
-        constants = xIsNotConstant(A, B, bv);
-    else if (A.y != B.y)
-        constants = yIsNotConstant(A, B, bv);
-    else
-        constants = zIsNotConstant(A, B, bv);
+    if (A.x != B.x) {
+        c1 = (y1 - y0) / (x1 - x0);
+        c2 = (x1 * y0 - x0 * y1 + x0 * bv->pos.y - x1 * bv->pos.y) / (x1 - x0);
 
-    float c1 = constants.c1, c2 = constants.c2;
-    float c3 = constants.c3, c4 = constants.c4;
+        c3 = (z1 - z0) / (x1 - x0);
+        c4 = (x1 * z0 - x0 * z1 + x0 * bv->pos.z - x1 * bv->pos.z) / (x1 - x0);
+    } else if (A.y != B.y) {
+        c1 = (x1 - x0) / (y1 - y0);
+        c2 = (y1 * x0 - y0 * x1 + y0 * bv->pos.x - y1 * bv->pos.x) / (y1 - y0);
+
+        c3 = (z1 - z0) / (y1 - y0);
+        c4 = (y1 * z0 - y0 * z1 + y0 * bv->pos.z - y1 * bv->pos.z) / (y1 - y0);
+    } else {
+        c1 = (x1 - x0) / (z1 - z0);
+        c2 = (z1 * x0 - z0 * x1 + z0 * bv->pos.x - z1 * bv->pos.x) / (z1 - z0);
+
+        c3 = (y1 - y0) / (z1 - z0);
+        c4 = (z1 * y0 - z0 * y1 + z0 * bv->pos.y - z1 * bv->pos.y) / (z1 - z0);
+    }
 
     // The points of intersection are the solutions of the quadratic equation
     float pinnedSphereOffset;
 
-    if (A.x != B.x)
+    if (x0 != x1)
         pinnedSphereOffset = bv->pos.x;
-    else if (A.y != B.y)
+    else if (y0 != y1)
         pinnedSphereOffset = bv->pos.y;
     else
         pinnedSphereOffset = bv->pos.z;
@@ -443,9 +407,9 @@ bool Ray::checkCollision(BoundingSphere* bv) {
     } else {
         Solutions solutions;
 
-        if (A.x != B.x)
+        if (x0 != x1)
             solutions = xIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
-        else if (A.y != B.y)
+        else if (y0 != y1)
             solutions = yIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
         else
             solutions = zIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
@@ -454,9 +418,9 @@ bool Ray::checkCollision(BoundingSphere* bv) {
         if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) <= this->length)
             return true;
 
-        if (A.x != B.x)
+        if (x0 != x1)
             solutions = xIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
-        else if (A.y != B.y)
+        else if (y0 != y1)
             solutions = yIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
         else
             solutions = zIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
@@ -547,7 +511,7 @@ bool Ray::checkCollision(Triangle *t) {
     Solutions solutions;
 
     // Pick an axis which the line is not parallel to
-    if (A.x != B.x) {
+    if (x0 != x1) {
         c1 = b * (y1 - y0) / (x1 - x0);
         c2 = b * (x1 * y0 - x0 * y1) / (x1 - x0);
 
@@ -558,7 +522,7 @@ bool Ray::checkCollision(Triangle *t) {
             return false;
 
         solutions = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
-    } else if (A.y != B.y) {
+    } else if (y0 != y1) {
         c1 = a * (x1 - x0) / (y1 - y0);
         c2 = a * (y1 * x0 - y0 * x1) / (y1 - y0);
 
