@@ -8,8 +8,17 @@
 #include "glm/gtx/string_cast.hpp"
 
 #pragma region Functii Ovidiu
+
+#define EPS 0.00001
+
 float getEuclidianDistance(glm::vec3 p1, glm::vec3 p2) {
     return sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y) + (p2.z - p1.z) * (p2.z - p1.z));
+}
+
+float getTriangleArea(float edge1, float edge2, float edge3) {
+    float p = (edge1 + edge2 + edge3) / 2;
+
+    return sqrt(p * (p - edge1) * (p - edge2) * (p - edge3));
 }
 
 struct Constants {
@@ -400,9 +409,18 @@ bool Ray::checkCollision(BoundingSphere* bv) {
     float c3 = constants.c3, c4 = constants.c4;
 
     // The points of intersection are the solutions of the quadratic equation
+    float pinnedSphereOffset;
+
+    if (A.x != B.x)
+        pinnedSphereOffset = bv->pos.x;
+    else if (A.y != B.y)
+        pinnedSphereOffset = bv->pos.y;
+    else
+        pinnedSphereOffset = bv->pos.z;
+
     float a = 1 + c1 * c1 + c3 * c3;
-    float b = -2 * (bv->pos.x - c1 * c2 - c3 * c4);
-    float c = bv->pos.x * bv->pos.x + c2 * c2 + c4 * c4 - bv->radius * bv->radius;
+    float b = -2 * (pinnedSphereOffset - c1 * c2 - c3 * c4);
+    float c = pinnedSphereOffset * pinnedSphereOffset + c2 * c2 + c4 * c4 - bv->radius * bv->radius;
 
     float delta = b * b - 4 * a * c;
 
@@ -513,9 +531,74 @@ bool Ray::checkCollision(AABB* bv) {
 bool Ray::checkCollision(Ray* r) {
     return false;
 }
-// TODO
 bool Ray::checkCollision(Triangle *t) {
-    return false;
+    glm::vec3 A = this->origin, B = this->origin - this->direction;
+
+    if (glm::dot(t->norm, B) < 0)
+        return false;
+
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
+
+    float a = t->norm.x, b = t->norm.y, c = t->norm.z;
+    float d = t->norm.x * t->vertices[0].x + t->norm.y * t->vertices[0].y + t->norm.z * t->vertices[0].z;
+
+    float c1, c2, c3, c4;
+    Solutions solutions;
+
+    // Pick an axis which the line is not parallel to
+    if (A.x != B.x) {
+        c1 = b * (y1 - y0) / (x1 - x0);
+        c2 = b * (x1 * y0 - x0 * y1) / (x1 - x0);
+
+        c3 = c * (z1 - z0) / (x1 - x0);
+        c4 = c * (x1 * z0 - x0 * z1) / (x1 - x0);
+
+        if (!(a + c1 + c3))
+            return false;
+
+        solutions = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+    } else if (A.y != B.y) {
+        c1 = a * (x1 - x0) / (y1 - y0);
+        c2 = a * (y1 * x0 - y0 * x1) / (y1 - y0);
+
+        c3 = c * (z1 - z0) / (y1 - y0);
+        c4 = c * (y1 * z0 - y0 * z1) / (y1 - y0);
+
+        if (!(a + c1 + c3))
+            return false;
+
+        solutions = yIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+    } else {
+        c1 = a * (x1 - x0) / (z1 - z0);
+        c2 = a * (z1 * x0 - z0 * x1) / (z1 - z0);
+
+        c3 = c * (y1 - y0) / (z1 - z0);
+        c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
+
+        if (!(a + c1 + c3))
+            return false;
+
+        solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+    }
+
+    if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) > this->length)
+        return false;
+
+    // Idea based on barycentric coordinates
+    float edge1 = getEuclidianDistance(t->vertices[0], t->vertices[1]);
+    float edge2 = getEuclidianDistance(t->vertices[1], t->vertices[2]);
+    float edge3 = getEuclidianDistance(t->vertices[0], t->vertices[2]);
+
+    float edge4 = getEuclidianDistance(t->vertices[0], glm::vec3(solutions.x, solutions.y, solutions.z));
+    float edge5 = getEuclidianDistance(t->vertices[1], glm::vec3(solutions.x, solutions.y, solutions.z));
+    float edge6 = getEuclidianDistance(t->vertices[2], glm::vec3(solutions.x, solutions.y, solutions.z));
+
+    float subarea1 = getTriangleArea(edge1, edge4, edge5);
+    float subarea2 = getTriangleArea(edge2, edge5, edge6);
+    float subarea3 = getTriangleArea(edge3, edge4, edge6);
+
+    return fabs(subarea1 + subarea2 + subarea3 - getTriangleArea(edge1, edge2, edge3)) <= EPS;
 }
 bool Ray::checkCollision(Capsule *col) {
     return col->checkCollision(this);
