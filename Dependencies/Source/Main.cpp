@@ -92,17 +92,17 @@ int main() {
     //meshes.push_back(sphere);
     //sphere->solidON = false;
 
-    //Mesh* Yen = readObj("Yen.obj");
-    //Yen->bv = new TriangleMesh(Yen);
+    //Mesh* Yen = readObj("Box.obj");
+    //Yen->bv = Capsule::generateCapsule(Yen);
     //meshes.push_back(Yen);
 
-    Mesh* Triangle = readObj("Triangle.obj");
-    Triangle->bv = new TriangleMesh(Triangle);
-    meshes.push_back(Triangle);
+    //Mesh* Triangle = readObj("Triangle.obj");
+    //Triangle->bv = new TriangleMesh(Triangle);
+    //meshes.push_back(Triangle);
 
-    //Mesh* Mercy = readObj("Mercy.obj");
-    //Mercy->bv = new TriangleMesh(Mercy);
-    //meshes.push_back(Mercy);
+    Mesh* Mercy = readObj("Mercy.obj");
+    Mercy->bv = new AABB(Mercy);
+    meshes.push_back(Mercy);
 
     //Mesh* Tube = readObj("Tube.obj");
     //meshes.push_back(Tube);

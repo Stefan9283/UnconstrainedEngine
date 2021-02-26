@@ -154,12 +154,8 @@ AABB::AABB(Mesh* mesh) {
         if (max.z < v.Position.z) max.z = v.Position.z;
     }
 }
-std::vector<glm::vec3> AABB::generateVerices(glm::mat4 transform) {
+std::vector<glm::vec3> AABB::generateVerices(glm::vec3 min, glm::vec3 max) {
     std::vector<glm::vec3> vertices;
-    glm::vec3 max, min;
-    min = glm::vec3(transform * glm::vec4(this->min, 1.0f));
-    max = glm::vec3(transform * glm::vec4(this->max, 1.0f));
-    //std::cout << glm::to_string(min) << glm::to_string(max) << "\n";
     vertices.emplace_back(glm::vec3(min.x, min.y, min.z));
     vertices.emplace_back(glm::vec3(min.x, min.y, max.z));
     vertices.emplace_back(glm::vec3(min.x, max.y, min.z));
@@ -171,7 +167,20 @@ std::vector<glm::vec3> AABB::generateVerices(glm::mat4 transform) {
     return vertices;
 }
 Mesh *AABB::generateNewMesh() {
-    std::vector<glm::vec3> verticesPos = generateVerices(transform);
+    std::vector<glm::vec3> verticesPos = generateVerices(min, max);
+    for (int i = 0; i < verticesPos.size(); ++i) {
+        verticesPos[i] = glm::vec3(transform * glm::vec4(verticesPos[i], 1.0f));
+    }
+
+    glm::vec3 minNow = verticesPos[0];
+    glm::vec3 maxNow = verticesPos[0];
+    for (int i = 1; i < verticesPos.size(); ++i) {
+        minNow = glm::min(minNow, verticesPos[i]);
+        maxNow = glm::max(maxNow, verticesPos[i]);
+    }
+
+    verticesPos = generateVerices(minNow, maxNow);
+
     body = new Mesh();
     for (auto v : verticesPos)
         body->vertices.push_back(Vertex{v, v});
@@ -613,7 +622,6 @@ bool Triangle::checkCollision(Triangle *t) {
     return false;
 }
 
-
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     this->start = start;
     this->end = end;
@@ -631,25 +639,41 @@ Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
 
     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1), glm::vec3(radius));
 
-    glm::mat4 modelEnd = glm::translate(glm::mat4(1), glm::vec3(0, diff/2, 0)) * scaleMatrix;
-    glm::mat4 modelStart = modelEnd * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(1, 0, 0)) * scaleMatrix;
+    for (int l = 0; l < body->vertices.size(); ++l) {
+        body->vertices[l].Position = glm::vec3(scaleMatrix * glm::vec4(body->vertices[l].Position, 1.0f));
+    }
+
+
+
+    glm::mat4 modelEnd = glm::translate(glm::mat4(1), glm::vec3(0, diff/2, 0));
+    glm::mat4 modelStart = glm::translate(glm::mat4(1), glm::vec3(0, -diff/2, 0)) * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(1, 0, 0));
+
+    modelStart = modelStart * scaleMatrix;
+    modelEnd = modelEnd * scaleMatrix;
+
+
+
 
     size_t indicesCount = Tube->indices.size();
+
+    for (int i = 0; i < halfSphere->vertices.size(); ++i) {
+        Vertex v{glm::vec3(modelEnd * glm::vec4(halfSphere->vertices[i].Position, 1.0f)), halfSphere->vertices[i].Normal};
+        body->vertices.push_back(v);
+    }
     for (int j = 0; j < halfSphere->indices.size(); ++j) {
         body->indices.push_back(halfSphere->indices[j] + indicesCount);
     }
-    for (int i = 0; i < halfSphere->vertices.size(); ++i) {
-        halfSphere->vertices[i].Position = glm::vec3(modelStart * glm::vec4(halfSphere->vertices[i].Position, 1.0f));
-        body->vertices.push_back(halfSphere->vertices[i]);
-    }
-    for (int i = 0; i < halfSphere->vertices.size(); ++i) {
-        halfSphere->vertices[i].Position = glm::vec3(modelEnd * glm::vec4(halfSphere->vertices[i].Position, 1.0f));
-        body->vertices.push_back(halfSphere->vertices[i]);
-    }
+
     indicesCount = body->indices.size();
+
+    for (int i = 0; i < halfSphere->vertices.size(); ++i) {
+        Vertex v{ glm::vec3(modelStart * glm::vec4(halfSphere->vertices[i].Position, 1.0f)), halfSphere->vertices[i].Normal};
+        body->vertices.push_back(v);
+    }
     for (int j = 0; j < halfSphere->indices.size(); ++j) {
         body->indices.push_back(halfSphere->indices[j] + indicesCount);
     }
+
     delete Tube;
     delete halfSphere;
 
@@ -659,7 +683,10 @@ Capsule *Capsule::generateCapsule(Mesh *mesh) {
     glm::vec3 min, max;
     min = mesh->vertices[0].Position;
     max = mesh->vertices[0].Position;
+
+    glm::vec3 center = glm::vec3(0);
     for (auto v : mesh->vertices) {
+        center = center + v.Position;
         if (min.x > v.Position.x) min.x = v.Position.x;
         if (min.y > v.Position.y) min.y = v.Position.y;
         if (min.z > v.Position.z) min.z = v.Position.z;
@@ -667,7 +694,9 @@ Capsule *Capsule::generateCapsule(Mesh *mesh) {
         if (max.y < v.Position.y) max.y = v.Position.y;
         if (max.z < v.Position.z) max.z = v.Position.z;
     }
-    return new Capsule(min, max, 1);
+    center = center/(float)mesh->vertices.size();
+    glm::vec3 r = glm::max(glm::abs(min), glm::abs(max));
+    return new Capsule(min, max, glm::sqrt(2 * glm::max(r.x, glm::max(r.y, r.z))));
 }
 // TODO
 bool Capsule::checkCollision(TriangleMesh *col) {

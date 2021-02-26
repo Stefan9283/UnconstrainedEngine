@@ -68,7 +68,7 @@ public:
     glm::vec3 max{}, min{}, offset{};
 
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
-    std::vector<glm::vec3> generateVerices(glm::mat4 transform);
+    std::vector<glm::vec3> generateVerices(glm::vec3 min, glm::vec3 max);
     Mesh* generateNewMesh();
     bool checkCollision(AABB* bv) override;
     bool checkCollision(BoundingSphere* bv) override;
