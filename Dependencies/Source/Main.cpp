@@ -82,20 +82,21 @@ int main() {
 
     std::vector<Mesh*> meshes;
 
-    //Mesh* cube = readObj("Box.obj");
-    //cube->bv = new AABB(cube);
-    //meshes.push_back(cube);
-    //cube->translation = glm::vec3(1.76, 1.76, 0);
-    //cube->rotation = glm::vec3 (0, -145, 0);
-    //cube->solidON = false;
+    Mesh* cube = readObj("Box.obj");
+    cube->bv = new AABB(cube);
+    cube->translation = glm::vec3(1.76, 1.76, 0);
+    cube->rotation = glm::vec3 (0, -145, 0);
+    cube->solidON = false;
+    meshes.push_back(cube);
 
-    //Mesh* sphere = readObj("Sphere.obj");
-    //sphere->translation += glm::vec3(0,-1,0);
-    //sphere->bv = new BoundingSphere(sphere);
-    //sphere->solidON = false;
-    //sphere->translation = glm::vec3(-1.76, 1.11, 0);
-    //sphere->solidON = false;
-    //meshes.push_back(sphere);
+
+    Mesh* sphere = readObj("Sphere.obj");
+    sphere->translation += glm::vec3(0,-1,0);
+    sphere->bv = new BoundingSphere(sphere);
+    sphere->solidON = false;
+    sphere->translation = glm::vec3(-1.76, 1.11, 0);
+    sphere->solidON = false;
+    meshes.push_back(sphere);
 
     //Mesh* Yen = readObj("Yen.obj");
     //Yen->bv = Capsule::generateCapsule(Yen);
@@ -103,17 +104,17 @@ int main() {
 
     Mesh* triangle = readObj("Triangle.obj");
     triangle->bv = new TriangleMesh(triangle);
-    //triangle->rotation = glm::vec3(0, -180, 0);
-    //triangle->translation = glm::vec3(0, 1.11, 0);
+    triangle->rotation = glm::vec3(0, -180, 0);
+    triangle->translation = glm::vec3(0, 1.11, 0);
     triangle->solidON = false;
     meshes.push_back(triangle);
 
-    //Mesh* triangle2 = readObj("Triangle.obj");
-    //triangle2->bv = new TriangleMesh(triangle2);
-    //triangle2->rotation = glm::vec3(0, -180, 0);
-    //triangle2->translation = glm::vec3(0, 1.11, 0);
-    //triangle2->solidON = false;
-    //meshes.push_back(triangle2);
+    Mesh* triangle2 = readObj("Triangle.obj");
+    triangle2->bv = new TriangleMesh(triangle2);
+    triangle2->rotation = glm::vec3(0, -180, -49);
+    triangle2->translation = glm::vec3(0, 1.316, 0);
+    triangle2->solidON = false;
+    meshes.push_back(triangle2);
 
     //Mesh* Mercy = readObj("Mercy.obj");
     //Mercy->bv = new TriangleMesh(Mercy);
