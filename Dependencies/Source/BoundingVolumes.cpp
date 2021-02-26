@@ -65,6 +65,11 @@ Solutions zIsFixed(glm::vec3 A, glm::vec3 B, float z) {
 }
 #pragma endregion
 
+#pragma region Functii Stefan
+glm::vec3 getTransformedVertex(glm::mat4 tr, glm::vec3 v) {
+    return glm::vec3(tr * glm::vec4(v, 1.0f));
+}
+#pragma endregion
 
 bool Collider::checkCollision(Collider* col) {
     if (dynamic_cast<BoundingSphere*>(col)) {
@@ -143,47 +148,43 @@ void BoundingSphere::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale)
 
 
 AABB::AABB(Mesh* mesh) {
-    min = mesh->vertices[0].Position;
-    max = mesh->vertices[0].Position;
+    min0 = mesh->vertices[0].Position;
+    max0 = mesh->vertices[0].Position;
+
+
+
     for (auto v : mesh->vertices) {
-        if (min.x > v.Position.x) min.x = v.Position.x;
-        if (min.y > v.Position.y) min.y = v.Position.y;
-        if (min.z > v.Position.z) min.z = v.Position.z;
-        if (max.x < v.Position.x) max.x = v.Position.x;
-        if (max.y < v.Position.y) max.y = v.Position.y;
-        if (max.z < v.Position.z) max.z = v.Position.z;
+        if (min0.x > v.Position.x) min0.x = v.Position.x;
+        if (min0.y > v.Position.y) min0.y = v.Position.y;
+        if (min0.z > v.Position.z) min0.z = v.Position.z;
+        if (max0.x < v.Position.x) max0.x = v.Position.x;
+        if (max0.y < v.Position.y) max0.y = v.Position.y;
+        if (max0.z < v.Position.z) max0.z = v.Position.z;
     }
+
+    min = min0;
+    max = max0;
 }
-std::vector<glm::vec3> AABB::generateVerices(glm::vec3 min, glm::vec3 max) {
+std::vector<glm::vec3> AABB::generateVerices(glm::vec3 min_, glm::vec3 max_) {
     std::vector<glm::vec3> vertices;
-    vertices.emplace_back(glm::vec3(min.x, min.y, min.z));
-    vertices.emplace_back(glm::vec3(min.x, min.y, max.z));
-    vertices.emplace_back(glm::vec3(min.x, max.y, min.z));
-    vertices.emplace_back(glm::vec3(min.x, max.y, max.z));
-    vertices.emplace_back(glm::vec3(max.x, min.y, min.z));
-    vertices.emplace_back(glm::vec3(max.x, min.y, max.z));
-    vertices.emplace_back(glm::vec3(max.x, max.y, min.z));
-    vertices.emplace_back(glm::vec3(max.x, max.y, max.z));
+    vertices.emplace_back(glm::vec3(min_.x, min_.y, min_.z));
+    vertices.emplace_back(glm::vec3(min_.x, min_.y, max_.z));
+    vertices.emplace_back(glm::vec3(min_.x, max_.y, min_.z));
+    vertices.emplace_back(glm::vec3(min_.x, max_.y, max_.z));
+    vertices.emplace_back(glm::vec3(max_.x, min_.y, min_.z));
+    vertices.emplace_back(glm::vec3(max_.x, min_.y, max_.z));
+    vertices.emplace_back(glm::vec3(max_.x, max_.y, min_.z));
+    vertices.emplace_back(glm::vec3(max_.x, max_.y, max_.z));
     return vertices;
 }
 Mesh *AABB::generateNewMesh() {
     std::vector<glm::vec3> verticesPos = generateVerices(min, max);
-    for (int i = 0; i < verticesPos.size(); ++i) {
-        verticesPos[i] = glm::vec3(transform * glm::vec4(verticesPos[i], 1.0f));
-    }
-
-    glm::vec3 minNow = verticesPos[0];
-    glm::vec3 maxNow = verticesPos[0];
-    for (int i = 1; i < verticesPos.size(); ++i) {
-        minNow = glm::min(minNow, verticesPos[i]);
-        maxNow = glm::max(maxNow, verticesPos[i]);
-    }
-
-    verticesPos = generateVerices(minNow, maxNow);
 
     body = new Mesh();
+
     for (auto v : verticesPos)
         body->vertices.push_back(Vertex{v, v});
+
     body->indices.push_back(3);
     body->indices.push_back(2);
     body->indices.push_back(0);
@@ -234,6 +235,25 @@ Mesh *AABB::generateNewMesh() {
     body->prepare();
     return body;
 }
+void AABB::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
+    Collider::setTransform(pos, rot, scale);
+    if (body) delete body;
+    updateMinMax(transform);
+    body = generateNewMesh();
+}
+void AABB::updateMinMax(glm::mat4 transform) {
+    std::vector<glm::vec3> verticesPos = generateVerices(min0, max0);
+    for (int i = 0; i < verticesPos.size(); ++i)
+        verticesPos[i] = getTransformedVertex(transform, verticesPos[i]);
+
+    min = verticesPos[0];
+    max = verticesPos[0];
+
+    for (int i = 1; i < verticesPos.size(); ++i) {
+        min = glm::min(min, verticesPos[i]);
+        max = glm::max(max, verticesPos[i]);
+    }
+}
 bool AABB::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
 }
@@ -264,11 +284,6 @@ bool AABB::checkCollision(Triangle *t) {
 bool AABB::checkCollision(Capsule *col) {
     return col->checkCollision(this);
 }
-void AABB::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
-    Collider::setTransform(pos, rot, scale);
-    if (body) delete body;
-    body = generateNewMesh();
-}
 
 
 TriangleMesh::TriangleMesh(Mesh *mesh) {
@@ -293,10 +308,10 @@ bool TriangleMesh::checkCollisionByTriangle(Collider *col) {
     bool result = false;
     for (int i = 0; i < this->body->indices.size(); i+=3) {
         Triangle t(
-                glm::vec3(this->transform * glm::vec4(body->vertices[i].Position, 1.0f)),
-                glm::vec3(this->transform * glm::vec4(body->vertices[i+1].Position, 1.0f)),
-                glm::vec3(this->transform * glm::vec4(body->vertices[i+2].Position, 1.0f)),
-                body->vertices[i].Normal
+                getTransformedVertex(transform, body->vertices[i].Position),
+                getTransformedVertex(transform, body->vertices[i+1].Position),
+                getTransformedVertex(transform, body->vertices[i+2].Position),
+                glm::mat3(transpose(inverse(transform))) * body->vertices[i].Normal
                 );
         result = col->checkCollision(&t);
         if (result) return true;
@@ -308,9 +323,23 @@ bool TriangleMesh::checkCollision(Capsule *col) {
 }
 
 
+Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length) {
+        this->origin = origin;
+        this->direction = direction;
+        this->length = length;
+        body = new Mesh();
+        body->vertices.push_back(Vertex{origin});
+        body->vertices.push_back(Vertex{origin + direction * length});
+        body->indices.push_back(0);
+        body->indices.push_back(1);
+        body->indices.push_back(0);
+        body->solidON = false;
+        body->wireframeON = true;
+        body->prepare();
+}
 Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
     static bool wasHeld = false;
-     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && wasHeld) {
+    if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && wasHeld) {
         int wi, he;
         glfwGetWindowSize(window, &wi, &he);
         float x = cam->lastx_mouse - (float) wi / 2.0f;
@@ -334,20 +363,6 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) { wasHeld = true; }
 
     return nullptr;
-}
-Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length) {
-        this->origin = origin;
-        this->direction = direction;
-        this->length = length;
-        body = new Mesh();
-        body->vertices.push_back(Vertex{origin});
-        body->vertices.push_back(Vertex{origin + direction * length});
-        body->indices.push_back(0);
-        body->indices.push_back(1);
-        body->indices.push_back(0);
-        body->solidON = false;
-        body->wireframeON = true;
-        body->prepare();
 }
 bool Ray::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
@@ -507,8 +522,12 @@ bool Ray::checkCollision(Ray* r) {
 bool Ray::checkCollision(Triangle *t) {
     glm::vec3 A = this->origin, B = this->origin - this->direction;
 
+    std::cout << "Sup0\n";
+
     if (glm::dot(t->norm, B) < 0)
         return false;
+    std::cout << "Sup1\n";
+
 
     float x0 = A.x, y0 = A.y, z0 = A.z;
     float x1 = B.x, y1 = B.y, z1 = B.z;
@@ -555,6 +574,9 @@ bool Ray::checkCollision(Triangle *t) {
         solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
     }
 
+    std::cout << "Sup2\n";
+
+
     if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) > this->length)
         return false;
 
@@ -584,6 +606,7 @@ Triangle::Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm) {
     this->vertices[2] = v2;
     this->norm = norm;
 }
+
 bool Triangle::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
 }
@@ -595,22 +618,6 @@ bool Triangle::checkCollision(Capsule *col) {
 }
 // TODO
 bool Triangle::checkCollision(AABB *bv) {
-    float p0, p1, p2, r;
-    // Compute box center and extents (if not already given in that format)
-    glm::vec3 c = (bv->min + bv->max) * 0.5f;
-    float e0 = (bv->max.x - bv->min.x) * 0.5f;
-    float e1 = (bv->max.y - bv->min.y) * 0.5f;
-    float e2 = (bv->max.z - bv->min.z) * 0.5f;
-
-    glm::vec3 v0, v1, v2;
-    v0 = vertices[0];
-    v1 = vertices[1];
-    v2 = vertices[2];
-
-    v0 = v0 - c;
-    v1 = v1 - c;
-    v2 = v2 - c;
-
     return false;
 }
 // TODO
@@ -621,6 +628,7 @@ bool Triangle::checkCollision(BoundingSphere *bv) {
 bool Triangle::checkCollision(Triangle *t) {
     return false;
 }
+
 
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     this->start = start;
@@ -637,19 +645,18 @@ Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
 
     float diff = glm::length(end - start);
 
-    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1), glm::vec3(radius));
+    glm::mat4 scaleMatrixTube = glm::scale(glm::mat4(1), glm::vec3(radius, diff/2, radius));
 
-    for (int l = 0; l < body->vertices.size(); ++l) {
-        body->vertices[l].Position = glm::vec3(scaleMatrix * glm::vec4(body->vertices[l].Position, 1.0f));
-    }
+    for (int l = 0; l < body->vertices.size(); ++l)
+        body->vertices[l].Position = getTransformedVertex(scaleMatrixTube, body->vertices[l].Position);
 
-
+    glm::mat4 scaleMatrixHalfSphere = glm::scale(glm::mat4(1), glm::vec3(radius));
 
     glm::mat4 modelEnd = glm::translate(glm::mat4(1), glm::vec3(0, diff/2, 0));
     glm::mat4 modelStart = glm::translate(glm::mat4(1), glm::vec3(0, -diff/2, 0)) * glm::rotate(glm::mat4(1), glm::radians(180.0f), glm::vec3(1, 0, 0));
 
-    modelStart = modelStart * scaleMatrix;
-    modelEnd = modelEnd * scaleMatrix;
+    modelStart = modelStart * scaleMatrixHalfSphere;
+    modelEnd = modelEnd * scaleMatrixHalfSphere;
 
 
 
@@ -657,7 +664,7 @@ Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     size_t indicesCount = Tube->indices.size();
 
     for (int i = 0; i < halfSphere->vertices.size(); ++i) {
-        Vertex v{glm::vec3(modelEnd * glm::vec4(halfSphere->vertices[i].Position, 1.0f)), halfSphere->vertices[i].Normal};
+        Vertex v{ getTransformedVertex(modelEnd, halfSphere->vertices[i].Position), halfSphere->vertices[i].Normal};
         body->vertices.push_back(v);
     }
     for (int j = 0; j < halfSphere->indices.size(); ++j) {
@@ -667,7 +674,7 @@ Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     indicesCount = body->indices.size();
 
     for (int i = 0; i < halfSphere->vertices.size(); ++i) {
-        Vertex v{ glm::vec3(modelStart * glm::vec4(halfSphere->vertices[i].Position, 1.0f)), halfSphere->vertices[i].Normal};
+        Vertex v{ getTransformedVertex(modelStart, halfSphere->vertices[i].Position), halfSphere->vertices[i].Normal};
         body->vertices.push_back(v);
     }
     for (int j = 0; j < halfSphere->indices.size(); ++j) {
@@ -698,6 +705,14 @@ Capsule *Capsule::generateCapsule(Mesh *mesh) {
     glm::vec3 r = glm::max(glm::abs(min), glm::abs(max));
     return new Capsule(min, max, glm::sqrt(2 * glm::max(r.x, glm::max(r.y, r.z))));
 }
+void Capsule::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
+    Collider::setTransform(pos, rot, scale);
+    start = getTransformedVertex(transform, start0);
+    end = getTransformedVertex(transform, end0);
+    body->translation = pos;
+    body->scale = scale;
+    body->rotation = rot;
+}
 // TODO
 bool Capsule::checkCollision(TriangleMesh *col) {
     return false;
@@ -722,6 +737,5 @@ bool Capsule::checkCollision(Ray *col) {
 bool Capsule::checkCollision(Capsule *col) {
     return false;
 }
-
 
 

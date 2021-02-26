@@ -65,8 +65,9 @@ public:
 
 class AABB : public Collider{
 public:
-    glm::vec3 max{}, min{}, offset{};
+    glm::vec3 max{}, min{}, max0, min0, offset{};
 
+    void updateMinMax(glm::mat4 transform);
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
     std::vector<glm::vec3> generateVerices(glm::vec3 min, glm::vec3 max);
     Mesh* generateNewMesh();
@@ -130,10 +131,14 @@ public:
 
 class Capsule : public Collider { // aka swept sphere
 public:
-    glm::vec3 start{}, end{};
+    glm::vec3 start0{}, end0{};
     float radius;
 
+    glm::vec3 start{}, end{};
+
+
     static Capsule* generateCapsule(Mesh* mesh);
+    void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
     Capsule(glm::vec3 start, glm::vec3 end, float radius);
     bool checkCollision(BoundingSphere* col) override;
     bool checkCollision(AABB* col) override;

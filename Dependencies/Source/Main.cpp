@@ -85,29 +85,40 @@ int main() {
     //Mesh* cube = readObj("Box.obj");
     //cube->bv = new AABB(cube);
     //meshes.push_back(cube);
+    //cube->translation = glm::vec3(1.76, 1.76, 0);
+    //cube->rotation = glm::vec3 (0, -145, 0);
+    //cube->solidON = false;
 
     //Mesh* sphere = readObj("Sphere.obj");
     //sphere->translation += glm::vec3(0,-1,0);
     //sphere->bv = new BoundingSphere(sphere);
-    //meshes.push_back(sphere);
     //sphere->solidON = false;
+    //sphere->translation = glm::vec3(-1.76, 1.11, 0);
+    //sphere->solidON = false;
+    //meshes.push_back(sphere);
 
-    //Mesh* Yen = readObj("Box.obj");
+    //Mesh* Yen = readObj("Yen.obj");
     //Yen->bv = Capsule::generateCapsule(Yen);
     //meshes.push_back(Yen);
 
-    //Mesh* Triangle = readObj("Triangle.obj");
-    //Triangle->bv = new TriangleMesh(Triangle);
-    //meshes.push_back(Triangle);
+    Mesh* triangle = readObj("Triangle.obj");
+    triangle->bv = new TriangleMesh(triangle);
+    //triangle->rotation = glm::vec3(0, -180, 0);
+    //triangle->translation = glm::vec3(0, 1.11, 0);
+    triangle->solidON = false;
+    meshes.push_back(triangle);
 
-    Mesh* Mercy = readObj("Mercy.obj");
-    Mercy->bv = new AABB(Mercy);
-    meshes.push_back(Mercy);
+    //Mesh* triangle2 = readObj("Triangle.obj");
+    //triangle2->bv = new TriangleMesh(triangle2);
+    //triangle2->rotation = glm::vec3(0, -180, 0);
+    //triangle2->translation = glm::vec3(0, 1.11, 0);
+    //triangle2->solidON = false;
+    //meshes.push_back(triangle2);
 
-    //Mesh* Tube = readObj("Tube.obj");
-    //meshes.push_back(Tube);
-    //Mesh* halfSphere = readObj("halfSphere.obj");
-    //meshes.push_back(halfSphere);
+    //Mesh* Mercy = readObj("Mercy.obj");
+    //Mercy->bv = new TriangleMesh(Mercy);
+    //meshes.push_back(Mercy);
+
     glClearColor(0.1, 0.1, 0.3, 1);
 
     Ray* r = nullptr;
@@ -140,7 +151,10 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-
+        if(ImGui::Button("Slow Camera" ))
+            c->speed = 0.1f;
+        else if(ImGui::Button("Normal Camera"))
+            c->speed = 0.5f;
 
         s->setFloat("flatColorsON", 1);
         crosshair->Draw(s);
