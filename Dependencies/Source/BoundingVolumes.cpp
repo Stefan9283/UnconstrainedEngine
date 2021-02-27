@@ -101,12 +101,17 @@ bool Collider::checkCollision(Collider* col) {
     return false;
 }
 
+
 Collider::~Collider() {
     if (body)
         delete body;
 }
 
 
+BoundingSphere::BoundingSphere(glm::vec3 pos, float radius) {
+    this->pos = pos;
+    this->radius = radius;
+}
 BoundingSphere::BoundingSphere(Mesh *mesh) {
     pos = glm::vec3(0);
 
@@ -151,11 +156,6 @@ void BoundingSphere::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale)
     //transform = glm::translate(glm::mat4(1), pos) * glm::scale(glm::mat4(1), scale);
     this->pos = pos;
     this->body->translation = pos;
-}
-
-BoundingSphere::BoundingSphere(glm::vec3 pos, float radius) {
-    this->pos = pos;
-    this->radius = radius;
 }
 
 
@@ -722,17 +722,18 @@ void Capsule::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     body->scale = scale;
     body->rotation = rot;
 }
-// TODO
 bool Capsule::checkCollision(TriangleMesh *col) {
-    return false;
+    return col->checkCollision(this);
 }
-// TODO
 bool Capsule::checkCollision(BoundingSphere *col) {
-    return false;
+    glm::vec3 bestPoint = ClosestPointOnLineSegment(start, end, col->pos);
+    BoundingSphere s(bestPoint, radius);
+    return s.checkCollision(col);
 }
-// TODO
 bool Capsule::checkCollision(AABB *col) {
-    return false;
+    glm::vec3 bestPoint = ClosestPointOnLineSegment(start, end, (col->max + col->min)/2.0f);
+    BoundingSphere s(bestPoint, radius);
+    return s.checkCollision(col);
 }
 // TODO https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Capsule::checkCollision(Triangle *t) {
@@ -785,20 +786,10 @@ bool Capsule::checkCollision(Capsule *col) {
 // now do the same for capsule A segment:
     bestA = ClosestPointOnLineSegment(this->start, this->end, bestB);
 
-    //std::cout << glm::to_string(a_A) << glm::to_string(a_B) << " best A and B\n";
-    std::cout << glm::to_string(bestA) << glm::to_string(bestB) << " best A and B\n";
-
-
     Collider* s1 = new BoundingSphere(bestA, this->radius);
     Collider* s2 = new BoundingSphere(bestB, col->radius);
     bool result = s1->checkCollision(s2);
 
-    std::cout << glm::to_string(this->start) << glm::to_string(col->start) << " start\n";
-    std::cout << glm::to_string(this->end) << glm::to_string(col->end) << " end\n";
-    std::cout << glm::to_string(((BoundingSphere*)s1)->pos) << ((BoundingSphere*)s1)->radius << "\n";
-    std::cout << glm::to_string(((BoundingSphere*)s2)->pos) << ((BoundingSphere*)s2)->radius << "\n";
-    std::cout << glm::length(((BoundingSphere*)s1)->pos - ((BoundingSphere*)s2)->pos) << " center to center\n";
-    std::cout << result << "\n";
 
     delete s1;
     delete s2;
