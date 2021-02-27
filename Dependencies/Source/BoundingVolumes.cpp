@@ -69,6 +69,13 @@ Solutions zIsFixed(glm::vec3 A, glm::vec3 B, float z) {
 glm::vec3 getTransformedVertex(glm::mat4 tr, glm::vec3 v) {
     return glm::vec3(tr * glm::vec4(v, 1.0f));
 }
+glm::vec3 ClosestPointOnLineSegment(glm::vec3 A, glm::vec3 B, glm::vec3 Point)
+{
+    glm::vec3 AB = B - A;
+    float t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
+    return A + glm::min(glm::max(t, 0.0f), 1.0f) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
+}
+
 #pragma endregion
 
 bool Collider::checkCollision(Collider* col) {
@@ -129,7 +136,7 @@ bool BoundingSphere::checkCollision(AABB* bv) {
 }
 bool BoundingSphere::checkCollision(BoundingSphere* bv) {
     float radius2radiusDistance = glm::length(pos - bv->pos);
-    return radius2radiusDistance < radius || radius2radiusDistance < bv->radius;
+    return radius2radiusDistance <= radius + bv->radius;
 }
 bool BoundingSphere::checkCollision(Ray *r) {
     return r->checkCollision(this);
@@ -144,6 +151,11 @@ void BoundingSphere::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale)
     //transform = glm::translate(glm::mat4(1), pos) * glm::scale(glm::mat4(1), scale);
     this->pos = pos;
     this->body->translation = pos;
+}
+
+BoundingSphere::BoundingSphere(glm::vec3 pos, float radius) {
+    this->pos = pos;
+    this->radius = radius;
 }
 
 
@@ -522,12 +534,8 @@ bool Ray::checkCollision(Ray* r) {
 bool Ray::checkCollision(Triangle *t) {
     glm::vec3 A = this->origin, B = this->origin - this->direction;
 
-    std::cout << "Sup0\n";
-
     if (glm::dot(t->norm, B) < 0)
         return false;
-    std::cout << "Sup1\n";
-
 
     float x0 = A.x, y0 = A.y, z0 = A.z;
     float x1 = B.x, y1 = B.y, z1 = B.z;
@@ -574,8 +582,6 @@ bool Ray::checkCollision(Triangle *t) {
         solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
     }
 
-    std::cout << "Sup2\n";
-
 
     if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) > this->length)
         return false;
@@ -616,23 +622,23 @@ bool Triangle::checkCollision(Ray *r) {
 bool Triangle::checkCollision(Capsule *col) {
     return col->checkCollision(this);
 }
-// TODO
+// TODO https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
 bool Triangle::checkCollision(AABB *bv) {
     return false;
 }
-// TODO
+// TODO https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Triangle::checkCollision(BoundingSphere *bv) {
     return false;
 }
-// TODO
+// TODO https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/triangle-triangle.html
 bool Triangle::checkCollision(Triangle *t) {
     return false;
 }
 
 
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
-    this->start = start;
-    this->end = end;
+    this->start0 = start;
+    this->end0 = end;
     this->radius = radius;
 
     Mesh* Tube = readObj("Tube.obj");
@@ -702,13 +708,16 @@ Capsule *Capsule::generateCapsule(Mesh *mesh) {
         if (max.z < v.Position.z) max.z = v.Position.z;
     }
     center = center/(float)mesh->vertices.size();
-    glm::vec3 r = glm::max(glm::abs(min), glm::abs(max));
-    return new Capsule(min, max, glm::sqrt(2 * glm::max(r.x, glm::max(r.y, r.z))));
+    glm::vec3 r = glm::max(glm::abs(min - center), glm::abs(max - center));
+    float radius = glm::sqrt(2 * glm::max(r.x, glm::max(r.y, r.z)));
+    float max_y = glm::max(glm::abs(min.y) - radius, glm::abs(max.y) - radius);
+    return new Capsule(glm::vec3(0, max_y, 0), - glm::vec3(0, max_y, 0), radius);
 }
 void Capsule::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     Collider::setTransform(pos, rot, scale);
     start = getTransformedVertex(transform, start0);
     end = getTransformedVertex(transform, end0);
+
     body->translation = pos;
     body->scale = scale;
     body->rotation = rot;
@@ -725,7 +734,7 @@ bool Capsule::checkCollision(BoundingSphere *col) {
 bool Capsule::checkCollision(AABB *col) {
     return false;
 }
-// TODO
+// TODO https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Capsule::checkCollision(Triangle *t) {
     return false;
 }
@@ -733,9 +742,68 @@ bool Capsule::checkCollision(Triangle *t) {
 bool Capsule::checkCollision(Ray *col) {
     return false;
 }
-// TODO
+// !source of inspiration: https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Capsule::checkCollision(Capsule *col) {
-    return false;
+// capsule A:
+    glm::vec3 a_Normal = normalize(this->start - this->end);
+    glm::vec3 a_LineEndOffset = a_Normal * this->radius;
+    glm::vec3 a_A = this->start + a_LineEndOffset;
+    glm::vec3 a_B = this->end - a_LineEndOffset;
+
+// capsule B:
+    glm::vec3 b_Normal = normalize(col->start - col->end);
+    glm::vec3 b_LineEndOffset = b_Normal * col->radius;
+    glm::vec3 b_A = col->start + b_LineEndOffset;
+    glm::vec3 b_B = col->end - b_LineEndOffset;
+
+// vectors between line endpoints
+    glm::vec3 v0 = b_A - a_A;
+    glm::vec3 v1 = b_B - a_A;
+    glm::vec3 v2 = b_A - a_B;
+    glm::vec3 v3 = b_B - a_B;
+
+// squared distances:
+    float d0 = glm::dot(v0, v0);
+    float d1 = glm::dot(v1, v1);
+    float d2 = glm::dot(v2, v2);
+    float d3 = glm::dot(v3, v3);
+
+// select best potential endpoint on capsule A:
+    glm::vec3 bestA;
+    if (d2 < d0 || d2 < d1 || d3 < d0 || d3 < d1)
+    {
+        bestA = a_B;
+    }
+    else
+    {
+        bestA = a_A;
+    }
+
+// select point on capsule B line segment nearest to best potential endpoint on A capsule:
+    glm::vec3 bestB = ClosestPointOnLineSegment(col->start, col->end, bestA);
+
+// now do the same for capsule A segment:
+    bestA = ClosestPointOnLineSegment(this->start, this->end, bestB);
+
+    //std::cout << glm::to_string(a_A) << glm::to_string(a_B) << " best A and B\n";
+    std::cout << glm::to_string(bestA) << glm::to_string(bestB) << " best A and B\n";
+
+
+    Collider* s1 = new BoundingSphere(bestA, this->radius);
+    Collider* s2 = new BoundingSphere(bestB, col->radius);
+    bool result = s1->checkCollision(s2);
+
+    std::cout << glm::to_string(this->start) << glm::to_string(col->start) << " start\n";
+    std::cout << glm::to_string(this->end) << glm::to_string(col->end) << " end\n";
+    std::cout << glm::to_string(((BoundingSphere*)s1)->pos) << ((BoundingSphere*)s1)->radius << "\n";
+    std::cout << glm::to_string(((BoundingSphere*)s2)->pos) << ((BoundingSphere*)s2)->radius << "\n";
+    std::cout << glm::length(((BoundingSphere*)s1)->pos - ((BoundingSphere*)s2)->pos) << " center to center\n";
+    std::cout << result << "\n";
+
+    delete s1;
+    delete s2;
+
+    return result;
 }
 
 

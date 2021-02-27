@@ -60,6 +60,7 @@ public:
     bool checkCollision(Capsule* col) override;
 
     explicit BoundingSphere(Mesh* mesh);
+    BoundingSphere(glm::vec3 pos, float radius);
 
 };
 
