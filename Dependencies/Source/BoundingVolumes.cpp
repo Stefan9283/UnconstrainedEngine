@@ -739,9 +739,48 @@ bool Capsule::checkCollision(AABB *col) {
 bool Capsule::checkCollision(Triangle *t) {
     return false;
 }
-// TODO
 bool Capsule::checkCollision(Ray *col) {
-    return false;
+// capsule:
+    glm::vec3 a_Normal = normalize(this->start - this->end);
+    glm::vec3 a_LineEndOffset = a_Normal * this->radius;
+    glm::vec3 a_A = this->start + a_LineEndOffset;
+    glm::vec3 a_B = this->end - a_LineEndOffset;
+
+// ray:
+    glm::vec3 b_A = col->origin;
+    glm::vec3 b_B = col->direction * col->length + col->origin;
+
+// vectors between line endpoints
+    glm::vec3 v0 = b_A - a_A;
+    glm::vec3 v1 = b_B - a_A;
+    glm::vec3 v2 = b_A - a_B;
+    glm::vec3 v3 = b_B - a_B;
+
+// squared distances:
+    float d0 = glm::dot(v0, v0);
+    float d1 = glm::dot(v1, v1);
+    float d2 = glm::dot(v2, v2);
+    float d3 = glm::dot(v3, v3);
+
+// select best potential endpoint on capsule A:
+    glm::vec3 bestA;
+    if (d2 < d0 || d2 < d1 || d3 < d0 || d3 < d1)
+    {
+        bestA = a_B;
+    }
+    else
+    {
+        bestA = a_A;
+    }
+
+// select point on line segment nearest to best potential endpoint on capsule:
+    glm::vec3 bestB = ClosestPointOnLineSegment(b_A, b_B, bestA);
+
+// now do the same for capsule A segment:
+    bestA = ClosestPointOnLineSegment(this->start, this->end, bestB);
+
+    BoundingSphere s(bestA, this->radius);
+    return s.checkCollision(col);
 }
 // !source of inspiration: https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Capsule::checkCollision(Capsule *col) {
@@ -786,15 +825,10 @@ bool Capsule::checkCollision(Capsule *col) {
 // now do the same for capsule A segment:
     bestA = ClosestPointOnLineSegment(this->start, this->end, bestB);
 
-    Collider* s1 = new BoundingSphere(bestA, this->radius);
-    Collider* s2 = new BoundingSphere(bestB, col->radius);
-    bool result = s1->checkCollision(s2);
+    BoundingSphere s1(bestA, this->radius);
+    BoundingSphere s2(bestB, col->radius);
 
-
-    delete s1;
-    delete s2;
-
-    return result;
+    return s1.checkCollision(&s2);
 }
 
 
