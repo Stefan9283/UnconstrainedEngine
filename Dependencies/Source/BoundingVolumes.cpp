@@ -9,7 +9,7 @@
 
 #pragma region Functii Ovidiu
 
-#define EPS 0.00001
+#define EPS 0.001
 
 float getEuclidianDistance(glm::vec3 p1, glm::vec3 p2) {
     return sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y) + (p2.z - p1.z) * (p2.z - p1.z));
@@ -75,7 +75,6 @@ glm::vec3 ClosestPointOnLineSegment(glm::vec3 A, glm::vec3 B, glm::vec3 Point)
     float t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
     return A + glm::min(glm::max(t, 0.0f), 1.0f) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
 }
-
 #pragma endregion
 
 bool Collider::checkCollision(Collider* col) {
@@ -295,6 +294,12 @@ bool AABB::checkCollision(Triangle *t) {
 }
 bool AABB::checkCollision(Capsule *col) {
     return col->checkCollision(this);
+}
+AABB::AABB(glm::vec3 min, glm::vec3 max) {
+    min0 = min;
+    max0 = max;
+    offset = glm::vec3(0);
+    transform = glm::mat4(1);
 }
 
 
@@ -528,78 +533,97 @@ bool Ray::checkCollision(AABB* bv) {
     return false;
 }
 // TODO
+/*
+ * O1 + t * (O1 - D1) = v
+ * O2 + t * (O2 - D2) = v
+ *  ==> O1 + t * (O1 - D1) = O2 + t * (O2 - D2)
+ *  t = (O1 - O2)/((O2 - D2) - (O1 - D1))
+ * */
 bool Ray::checkCollision(Ray* r) {
-    return false;
+    glm::dvec3 O1, O2, D1, D2;
+    O1 = r->origin;
+    D1 = r->origin - r->direction * r->length;
+
+    O2 = origin;
+    D2 = origin - direction * length;
+
+    glm::dvec3 t =  (O1 - O2) / ((O2 - D2) - (O1 - D1));
+
+    if (glm::isnan(t.z))
+        return glm::pow(t.x - t.y, 2) < EPS && t.x <= 1 && t.x >=0;
+
+    if (glm::isnan(t.y))
+        return glm::pow(t.x - t.z, 2) < EPS && t.x <= 1 && t.x >=0;
+
+    if (glm::isnan(t.x))
+        return glm::pow(t.z - t.y, 2) < EPS && t.z <= 1 && t.z >=0;
+
+    return t.x - t.y < EPS && t.x - t.z < EPS && t.x <= 1 && t.x >=0;
 }
 bool Ray::checkCollision(Triangle *t) {
     glm::vec3 A = this->origin, B = this->origin - this->direction;
 
     if (glm::dot(t->norm, B) < 0)
         return false;
+    else if (glm::dot(t->norm, B) > 0) {
+        float x0 = A.x, y0 = A.y, z0 = A.z;
+        float x1 = B.x, y1 = B.y, z1 = B.z;
 
-    float x0 = A.x, y0 = A.y, z0 = A.z;
-    float x1 = B.x, y1 = B.y, z1 = B.z;
+        float a = t->norm.x, b = t->norm.y, c = t->norm.z;
+        float d = glm::dot(t->norm, t->vertices[0]);
+        // t->norm.x * t->vertices[0].x + t->norm.y * t->vertices[0].y + t->norm.z * t->vertices[0].z;
 
-    float a = t->norm.x, b = t->norm.y, c = t->norm.z;
-    float d = t->norm.x * t->vertices[0].x + t->norm.y * t->vertices[0].y + t->norm.z * t->vertices[0].z;
+        float c1, c2, c3, c4;
+        Solutions solutions{};
 
-    float c1, c2, c3, c4;
-    Solutions solutions;
+        // Pick an axis which the line is not parallel to
+        if (x0 != x1) {
+            c1 = b * (y1 - y0) / (x1 - x0);
+            c2 = b * (x1 * y0 - x0 * y1) / (x1 - x0);
 
-    // Pick an axis which the line is not parallel to
-    if (x0 != x1) {
-        c1 = b * (y1 - y0) / (x1 - x0);
-        c2 = b * (x1 * y0 - x0 * y1) / (x1 - x0);
+            c3 = c * (z1 - z0) / (x1 - x0);
+            c4 = c * (x1 * z0 - x0 * z1) / (x1 - x0);
 
-        c3 = c * (z1 - z0) / (x1 - x0);
-        c4 = c * (x1 * z0 - x0 * z1) / (x1 - x0);
+            if (!(a + c1 + c3))
+                return false;
+            solutions = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+        } else if (y0 != y1) {
+            c1 = a * (x1 - x0) / (y1 - y0);
+            c2 = a * (y1 * x0 - y0 * x1) / (y1 - y0);
 
-        if (!(a + c1 + c3))
+            c3 = c * (z1 - z0) / (y1 - y0);
+            c4 = c * (y1 * z0 - y0 * z1) / (y1 - y0);
+
+            if (!(a + c1 + c3))
+                return false;
+            solutions = yIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+        } else {
+            c1 = a * (x1 - x0) / (z1 - z0);
+            c2 = a * (z1 * x0 - z0 * x1) / (z1 - z0);
+
+            c3 = c * (y1 - y0) / (z1 - z0);
+            c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
+
+            if (!(a + c1 + c3))
+                return false;
+            solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+        }
+
+
+        if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) > this->length)
             return false;
 
-        solutions = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
-    } else if (y0 != y1) {
-        c1 = a * (x1 - x0) / (y1 - y0);
-        c2 = a * (y1 * x0 - y0 * x1) / (y1 - y0);
-
-        c3 = c * (z1 - z0) / (y1 - y0);
-        c4 = c * (y1 * z0 - y0 * z1) / (y1 - y0);
-
-        if (!(a + c1 + c3))
-            return false;
-
-        solutions = yIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
-    } else {
-        c1 = a * (x1 - x0) / (z1 - z0);
-        c2 = a * (z1 * x0 - z0 * x1) / (z1 - z0);
-
-        c3 = c * (y1 - y0) / (z1 - z0);
-        c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
-
-        if (!(a + c1 + c3))
-            return false;
-
-        solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+        return t->isInside(glm::vec3(solutions.x, solutions.y, solutions.z));
     }
+    else {
+        if (t->isInside(origin) || t->isInside(origin + direction * length))
+            return true;
 
-
-    if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) > this->length)
-        return false;
-
-    // Idea based on barycentric coordinates
-    float edge1 = getEuclidianDistance(t->vertices[0], t->vertices[1]);
-    float edge2 = getEuclidianDistance(t->vertices[1], t->vertices[2]);
-    float edge3 = getEuclidianDistance(t->vertices[0], t->vertices[2]);
-
-    float edge4 = getEuclidianDistance(t->vertices[0], glm::vec3(solutions.x, solutions.y, solutions.z));
-    float edge5 = getEuclidianDistance(t->vertices[1], glm::vec3(solutions.x, solutions.y, solutions.z));
-    float edge6 = getEuclidianDistance(t->vertices[2], glm::vec3(solutions.x, solutions.y, solutions.z));
-
-    float subarea1 = getTriangleArea(edge1, edge4, edge5);
-    float subarea2 = getTriangleArea(edge2, edge5, edge6);
-    float subarea3 = getTriangleArea(edge3, edge4, edge6);
-
-    return fabs(subarea1 + subarea2 + subarea3 - getTriangleArea(edge1, edge2, edge3)) <= EPS;
+        Ray r0(t->vertices[0], glm::normalize(t->vertices[0] - t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
+        Ray r1(t->vertices[2], glm::normalize(t->vertices[2] - t->vertices[1]), glm::length(t->vertices[2] - t->vertices[1]));
+        Ray r2(t->vertices[0], glm::normalize(t->vertices[0] - t->vertices[2]), glm::length(t->vertices[0] - t->vertices[2]));
+        return r0.checkCollision(this) && r1.checkCollision(this) && r2.checkCollision(this);
+    }
 }
 bool Ray::checkCollision(Capsule *col) {
     return col->checkCollision(this);
@@ -632,7 +656,99 @@ bool Triangle::checkCollision(BoundingSphere *bv) {
 }
 // TODO https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/triangle-triangle.html
 bool Triangle::checkCollision(Triangle *t) {
+    bool co_planar = true;
+
+    float d2 = -glm::dot(t->norm, t->vertices[0]);
+    float d1 = -glm::dot(t->norm, vertices[0]);
+
+    float d1_[3];
+    float d2_[3];
+
+
+    {
+        bool
+                positiveDist = false,
+                negativeDist = false;
+
+        for (int i = 0; i < 3; ++i) {
+            d1_[i] = glm::dot(t->norm, vertices[i]) + d2;
+            d2_[i] = glm::dot(t->norm, t->vertices[i]) + d1;
+
+            if (d1_[i] != 0) co_planar = false;
+            if (d1_[i] < 0) negativeDist = true;
+                else if (d1_[i] > 0) positiveDist = true;
+        }
+
+        if (!negativeDist || !positiveDist)
+            return false;
+
+    }
+
+    float p1[3], p2[3];
+    if (!co_planar) {
+        glm::vec3 O = vertices[0];
+        glm::vec3 D = glm::cross(norm, t->norm);
+
+        glm::vec3 t1, t2, v0, v1;
+        float d_0, d_1;
+
+        if (d1_[0] * d2_[1] < 0) {
+            v0 = vertices[0];
+            v1 = vertices[1];
+            d_0 = d1_[0];
+            d_1 = d1_[1];
+        } else {
+            v0 = vertices[0];
+            v1 = vertices[2];
+            d_0 = d1_[0];
+            d_1 = d1_[2];
+        }
+
+        t1 = D * ((v0 - O) + (v1 - v0) * d_0 / (d_0 - d_1));
+
+
+        if (d1_[2] * d2_[1] < 0) {
+            v0 = vertices[2];
+            v1 = vertices[1];
+            d_0 = d1_[2];
+            d_1 = d1_[1];
+        } else {
+            v0 = vertices[2];
+            v1 = vertices[1];
+            d_0 = d1_[2];
+            d_1 = d1_[1];
+        }
+
+        t2 = D * ((v0 - O) + (v1 - v0) * d_0 / (d_0 - d_1));
+
+
+        //std::cout << glm::to_string(t1) << " " << glm::to_string(t2) << "\n";
+        Ray r(t1, - glm::normalize(t2 - t1), glm::length(t2 - t1));
+
+        return r.checkCollision(t);
+    } else {
+
+     }
+
+
     return false;
+}
+
+bool Triangle::isInside(glm::vec3 point) {
+    // Idea based on barycentric coordinates
+    float edge1 = getEuclidianDistance(vertices[0], vertices[1]);
+    float edge2 = getEuclidianDistance(vertices[1], vertices[2]);
+    float edge3 = getEuclidianDistance(vertices[0], vertices[2]);
+
+    float edge4 = getEuclidianDistance(vertices[0], glm::vec3(point.x, point.y, point.z));
+    float edge5 = getEuclidianDistance(vertices[1], glm::vec3(point.x, point.y, point.z));
+    float edge6 = getEuclidianDistance(vertices[2], glm::vec3(point.x, point.y, point.z));
+
+    float subarea1 = getTriangleArea(edge1, edge4, edge5);
+    float subarea2 = getTriangleArea(edge2, edge5, edge6);
+    float subarea3 = getTriangleArea(edge3, edge4, edge6);
+
+    return fabs(subarea1 + subarea2 + subarea3 - getTriangleArea(edge1, edge2, edge3)) <= EPS;
 }
 
 

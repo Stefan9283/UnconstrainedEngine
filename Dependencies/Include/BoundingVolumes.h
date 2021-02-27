@@ -68,6 +68,7 @@ class AABB : public Collider{
 public:
     glm::vec3 max{}, min{}, max0, min0, offset{};
 
+
     void updateMinMax(glm::mat4 transform);
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
     std::vector<glm::vec3> generateVerices(glm::vec3 min, glm::vec3 max);
@@ -79,6 +80,7 @@ public:
     bool checkCollision(Triangle* t) override;
     bool checkCollision(Capsule* col) override;
 
+    AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
 };
 
@@ -108,6 +110,8 @@ public:
     bool checkCollision(TriangleMesh* col) override;
     bool checkCollision(Triangle* t) override;
     bool checkCollision(Capsule* col) override;
+
+    bool isInside(glm::vec3 point);
 
     Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm);
 };
