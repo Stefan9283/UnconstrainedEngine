@@ -536,8 +536,8 @@ bool Ray::checkCollision(BoundingSphere* bv) {
             solution = zIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
 
         // Check the distance between the ray's origin and the second point
-        float distance1 = getEuclidianDistance(A, glm::vec3(solution.x, solution.y, solution.z));
-        float distance2 = getEuclidianDistance(A + this->direction * this->length, glm::vec3(solution.x, solution.y, solution.z));
+        distance1 = getEuclidianDistance(A, glm::vec3(solution.x, solution.y, solution.z));
+        distance2 = getEuclidianDistance(A + this->direction * this->length, glm::vec3(solution.x, solution.y, solution.z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return true;
