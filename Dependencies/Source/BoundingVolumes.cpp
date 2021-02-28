@@ -596,14 +596,17 @@ bool Ray::checkCollision(AABB* bv) {
     return false;
 }
 
-///
+/// to do Ray - Ray
 bool Ray::checkCollision(Triangle *t, glm::vec3 C, glm::vec3 D) {
-    glm::vec3 A = this->origin, B = this->origin - this->direction;
+    glm::vec3 A = this->origin, B = this->origin + this->direction;
 
     Solutions solutions = getIntersectionPoint(A, B, C, D);
 
-    if (solutions.x != -INF && solutions.x != INF &&
-        getEuclidianDistance(this->origin, glm::vec3(solutions.x, solutions.y, solutions.z)) <= this->length &&
+    float distance1 = getEuclidianDistance(A, glm::vec3(solutions.x, solutions.y, solutions.z));
+    float distance2 = getEuclidianDistance(A + this->direction * this->length, glm::vec3(solutions.x, solutions.y, solutions.z));
+
+    if (solutions.x != -INF &&
+        solutions.x != INF && fabs(distance1 + distance2 - this->length) <= EPS &&
         t->isInside(glm::vec3(solutions.x, solutions.y, solutions.z)))
             return true;
 
@@ -640,7 +643,7 @@ bool Ray::checkCollision(Ray* r) {
     return t.x - t.y < EPS && t.x - t.z < EPS && t.x <= 1 && t.x >=0;
 }
 bool Ray::checkCollision(Triangle *t) {
-    glm::vec3 A = this->origin, B = this->origin - this->direction;
+    glm::vec3 A = this->origin, B = this->origin + this->direction;
 
     if (glm::dot(t->norm, B) < 0)
         return false;
@@ -650,7 +653,6 @@ bool Ray::checkCollision(Triangle *t) {
     
     float a = t->norm.x, b = t->norm.y, c = t->norm.z;
     float d = glm::dot(t->norm, t->vertices[0]);
-    // t->norm.x * t->vertices[0].x + t->norm.y * t->vertices[0].y + t->norm.z * t->vertices[0].z;
     
     float c1, c2, c3, c4;
     Solutions solutions;
@@ -723,8 +725,11 @@ bool Ray::checkCollision(Triangle *t) {
 
         solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
     }
+
+    float distance1 = getEuclidianDistance(A, glm::vec3(solutions.x, solutions.y, solutions.z));
+    float distance2 = getEuclidianDistance(A + this->direction * this->length, glm::vec3(solutions.x, solutions.y, solutions.z));
     
-    if (getEuclidianDistance(this->origin, glm::vec3(solutions.x, solutions.y, solutions.z)) > this->length)
+    if (distance1 > this->length || distance2 > this->length)
         return false;
     
     return t->isInside(glm::vec3(solutions.x, solutions.y, solutions.z));

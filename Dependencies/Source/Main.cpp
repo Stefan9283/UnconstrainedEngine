@@ -134,8 +134,8 @@ int main() {
 
     meshes.push_back(test);
 
-    Ray* r = new Ray(glm::vec3(1, 1, 0),
-            glm::normalize(glm::vec3(-1, 5, 0)),
+    Ray* r = new Ray(glm::vec3(-0.33, 1.14, 0),
+            glm::normalize(glm::vec3(-0.3, 0.954, 0)),
             100);
 
     std::vector<bool> collision;
@@ -221,6 +221,29 @@ int main() {
             if (r) delete r;
             r = tmp_r;
             collision[collision.size() - 1] = false;
+        }
+
+        if (r) {
+            float start[4] = {
+                    r->origin.x,
+                    r->origin.y,
+                    r->origin.z,
+                    1
+            },
+                end[4] = {
+                        r->direction.x,
+                        r->direction.y,
+                        r->direction.z,
+                        1
+            },
+                length = r->length;
+
+
+            ImGui::SliderFloat3("origin", start, -10, 10);
+            ImGui::SliderFloat3("direction", end, -1, 1);
+            ImGui::SliderFloat("length", &length, 0, 10);
+            delete r;
+            r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length);
         }
 
         s->setFloat("flatColorsON", 0);
