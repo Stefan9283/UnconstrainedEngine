@@ -131,14 +131,15 @@ int main() {
     //test->indices.push_back(2);
     //test->bv = new TriangleMesh(test);
     //test->prepare();
-
     //meshes.push_back(test);
 
-    Ray* r = new Ray(glm::vec3(-0.33, 1.14, 0),
-            glm::normalize(glm::vec3(-0.3, 0.954, 0)),
+    Ray* r = nullptr;
+    /*
+            new Ray(glm::vec3(-0.33, 1.14, 0),
+            glm::normalize(glm::vec3(0.66, -0.751, 0)),
             100);
-
-    r = nullptr;
+*/
+    //r = nullptr;
 
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)

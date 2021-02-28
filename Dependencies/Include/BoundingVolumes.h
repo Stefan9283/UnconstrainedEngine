@@ -129,10 +129,6 @@ public:
     bool checkCollision(Triangle* t) override;
     bool checkCollision(Capsule* col) override;
 
-    ///
-    bool checkCollision(Triangle *t, glm::vec3 C, glm::vec3 D);
-    /// 
-    
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
     Ray(glm::vec3 origin, glm::vec3 direction, float length);
