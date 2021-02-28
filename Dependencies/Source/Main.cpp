@@ -102,19 +102,19 @@ int main() {
     //////Yen->bv = Capsule::generateCapsule(Yen);
     //////meshes.push_back(Yen);
 //
-    //Mesh* triangle = readObj("Triangle.obj");
-    //triangle->bv = new TriangleMesh(triangle);
-    //triangle->rotation = glm::vec3(0, -180, 0);
-    //triangle->translation = glm::vec3(0, 1.11, 0);
-    //triangle->solidON = false;
-    //meshes.push_back(triangle);
+    Mesh* triangle = readObj("Triangle.obj");
+    triangle->bv = new TriangleMesh(triangle);
+    triangle->rotation = glm::vec3(0, -180, 0);
+    triangle->translation = glm::vec3(0, 1.11, 0);
+    triangle->solidON = false;
+    meshes.push_back(triangle);
 //
-    //Mesh* triangle2 = readObj("Triangle.obj");
-    //triangle2->bv = new TriangleMesh(triangle2);
-    //triangle2->rotation = glm::vec3(0, -180, -49);
-    //triangle2->translation = glm::vec3(0, 1.316, 0);
-    //triangle2->solidON = false;
-    //meshes.push_back(triangle2);
+    Mesh* triangle2 = readObj("Triangle.obj");
+    triangle2->bv = new TriangleMesh(triangle2);
+    triangle2->rotation = glm::vec3(0, -180, -49);
+    triangle2->translation = glm::vec3(0, 1.316, 0);
+    triangle2->solidON = false;
+    meshes.push_back(triangle2);
 
     //Mesh* Mercy = readObj("Mercy.obj");
     //Mercy->bv = new AABB(Mercy);
@@ -122,21 +122,23 @@ int main() {
 
     glClearColor(0.1, 0.1, 0.3, 1);
 
-    Mesh* test = new Mesh();
-    test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    test->indices.push_back(0);
-    test->indices.push_back(1);
-    test->indices.push_back(2);
-    test->bv = new TriangleMesh(test);
-    test->prepare();
+    //Mesh* test = new Mesh();
+    //test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //test->indices.push_back(0);
+    //test->indices.push_back(1);
+    //test->indices.push_back(2);
+    //test->bv = new TriangleMesh(test);
+    //test->prepare();
 
-    meshes.push_back(test);
+    //meshes.push_back(test);
 
     Ray* r = new Ray(glm::vec3(-0.33, 1.14, 0),
             glm::normalize(glm::vec3(-0.3, 0.954, 0)),
             100);
+
+    r = nullptr;
 
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)

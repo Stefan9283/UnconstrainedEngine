@@ -9,7 +9,7 @@
 
 #pragma region Functii Ovidiu
 
-#define EPS 0.00001
+#define EPS 0.0001
 #define INF 2000000000
 
 float getEuclidianDistance(glm::vec3 p1, glm::vec3 p2) {
@@ -704,7 +704,7 @@ bool Ray::checkCollision(Triangle *t) {
                 return false;
 
             // The intersection is an infinite number on points
-            if (t->isInside(A) || t->isInside(B))
+            if (t->isInside(A) || t->isInside(A + this->direction * this->length))
                 return true;
 
             return this->checkCollision(t, t->vertices[0], t->vertices[1]) ||
@@ -720,13 +720,13 @@ bool Ray::checkCollision(Triangle *t) {
         c3 = c * (z1 - z0) / (y1 - y0);
         c4 = c * (y1 * z0 - y0 * z1) / (y1 - y0);
     
-        if (!(a + c1 + c3)) {
+        if (!(b + c1 + c3)) {
             // No intersection at all
             if (d - c2 - c4)
                 return false;
 
             // The intersection is an infinite number on points
-            if (t->isInside(A) || t->isInside(B))
+            if (t->isInside(A) || t->isInside(A + this->direction * this->length))
                 return true;
 
             return this->checkCollision(t, t->vertices[0], t->vertices[1]) ||
@@ -734,7 +734,7 @@ bool Ray::checkCollision(Triangle *t) {
                    this->checkCollision(t, t->vertices[0], t->vertices[2]);
         }
 
-        solution = yIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+        solution = yIsFixed(A, B, (d - c2 - c4) / (b + c1 + c3));
     } else {
         c1 = a * (x1 - x0) / (z1 - z0);
         c2 = a * (z1 * x0 - z0 * x1) / (z1 - z0);
@@ -742,13 +742,13 @@ bool Ray::checkCollision(Triangle *t) {
         c3 = c * (y1 - y0) / (z1 - z0);
         c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
     
-        if (!(a + c1 + c3)) {
+        if (!(c + c1 + c3)) {
             // No intersection at all
             if (d - c2 - c4)
                 return false;
 
             // The intersection is an infinite number on points
-            if (t->isInside(A) || t->isInside(B))
+            if (t->isInside(A) || t->isInside(A + this->direction * this->length))
                 return true;
 
             return this->checkCollision(t, t->vertices[0], t->vertices[1]) ||
@@ -756,7 +756,7 @@ bool Ray::checkCollision(Triangle *t) {
                    this->checkCollision(t, t->vertices[0], t->vertices[2]);
         }
 
-        solution = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+        solution = zIsFixed(A, B, (d - c2 - c4) / (c + c1 + c3));
     }
 
     float distance1 = getEuclidianDistance(A, glm::vec3(solution.x, solution.y, solution.z));
@@ -766,7 +766,6 @@ bool Ray::checkCollision(Triangle *t) {
         return false;
     
     return t->isInside(glm::vec3(solution.x, solution.y, solution.z));
-    
 }
 bool Ray::checkCollision(Capsule *col) {
     return col->checkCollision(this);
@@ -799,7 +798,7 @@ bool Triangle::checkCollision(BoundingSphere *bv) {
 }
 // TODO https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/triangle-triangle.html
 bool Triangle::checkCollision(Triangle *t) {
-    bool co_planar = true;
+    /*bool co_planar = true;
 
     float d2 = -glm::dot(t->norm, t->vertices[0]);
     float d1 = -glm::dot(t->norm, vertices[0]);
@@ -869,12 +868,13 @@ bool Triangle::checkCollision(Triangle *t) {
         Ray r(t1, - glm::normalize(t2 - t1), glm::length(t2 - t1));
 
         return r.checkCollision(t);
-    } else {
-
-     }
-
-
-    return false;
+    }*/
+        
+    Ray r0(t->vertices[0], glm::normalize(t->vertices[0] - t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
+    Ray r1(t->vertices[1], glm::normalize(t->vertices[1] - t->vertices[2]), glm::length(t->vertices[1] - t->vertices[2]));  
+    Ray r2(t->vertices[0], glm::normalize(t->vertices[0] - t->vertices[2]), glm::length(t->vertices[0] - t->vertices[2]));
+    
+    return r0.checkCollision(t) || r1.checkCollision(t) || r2.checkCollision(t);
 }
 
 bool Triangle::isInside(glm::vec3 point) {
@@ -1089,5 +1089,3 @@ bool Capsule::checkCollision(Capsule *col) {
 
     return s1.checkCollision(&s2);
 }
-
-
