@@ -135,7 +135,7 @@ int main() {
     meshes.push_back(test);
 
     Ray* r = new Ray(glm::vec3(1, 1, 0),
-            glm::normalize(glm::vec3(-1, -1.7, 0)),
+            glm::normalize(glm::vec3(-1, 5, 0)),
             100);
 
     std::vector<bool> collision;

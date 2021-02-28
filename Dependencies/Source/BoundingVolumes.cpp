@@ -9,7 +9,8 @@
 
 #pragma region Functii Ovidiu
 
-#define EPS 0.001
+#define EPS 0.00001
+#define INF 2000000000
 
 float getEuclidianDistance(glm::vec3 p1, glm::vec3 p2) {
     return sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y) + (p2.z - p1.z) * (p2.z - p1.z));
@@ -60,6 +61,68 @@ Solutions zIsFixed(glm::vec3 A, glm::vec3 B, float z) {
     solutions.x = (z - z0) * (x1 - x0) / (z1 - z0) + x0;
     solutions.y = (z - z0) * (y1 - y0) / (z1 - z0) + y0;
     solutions.z = z;
+
+    return solutions;
+}
+
+Solutions getIntersectionPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 D) {
+    Solutions solutions;
+
+    float c1, c2;
+
+    // Pick an axis which both lines are not parallel to
+    if (A.x != B.x && C.x != D.x) {
+        c1 = (B.y - A.y) / (B.x - A.x);
+        c2 = (A.y * B.x - A.x * B.y) / (B.x - A.x);
+
+        float a = (C.x * D.y + c2 * D.x - c2 * C.x - C.y * D.x);
+        float b = (D.y - C.y - c1 * D.x + c1 * C.x);
+
+        if (!b) {
+            if (a)
+                solutions.x = solutions.y = solutions.z = INF;
+            else
+                solutions.x = solutions.y = solutions.z = -INF;
+
+            return solutions;
+        }
+
+        solutions = xIsFixed(A, B, a / b);
+    } else if (A.y != B.y && C.y != D.y) {
+        c1 = (B.x - A.x) / (B.y - A.y);
+        c2 = (A.x * B.y - A.y * B.x) / (B.y - A.y);
+
+        float a = (C.y * D.x + c2 * D.y - c2 * C.y - C.x * D.y);
+        float b = (D.x - C.x - c1 * D.y + c1 * C.y);
+
+        if (!b) {
+            if (a)
+                solutions.x = solutions.y = solutions.z = INF;
+            else
+                solutions.x = solutions.y = solutions.z = -INF;
+
+            return solutions;
+        }
+
+        solutions = yIsFixed(A, B, a / b);
+    } else {
+        c1 = (B.x - A.x) / (B.z - A.z);
+        c2 = (A.x * B.z - A.z * B.x) / (B.z - A.z);
+
+        float a = (C.z * D.x + c2 * D.z - c2 * C.z - C.x * D.z);
+        float b = (D.x - C.x - c1 * D.z + c1 * C.z);
+
+        if (!b) {
+            if (a)
+                solutions.x = solutions.y = solutions.z = INF;
+            else
+                solutions.x = solutions.y = solutions.z = -INF;
+
+            return solutions;
+        }
+
+        solutions = zIsFixed(A, B, a / b);
+    }
 
     return solutions;
 }
@@ -532,6 +595,22 @@ bool Ray::checkCollision(AABB* bv) {
 
     return false;
 }
+
+///
+bool Ray::checkCollision(Triangle *t, glm::vec3 C, glm::vec3 D) {
+    glm::vec3 A = this->origin, B = this->origin - this->direction;
+
+    Solutions solutions = getIntersectionPoint(A, B, C, D);
+
+    if (solutions.x != -INF && solutions.x != INF &&
+        getEuclidianDistance(this->origin, glm::vec3(solutions.x, solutions.y, solutions.z)) <= this->length &&
+        t->isInside(glm::vec3(solutions.x, solutions.y, solutions.z)))
+            return true;
+
+    return false;
+}
+///
+
 // TODO
 /*
  * O1 + t * (O1 - D1) = v
@@ -565,65 +644,91 @@ bool Ray::checkCollision(Triangle *t) {
 
     if (glm::dot(t->norm, B) < 0)
         return false;
-    else if (glm::dot(t->norm, B) > 0) {
-        float x0 = A.x, y0 = A.y, z0 = A.z;
-        float x1 = B.x, y1 = B.y, z1 = B.z;
 
-        float a = t->norm.x, b = t->norm.y, c = t->norm.z;
-        float d = glm::dot(t->norm, t->vertices[0]);
-        // t->norm.x * t->vertices[0].x + t->norm.y * t->vertices[0].y + t->norm.z * t->vertices[0].z;
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
+    
+    float a = t->norm.x, b = t->norm.y, c = t->norm.z;
+    float d = glm::dot(t->norm, t->vertices[0]);
+    // t->norm.x * t->vertices[0].x + t->norm.y * t->vertices[0].y + t->norm.z * t->vertices[0].z;
+    
+    float c1, c2, c3, c4;
+    Solutions solutions;
+    
+    // Pick an axis which the line is not parallel to
+    if (x0 != x1) {
+        c1 = b * (y1 - y0) / (x1 - x0);
+        c2 = b * (x1 * y0 - x0 * y1) / (x1 - x0);
+    
+        c3 = c * (z1 - z0) / (x1 - x0);
+        c4 = c * (x1 * z0 - x0 * z1) / (x1 - x0);
 
-        float c1, c2, c3, c4;
-        Solutions solutions{};
-
-        // Pick an axis which the line is not parallel to
-        if (x0 != x1) {
-            c1 = b * (y1 - y0) / (x1 - x0);
-            c2 = b * (x1 * y0 - x0 * y1) / (x1 - x0);
-
-            c3 = c * (z1 - z0) / (x1 - x0);
-            c4 = c * (x1 * z0 - x0 * z1) / (x1 - x0);
-
-            if (!(a + c1 + c3))
+        if (!(a + c1 + c3)) {
+            // No intersection at all
+            if (d - c2 - c4)
                 return false;
-            solutions = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
-        } else if (y0 != y1) {
-            c1 = a * (x1 - x0) / (y1 - y0);
-            c2 = a * (y1 * x0 - y0 * x1) / (y1 - y0);
 
-            c3 = c * (z1 - z0) / (y1 - y0);
-            c4 = c * (y1 * z0 - y0 * z1) / (y1 - y0);
+            // The intersection is an infinite number on points
+            if (t->isInside(A) || t->isInside(B))
+                return true;
 
-            if (!(a + c1 + c3))
+            return this->checkCollision(t, t->vertices[0], t->vertices[1]) ||
+                   this->checkCollision(t, t->vertices[1], t->vertices[2]) ||
+                   this->checkCollision(t, t->vertices[0], t->vertices[2]);
+        }
+           
+        solutions = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+    } else if (y0 != y1) {
+        c1 = a * (x1 - x0) / (y1 - y0);
+        c2 = a * (y1 * x0 - y0 * x1) / (y1 - y0);
+    
+        c3 = c * (z1 - z0) / (y1 - y0);
+        c4 = c * (y1 * z0 - y0 * z1) / (y1 - y0);
+    
+        if (!(a + c1 + c3)) {
+            // No intersection at all
+            if (d - c2 - c4)
                 return false;
-            solutions = yIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
-        } else {
-            c1 = a * (x1 - x0) / (z1 - z0);
-            c2 = a * (z1 * x0 - z0 * x1) / (z1 - z0);
 
-            c3 = c * (y1 - y0) / (z1 - z0);
-            c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
+            // The intersection is an infinite number on points
+            if (t->isInside(A) || t->isInside(B))
+                return true;
 
-            if (!(a + c1 + c3))
-                return false;
-            solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+            return this->checkCollision(t, t->vertices[0], t->vertices[1]) ||
+                   this->checkCollision(t, t->vertices[1], t->vertices[2]) ||
+                   this->checkCollision(t, t->vertices[0], t->vertices[2]);
         }
 
+        solutions = yIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
+    } else {
+        c1 = a * (x1 - x0) / (z1 - z0);
+        c2 = a * (z1 * x0 - z0 * x1) / (z1 - z0);
+    
+        c3 = c * (y1 - y0) / (z1 - z0);
+        c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
+    
+        if (!(a + c1 + c3)) {
+            // No intersection at all
+            if (d - c2 - c4)
+                return false;
 
-        if (getEuclidianDistance(glm::vec3(solutions.x, solutions.y, solutions.z), this->origin) > this->length)
-            return false;
+            // The intersection is an infinite number on points
+            if (t->isInside(A) || t->isInside(B))
+                return true;
 
-        return t->isInside(glm::vec3(solutions.x, solutions.y, solutions.z));
+            return this->checkCollision(t, t->vertices[0], t->vertices[1]) ||
+                   this->checkCollision(t, t->vertices[1], t->vertices[2]) ||
+                   this->checkCollision(t, t->vertices[0], t->vertices[2]);
+        }
+
+        solutions = zIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
     }
-    else {
-        if (t->isInside(origin) || t->isInside(origin + direction * length))
-            return true;
-
-        Ray r0(t->vertices[0], glm::normalize(t->vertices[0] - t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
-        Ray r1(t->vertices[2], glm::normalize(t->vertices[2] - t->vertices[1]), glm::length(t->vertices[2] - t->vertices[1]));
-        Ray r2(t->vertices[0], glm::normalize(t->vertices[0] - t->vertices[2]), glm::length(t->vertices[0] - t->vertices[2]));
-        return r0.checkCollision(this) && r1.checkCollision(this) && r2.checkCollision(this);
-    }
+    
+    if (getEuclidianDistance(this->origin, glm::vec3(solutions.x, solutions.y, solutions.z)) > this->length)
+        return false;
+    
+    return t->isInside(glm::vec3(solutions.x, solutions.y, solutions.z));
+    
 }
 bool Ray::checkCollision(Capsule *col) {
     return col->checkCollision(this);
