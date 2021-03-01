@@ -14,6 +14,12 @@
 #include <ctime>
 #include <vector>
 
+#include <vector>
+#include "ObjLoad.h"
+#include "Camera.h"
+#include "BoundingVolumes.h"
+#include "Mesh.h"
+
 
 
 static void error_callback(int error, const char* description) {
@@ -29,11 +35,7 @@ void resize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-#include <vector>
-#include "ObjLoad.h"
-#include "Camera.h"
-#include "BoundingVolumes.h"
-#include "Mesh.h"
+Shader* s;
 
 int main() {
 #pragma region prepare OGL
@@ -75,7 +77,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
 #pragma endregion
-    Shader* s = new Shader("Dependencies/Shaders/simpleVert.glsl", "Dependencies/Shaders/simpleFrag.glsl");
+
+    s = new Shader("Dependencies/Shaders/simpleVert.glsl", "Dependencies/Shaders/simpleFrag.glsl");
     s->bind();
 
     Camera* c = new Camera(window);
@@ -101,20 +104,20 @@ int main() {
     //////Mesh* Yen = readObj("Yen.obj");
     //////Yen->bv = Capsule::generateCapsule(Yen);
     //////meshes.push_back(Yen);
-//
-    Mesh* triangle = readObj("Triangle.obj");
-    triangle->bv = new TriangleMesh(triangle);
-    triangle->rotation = glm::vec3(0, -180, 0);
-    triangle->translation = glm::vec3(0, 1.11, 0);
-    triangle->solidON = false;
-    meshes.push_back(triangle);
-//
-    Mesh* triangle2 = readObj("Triangle.obj");
-    triangle2->bv = new TriangleMesh(triangle2);
-    triangle2->rotation = glm::vec3(0, -180, -49);
-    triangle2->translation = glm::vec3(0, 1.316, 0);
-    triangle2->solidON = false;
-    meshes.push_back(triangle2);
+
+    //Mesh* triangle = readObj("Triangle.obj");
+    //triangle->bv = new TriangleMesh(triangle);
+    //triangle->rotation = glm::vec3(0, -180, 0);
+    //triangle->translation = glm::vec3(0, 1.11, 0);
+    //triangle->solidON = false;
+    //meshes.push_back(triangle);
+
+    //Mesh* triangle2 = readObj("Triangle.obj");
+    //triangle2->bv = new TriangleMesh(triangle2);
+    //triangle2->rotation = glm::vec3(0, -180, -49);
+    //triangle2->translation = glm::vec3(0, 1.316, 0);
+    //triangle2->solidON = false;
+    //meshes.push_back(triangle2);
 
     //Mesh* Mercy = readObj("Mercy.obj");
     //Mercy->bv = new AABB(Mercy);
@@ -122,30 +125,29 @@ int main() {
 
     glClearColor(0.1, 0.1, 0.3, 1);
 
-    //Mesh* test = new Mesh();
-    //test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //test->indices.push_back(0);
-    //test->indices.push_back(1);
-    //test->indices.push_back(2);
-    //test->bv = new TriangleMesh(test);
-    //test->prepare();
-    //meshes.push_back(test);
+    Mesh* test = new Mesh();
+    test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    test->indices.push_back(0);
+    test->indices.push_back(1);
+    test->indices.push_back(2);
+    test->bv = new TriangleMesh(test);
+    test->prepare();
+    meshes.push_back(test);
+
+    Mesh* test2 = new Mesh(*test);
+    test2->prepare();
+    test2->bv = new TriangleMesh(test2);
+    test->translation = glm::vec3(0, 2.5, 0);
+    meshes.push_back(test2);
 
     Ray* r = nullptr;
-    /*
-            new Ray(glm::vec3(-0.33, 1.14, 0),
-            glm::normalize(glm::vec3(0.66, -0.751, 0)),
-            100);
-*/
-    //r = nullptr;
 
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)
         collision.push_back(false);
     collision.push_back(false);
-
 
     bool continuouslyChecking = false;
 
@@ -179,6 +181,9 @@ int main() {
         s->setFloat("flatColorsON", 1);
         crosshair->Draw(s);
 
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
@@ -197,7 +202,6 @@ int main() {
                         }
                 }
             }
-
             if(r) {
                 for (int i=0; i<meshes.size(); i++) {
                     Mesh* m = meshes[i];

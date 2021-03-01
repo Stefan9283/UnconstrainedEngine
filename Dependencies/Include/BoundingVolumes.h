@@ -40,6 +40,7 @@ public:
     virtual bool checkCollision(TriangleMesh* col) = 0;
     virtual bool checkCollision(Ray* col) = 0;
     virtual bool checkCollision(Capsule* col) = 0;
+    virtual void toString() = 0;
 
     virtual ~Collider();
 };
@@ -61,6 +62,7 @@ public:
 
     explicit BoundingSphere(Mesh* mesh);
     BoundingSphere(glm::vec3 pos, float radius);
+    void toString() override;
 
 };
 
@@ -82,6 +84,7 @@ public:
 
     AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
+    void toString() override;
 };
 
 class TriangleMesh : public Collider {
@@ -97,12 +100,14 @@ public:
 
     TriangleMesh(Mesh* mesh);
     ~TriangleMesh() { body = nullptr; }
+    void toString() override;
 };
 
 class Triangle : public Collider {
 public:
     glm::vec3 vertices[3];
     glm::vec3 norm;
+    bool twoway = false;
 
     bool checkCollision(AABB* bv) override;
     bool checkCollision(BoundingSphere* bv) override;
@@ -114,13 +119,13 @@ public:
     bool isInside(glm::vec3 point);
 
     Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm);
+    void toString() override;
 };
 
 class Ray : public Collider {
 public:
     float length;
     glm::vec3 origin, direction;
-
 
     bool checkCollision(BoundingSphere* bv) override;
     bool checkCollision(AABB* bv) override;
@@ -129,10 +134,9 @@ public:
     bool checkCollision(Triangle* t) override;
     bool checkCollision(Capsule* col) override;
 
-
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
     Ray(glm::vec3 origin, glm::vec3 direction, float length);
-
+    void toString() override;
 };
 
 class Capsule : public Collider { // aka swept sphere
@@ -152,6 +156,7 @@ public:
     bool checkCollision(TriangleMesh* col) override;
     bool checkCollision(Ray* col) override;
     bool checkCollision(Capsule* col) override;
+    void toString() override;
 
 
 };

@@ -6,6 +6,8 @@
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 
+
+
 typedef struct ShaderProgramSource
 {
     char* vertexShader;
@@ -79,4 +81,5 @@ private:
     unsigned int CreateShader(const char* vertexShader, const char* fragmentShader);
 
 };
+
 
