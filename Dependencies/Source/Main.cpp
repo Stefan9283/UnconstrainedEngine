@@ -119,9 +119,9 @@ int main() {
     //triangle2->solidON = false;
     //meshes.push_back(triangle2);
 
-    //Mesh* Mercy = readObj("Mercy.obj");
-    //Mercy->bv = new AABB(Mercy);
-    //meshes.push_back(Mercy);
+    Mesh* Mercy = readObj("Mercy.obj");
+    Mercy->bv = Capsule::generateCapsule(Mercy);
+    meshes.push_back(Mercy);
 
     glClearColor(0.1, 0.1, 0.3, 1);
 
@@ -135,12 +135,6 @@ int main() {
     test->bv = new TriangleMesh(test);
     test->prepare();
     meshes.push_back(test);
-
-    Mesh* test2 = new Mesh(*test);
-    test2->prepare();
-    test2->bv = new TriangleMesh(test2);
-    test->translation = glm::vec3(0, 2.5, 0);
-    meshes.push_back(test2);
 
     Ray* r = nullptr;
 

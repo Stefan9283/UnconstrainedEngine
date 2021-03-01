@@ -63,6 +63,7 @@ public:
     explicit BoundingSphere(Mesh* mesh);
     BoundingSphere(glm::vec3 pos, float radius);
     void toString() override;
+    bool isInside(glm::vec3 point);
 
 };
 
@@ -85,6 +86,7 @@ public:
     AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
     void toString() override;
+    bool isInside(glm::vec3 point);
 };
 
 class TriangleMesh : public Collider {

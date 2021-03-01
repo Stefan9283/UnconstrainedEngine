@@ -139,6 +139,29 @@ glm::vec3 ClosestPointOnLineSegment(glm::vec3 A, glm::vec3 B, glm::vec3 Point)
     float t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
     return A + glm::min(glm::max(t, 0.0f), 1.0f) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
 }
+glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
+    glm::vec3 result = A, min, max;
+
+    min = glm::min(A, glm::min(B, C));
+    max = glm::max(A, glm::max(B, C));
+
+    if (A.x != B.x && B.x != C.x) {
+        if (A.x != min.x && A.x != max.x) result.x = A.x;
+        if (B.x != min.x && B.x != max.x) result.x = B.x;
+        if (C.x != min.x && C.x != max.x) result.x = C.x;
+    }
+    if (A.y != B.y && B.y != C.y) {
+        if (A.y != min.y && A.y != max.y) result.y = A.y;
+        if (B.y != min.y && B.y != max.y) result.y = B.y;
+        if (C.y != min.y && C.y != max.y) result.y = C.y;
+    }
+    if (A.z != B.z && B.z != C.z) {
+        if (A.z != min.z && A.z != max.z) result.z = A.z;
+        if (B.z != min.z && B.z != max.z) result.z = B.z;
+        if (C.z != min.z && C.z != max.z) result.z = C.z;
+    }
+    return result;
+}
 #pragma endregion
 
 #pragma region Collider
@@ -223,6 +246,10 @@ void BoundingSphere::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale)
 void BoundingSphere::toString() {
     std::cout << "Sphere center: " << glm::to_string(this->pos) << " " << this->radius << "\n";
 }
+bool BoundingSphere::isInside(glm::vec3 point) {
+    return glm::length(point - pos) < radius;
+}
+
 #pragma endregion
 #pragma region AABB
 AABB::AABB(Mesh* mesh) {
@@ -371,6 +398,19 @@ AABB::AABB(glm::vec3 min, glm::vec3 max) {
 void AABB::toString() {
     std::cout << "AABB:\n\tmin: " << glm::to_string(min) << "\n\tmax: "<< glm::to_string(max) << "\n";
 }
+bool AABB::isInside(glm::vec3 point) {
+    glm::vec3 minValues = min, maxValues = max;
+
+    if (max.x < minValues.x) minValues.x = max.x;
+    if (max.y < minValues.y) minValues.y = max.y;
+    if (max.z < minValues.z) minValues.z = max.z;
+    if (min.x > maxValues.x) maxValues.x = min.x;
+    if (min.y > maxValues.y) maxValues.y = min.y;
+    if (min.z > maxValues.z) maxValues.z = min.z;
+
+    return glm::clamp(point, minValues, maxValues) == point;
+}
+
 #pragma endregion
 #pragma region Ray
 Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length) {
@@ -624,7 +664,7 @@ bool Ray::checkCollision(Ray* r) {
 }
 bool Ray::checkCollision(Triangle *t) {
     glm::vec3 A = this->origin, B = this->origin + this->direction;
-    if (t->twoway && glm::dot(t->norm, B) < 0)
+    if (!t->twoway && glm::dot(t->norm, B) < 0)
         return false;
 
     float x0 = A.x, y0 = A.y, z0 = A.z;
@@ -783,17 +823,29 @@ bool Triangle::checkCollision(Ray *r) {
 bool Triangle::checkCollision(Capsule *col) {
     return col->checkCollision(this);
 }
-// TODO https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
+// https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
 bool Triangle::checkCollision(AABB *bv) {
-    return false;
+    for (int i = 0; i < 3; ++i)
+        if (isInside(vertices[i])) return true;
+    Ray r0(vertices[0], glm::normalize(-vertices[0] + vertices[1]), glm::length(vertices[0] - vertices[1]));
+    Ray r1(vertices[1], glm::normalize(-vertices[1] + vertices[2]), glm::length(vertices[1] - vertices[2]));
+    Ray r2(vertices[0], glm::normalize(-vertices[0] + vertices[2]), glm::length(vertices[0] - vertices[2]));
+    return r0.checkCollision(bv) || r1.checkCollision(bv) || r2.checkCollision(bv);
 }
-// TODO https://wickedengine.net/2020/04/26/capsule-collision-detection/
+// https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Triangle::checkCollision(BoundingSphere *bv) {
-    return false;
+    for (int i = 0; i < 3; ++i)
+        if (isInside(vertices[i])) return true;
+    Ray r0(vertices[0], glm::normalize(-vertices[0] + vertices[1]), glm::length(vertices[0] - vertices[1]));
+    Ray r1(vertices[1], glm::normalize(-vertices[1] + vertices[2]), glm::length(vertices[1] - vertices[2]));
+    Ray r2(vertices[0], glm::normalize(-vertices[0] + vertices[2]), glm::length(vertices[0] - vertices[2]));
+    return r0.checkCollision(bv) || r1.checkCollision(bv) || r2.checkCollision(bv);
 }
 // http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
 bool Triangle::checkCollision(Triangle *t) {
     bool twoway0 = twoway;
+
+    twoway = true;
 
     Ray r0(t->vertices[0], glm::normalize(- t->vertices[0] + t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
     Ray r1(t->vertices[1], glm::normalize(- t->vertices[1] + t->vertices[2]), glm::length(t->vertices[1] - t->vertices[2]));
@@ -929,9 +981,23 @@ bool Capsule::checkCollision(AABB *col) {
     BoundingSphere s(bestPoint, radius);
     return s.checkCollision(col);
 }
-// TODO https://wickedengine.net/2020/04/26/capsule-collision-detection/
+// https://wickedengine.net/2020/04/26/capsule-collision-detection/
 bool Capsule::checkCollision(Triangle *t) {
-    return false;
+    // for triangle inside a capsule
+    for (int i = 0; i < 3; ++i) {
+        glm::vec3 mid = getMidPoint(start, end, t->vertices[i]);
+         if(glm::length(mid - t->vertices[i]) < radius)
+             return true;
+    }
+
+    bool twoway = t->twoway;
+    t->twoway = true;
+    Ray r0(t->vertices[0], glm::normalize(- t->vertices[0] + t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
+    Ray r1(t->vertices[1], glm::normalize(- t->vertices[1] + t->vertices[2]), glm::length(t->vertices[1] - t->vertices[2]));
+    Ray r2(t->vertices[0], glm::normalize(- t->vertices[0] + t->vertices[2]), glm::length(t->vertices[0] - t->vertices[2]));
+    bool result = r0.checkCollision(this) || r1.checkCollision(this) || r2.checkCollision(this);
+    t->twoway = twoway;
+    return result;
 }
 bool Capsule::checkCollision(Ray *col) {
 // capsule:
