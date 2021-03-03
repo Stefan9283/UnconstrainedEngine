@@ -6,9 +6,16 @@
 #include "BoundingVolumes.h"
 #include "Mesh.h"
 #include "glm/gtx/string_cast.hpp"
-#include<iomanip>
+
+//#include "boost/multiprecision/cpp_bin_float.hpp"
+//#include <boost/multiprecision/mpfr.hpp>  // Defines the Backend type that wraps MPFR.
+//
+//typedef    boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<300>> bigfloat;
+
 
 extern Shader *s;
+
+
 
 #pragma region Functii Ovidiu
 
@@ -683,11 +690,9 @@ bool Ray::checkCollision(Triangle *t) {
     float c1, c2, c3, c4;
     Solution solution;
 
-
     Ray r0(t->vertices[0], glm::normalize(- t->vertices[0] + t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
     Ray r1(t->vertices[1], glm::normalize(- t->vertices[1] + t->vertices[2]), glm::length(t->vertices[1] - t->vertices[2]));
     Ray r2(t->vertices[0], glm::normalize(- t->vertices[0] + t->vertices[2]), glm::length(t->vertices[0] - t->vertices[2]));
-
 
     // Pick an axis which the line is not parallel to
     if (x0 != x1) {
@@ -702,7 +707,7 @@ bool Ray::checkCollision(Triangle *t) {
             if (d - (c2 - c4) )
                 return false;
 
-            std::cout << "hello\n";
+            //std::cout << "hello\n";
 
             // The intersection is an infinite number on points
             if (t->isInside(A) || t->isInside(A + this->direction * this->length))
@@ -759,9 +764,40 @@ bool Ray::checkCollision(Triangle *t) {
     float distance1 = getEuclidianDistance(A, solution.point);
     float distance2 = getEuclidianDistance(A + this->direction * this->length, solution.point);
 
-
     if (distance1 > this->length || distance2 > this->length)
         return false;
+
+    ////////////////////////
+    const float EPSILON = 0.000000001;
+    glm::vec3 vertex0 = t->vertices[0];
+    glm::vec3 vertex1 = t->vertices[1];
+    glm::vec3 vertex2 = t->vertices[2];
+    glm::vec3 edge1, edge2, h, s, q, rayVector = origin + length * direction, P;
+    float aa ,f,u,v;
+    edge1 = vertex1 - vertex0;
+    edge2 = vertex2 - vertex0;
+    h = glm::cross(rayVector, edge2);
+    aa = glm::dot(edge1, h);
+    f = 1.0/aa;
+    s = origin - vertex0;
+    u = f * glm::dot(s, h);
+    if (u < 0.0 || u > 1.0)
+        return false;
+    q = glm::cross(s, edge1);
+    v = f * glm::dot(rayVector, q);
+    if (v < 0.0 || u + v > 1.0)
+        return false;
+    // At this stage we can compute t to find out where the intersection point is on the line.
+    float tt = f * glm::dot(edge2, q);
+    //std::cout << t << " t\n";
+    //if (tt > EPSILON) // ray intersection
+    {
+        P = origin + rayVector * tt;
+        //std::cout << glm::to_string(solution.point) << glm::to_string(P) << glm::length(solution.point - P) << "\n";
+        return true;
+    }
+    ///////////////////////
+
 
     return t->isInside(solution.point);
 }

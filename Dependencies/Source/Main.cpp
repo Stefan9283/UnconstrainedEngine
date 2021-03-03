@@ -319,7 +319,7 @@ int main() {
 
 
         if (hit_or_nah.size()) {
-            std::cout << "sup\n";
+            //std::cout << "sup\n";
             s->setVec3("color", glm::vec3(1,0,0));
             hit_or_nah[0]->Draw(s);
             s->setVec3("color", glm::vec3(0,1,0));

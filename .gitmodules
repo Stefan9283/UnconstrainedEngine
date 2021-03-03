@@ -13,3 +13,6 @@
 [submodule "Dependencies/Vendor/ImGuizmo"]
 	path = Dependencies/Vendor/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo
+[submodule "Dependencies/Vendor/boost"]
+	path = Dependencies/Vendor/boost
+	url = https://github.com/boostorg/boost
