@@ -10,3 +10,6 @@
 [submodule "Dependencies/Vendor/imgui"]
 	path = Dependencies/Vendor/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "Dependencies/Vendor/ImGuizmo"]
+	path = Dependencies/Vendor/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo

@@ -38,10 +38,16 @@ include_directories(
 					Dependencies/Vendor/imgui/backends
 					Dependencies/Vendor/glfw/include
 					Dependencies/Vendor/glad/include
+					Dependencies/Vendor/ImGuizmo
 					)
 
 
-file(GLOB VENDORS_SOURCES Dependencies/Vendor/glad/src/glad.c Dependencies/Vendor/imgui/backends/imgui_impl_opengl3.cpp Dependencies/Vendor/imgui/backends/imgui_impl_glfw.cpp Dependencies/Vendor/imgui/*.cpp)
+file(GLOB VENDORS_SOURCES
+		Dependencies/Vendor/glad/src/glad.c
+		Dependencies/Vendor/imgui/backends/imgui_impl_opengl3.cpp
+		Dependencies/Vendor/imgui/backends/imgui_impl_glfw.cpp
+		Dependencies/Vendor/imgui/*.cpp
+		Dependencies/Vendor/ImGuizmo/*.cpp)
 file(GLOB PROJECT_SOURCES Dependencies/Source/*.cpp Dependencies/Source/*.c)
 file(GLOB PROJECT_HEADERS Dependencies/Include/*.hpp Dependencies/Include/*.h)
 

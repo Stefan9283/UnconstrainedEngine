@@ -28,7 +28,9 @@ glm::mat4 Mesh::getTransform() {
 }
 
 void Mesh::prepare() {
-    assert(vertices.size() != 0);
+    //assert(vertices.size() != 0);
+
+    if (vertices.size() == 0) return;
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);

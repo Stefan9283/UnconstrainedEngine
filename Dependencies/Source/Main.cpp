@@ -15,12 +15,22 @@
 #include <vector>
 
 #include <vector>
+#include <glm/gtc/type_ptr.hpp>
 #include "ObjLoad.h"
 #include "Camera.h"
 #include "BoundingVolumes.h"
 #include "Mesh.h"
 
+#include "imconfig.h"
+#include "imgui.h"
 
+#define USE_IMGUI_API
+
+#include "ImGuizmo.h"
+#include "ImSequencer.h"
+#include "ImZoomSlider.h"
+#include "ImCurveEdit.h"
+#include "Debug.h"
 
 static void error_callback(int error, const char* description) {
     fprintf(stderr, "Error: %s\n", description);
@@ -36,6 +46,7 @@ void resize(GLFWwindow* window, int width, int height) {
 }
 
 Shader* s;
+extern ImGuizmo::OPERATION mCurrentGizmoOperation;
 
 int main() {
 #pragma region prepare OGL
@@ -82,7 +93,9 @@ int main() {
     s->bind();
 
     Camera* c = new Camera(window);
+    glClearColor(0.1, 0.1, 0.3, 1);
 
+#pragma region meshes
     std::vector<Mesh*> meshes;
 
     //Mesh* cube = readObj("Box.obj");
@@ -91,8 +104,7 @@ int main() {
     //cube->rotation = glm::vec3 (0, -145, 0);
     //cube->solidON = false;
     //meshes.push_back(cube);
-//
-//
+
     //Mesh* sphere = readObj("Sphere.obj");
     //sphere->translation += glm::vec3(0,-1,0);
     //sphere->bv = new BoundingSphere(sphere);
@@ -100,7 +112,7 @@ int main() {
     //sphere->translation = glm::vec3(-1.76, 1.11, 0);
     //sphere->solidON = false;
     //meshes.push_back(sphere);
-//
+
     //////Mesh* Yen = readObj("Yen.obj");
     //////Yen->bv = Capsule::generateCapsule(Yen);
     //////meshes.push_back(Yen);
@@ -120,30 +132,66 @@ int main() {
     //meshes.push_back(triangle2);
 
     Mesh* Mercy = readObj("Mercy.obj");
-    Mercy->bv = Capsule::generateCapsule(Mercy);
+    Mercy->bv = new TriangleMesh(Mercy);
     meshes.push_back(Mercy);
 
-    glClearColor(0.1, 0.1, 0.3, 1);
 
-    Mesh* test = new Mesh();
-    test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    test->indices.push_back(0);
-    test->indices.push_back(1);
-    test->indices.push_back(2);
-    test->bv = new TriangleMesh(test);
-    test->prepare();
-    meshes.push_back(test);
+    //Mesh* test = new Mesh();
+    //test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //test->indices.push_back(0);
+    //test->indices.push_back(1);
+    //test->indices.push_back(2);
+    //test->bv = new TriangleMesh(test);
+    //test->prepare();
+    //meshes.push_back(test);
 
-    Ray* r = nullptr;
+    //std::vector<Mesh*> mamalLor;
 
-    std::vector<bool> collision;
-    for (int i = 0; i < meshes.size() ; i++)
-        collision.push_back(false);
-    collision.push_back(false);
+    //Mesh* m1 = new Mesh();
+    //m1->vertices.push_back(Vertex{glm::vec3(0.013611, 1.564913, 0.044879), glm::vec3(0.741500, 0.415300, -0.527000)});
+    //m1->vertices.push_back(Vertex{glm::vec3(0.014145, 1.565383, 0.046110), glm::vec3(0.741500, 0.415300, -0.527000)});
+    //m1->vertices.push_back(Vertex{glm::vec3(0.013871, 1.564592, 0.045128), glm::vec3(0.741500, 0.415300, -0.527000)});
+    //m1->indices.push_back(0);
+    //m1->indices.push_back(1);
+    //m1->indices.push_back(2);
+    //m1->bv = new TriangleMesh(m1);
+    //m1->prepare();
+    //meshes.push_back(m1);
 
-    bool continuouslyChecking = false;
+    //Mesh* m2 = new Mesh();
+    //m2->vertices.push_back(Vertex{glm::vec3(0.013871, 1.564592, 0.045128), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //m2->vertices.push_back(Vertex{glm::vec3(0.014145, 1.565383, 0.046110), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //m2->vertices.push_back(Vertex{glm::vec3(0.014555, 1.565118, 0.046085), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+//
+    //Mesh* m3 = new Mesh();
+    //m3->vertices.push_back(Vertex{glm::vec3(-0.024256, 1.565797, 0.040848), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //m3->vertices.push_back(Vertex{glm::vec3(-0.024852, 1.566274, 0.040575), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //m3->vertices.push_back(Vertex{glm::vec3(-0.025058, 1.565326, 0.040927), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+//
+    //Mesh* m4 = new Mesh();
+    //m4->vertices.push_back(Vertex{glm::vec3(-0.024000, 1.566069, 0.040335), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //m4->vertices.push_back(Vertex{glm::vec3(-0.024256, 1.565797, 0.040848), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+    //m4->vertices.push_back(Vertex{glm::vec3(-0.023475, 1.565964, 0.040644), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
+
+    //mamalLor.push_back(m1);
+    //mamalLor.push_back(m2);
+    //mamalLor.push_back(m3);
+    //mamalLor.push_back(m4);
+
+    //for (int n = 0; n < mamalLor.size(); ++n) {
+    //    mamalLor[n]->indices.push_back(0);
+    //    mamalLor[n]->indices.push_back(1);
+    //    mamalLor[n]->indices.push_back(2);
+    //    mamalLor[n]->bv = new TriangleMesh(mamalLor[n]);
+    //    mamalLor[n]->prepare();
+    //}
+
+
+    Ray* r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
+
+
 
     Mesh* crosshair = new Mesh();
     crosshair->vertices.push_back(Vertex{glm::vec3(0,  1,  -25.0f)});
@@ -159,6 +207,16 @@ int main() {
     crosshair->wireframeON = true;
     crosshair->solidON = true;
     crosshair->prepare();
+#pragma endregion
+
+    std::vector<bool> collision;
+    for (int i = 0; i < meshes.size() ; i++)
+        collision.push_back(false);
+    collision.push_back(false);
+
+    bool continuouslyChecking = false;
+
+    std::vector<Mesh*> hit_or_nah;
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -167,10 +225,53 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        if(ImGui::Button("Slow Camera" ))
-            c->speed = 0.1f;
-        else if(ImGui::Button("Normal Camera"))
-            c->speed = 0.5f;
+        s->setFloat("flatColorsON", 0);
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+        s->setVec3("cameraPos", c->position);
+        c->update_proj(window);
+        c->Move(window);
+
+        ImGuizmo::BeginFrame();
+
+        float* camviewvec = (float*)glm::value_ptr(c->view);
+        float* projvec = (float*)glm::value_ptr(c->proj);
+        float* identity = (float*)glm::value_ptr(glm::mat4(1));
+        //ImGuizmo::DrawGrid(camviewvec, projvec, identity, 100.f);
+
+        s->setFloat("flatColorsON", 0);
+        for (int i = 0; i < collision.size() - 1 ; ++i) {
+            EditTransform(c, &c->view, &c->proj, meshes[i]);
+            meshes[i]->gui(i);
+            if (collision[i])
+                s->setVec3("color", glm::vec3(1,0,0));
+            else s->setVec3("color", glm::vec3(0,1,0));
+            meshes[i]->Draw(s);
+        }
+
+        s->setFloat("flatColorsON", 1);
+        if (collision[collision.size() - 1])
+            s->setVec3("color", glm::vec3(1,0,0));
+        else s->setVec3("color", glm::vec3(0,1,0));
+        if (r) r->body->Draw(s);
+
+
+
+
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glm::mat4 proj = *c->getprojmatrix();
+        glm::mat4 model = glm::mat4(1);
+        s->setMat4("proj", &proj);
+        s->setMat4("view", &model);
+        //model = glm::scale(model, glm::vec3(0.0001f));
+        model = glm::translate(model, c->goFront);
+        s->setMat4("model", &model);
+        glViewport(0, 0, display_w, display_h);
+
+
+        ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
+
 
         s->setFloat("flatColorsON", 1);
         crosshair->Draw(s);
@@ -182,6 +283,15 @@ int main() {
 
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
         if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
+
+            if (hit_or_nah.size()) {
+                delete hit_or_nah[0];
+                delete hit_or_nah[1];
+            }
+
+            hit_or_nah = wasMeshHit(meshes[0]->bv, r);
+
+            /*
             for (int l = 0; l < collision.size(); ++l) {
                 collision[l] = false;
             }
@@ -204,17 +314,17 @@ int main() {
                         collision[collision.size() - 1] = true;
                     }
                 }
-            }
+            }*/
         }
 
 
-        s->setFloat("flatColorsON", 0);
-        s->setMat4("proj", c->getprojmatrix());
-        s->setMat4("view", c->getviewmatrix());
-        s->setVec3("cameraPos", c->position);
-        c->update_proj(window);
-        c->Move(window);
-
+        if (hit_or_nah.size()) {
+            std::cout << "sup\n";
+            s->setVec3("color", glm::vec3(1,0,0));
+            hit_or_nah[0]->Draw(s);
+            s->setVec3("color", glm::vec3(0,1,0));
+            hit_or_nah[1]->Draw(s);
+        }
 
 
         Ray* tmp_r = Ray::generateRay(window, c);
@@ -223,7 +333,6 @@ int main() {
             r = tmp_r;
             collision[collision.size() - 1] = false;
         }
-
         if (r) {
             float start[4] = {
                     r->origin.x,
@@ -244,23 +353,9 @@ int main() {
             ImGui::SliderFloat3("direction", end, -1, 1);
             ImGui::SliderFloat("length", &length, 0, 10);
             delete r;
-            r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length);
+            r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length, true);
         }
 
-        s->setFloat("flatColorsON", 0);
-        for (int i = 0; i < collision.size() - 1 ; ++i) {
-            meshes[i]->gui(i);
-            if (collision[i])
-                s->setVec3("color", glm::vec3(1,0,0));
-            else s->setVec3("color", glm::vec3(0,1,0));
-            meshes[i]->Draw(s);
-        }
-
-        s->setFloat("flatColorsON", 1);
-        if (collision[collision.size() - 1])
-            s->setVec3("color", glm::vec3(1,0,0));
-        else s->setVec3("color", glm::vec3(0,1,0));
-        if (r) r->body->Draw(s);
 
         if(ImGui::Button("Toggle bounding volumes all" )) {
             for (int i = 0; i < meshes.size(); ++i) {
@@ -268,7 +363,6 @@ int main() {
                 m->boundingBoxON = !m->boundingBoxON;
             }
         }
-
         if(ImGui::Button("Toggle solid all" )) {
             for (int i = 0; i < meshes.size(); ++i) {
                 Mesh* m = meshes[i];
@@ -276,22 +370,22 @@ int main() {
             }
         }
 
+        /*
+        s->setFloat("flatColorsON", 1);
+        s->setVec3("color", glm::vec3(1,1,1));
+        for (int n = 0; n < mamalLor.size(); ++n) {
+            mamalLor[n]->Draw(s);
+        }*/
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glm::mat4 proj = *c->getprojmatrix();
-        glm::mat4 model = glm::mat4(1);
-        s->setMat4("proj", &proj);
-        s->setMat4("view", &model);
-        //model = glm::scale(model, glm::vec3(0.0001f));
-        model = glm::translate(model, c->goFront);
-        s->setMat4("model", &model);
 
 
         ImGui::Render();
 
-        glViewport(0, 0, display_w, display_h);
+
+
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
         glfwSwapBuffers(window);
 

@@ -105,6 +105,8 @@ public:
     void toString() override;
 };
 
+std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col);
+
 class Triangle : public Collider {
 public:
     glm::vec3 vertices[3];
@@ -137,7 +139,7 @@ public:
     bool checkCollision(Capsule* col) override;
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
-    Ray(glm::vec3 origin, glm::vec3 direction, float length);
+    Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh);
     void toString() override;
 };
 
