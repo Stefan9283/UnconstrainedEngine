@@ -16,6 +16,8 @@
 
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
+#include <vec3.h>
+#include <iomanip>
 #include "ObjLoad.h"
 #include "Camera.h"
 #include "BoundingVolumes.h"
@@ -88,7 +90,6 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
 #pragma endregion
-
     s = new Shader("Dependencies/Shaders/simpleVert.glsl", "Dependencies/Shaders/simpleFrag.glsl");
     s->bind();
 
@@ -131,8 +132,9 @@ int main() {
     //triangle2->solidON = false;
     //meshes.push_back(triangle2);
 
-    Mesh* Mercy = readObj("Mercy.obj");
+    Mesh* Mercy = readObj("Mercy2.obj");
     Mercy->bv = new TriangleMesh(Mercy);
+    Mercy->solidON = false;
     meshes.push_back(Mercy);
 
 
@@ -218,7 +220,21 @@ int main() {
 
     std::vector<Mesh*> hit_or_nah;
 
-    while (!glfwWindowShouldClose(window)) {
+    //////////////////////////// TEST ZONE
+
+
+   pe::vec3<long double> e11(112254.63246236/213521516326234.0f, 0.72341125435 ,112254632.46236/21352151632.62340f), e22(1, 1.121256675 ,0);
+
+   glm::highp_dvec3 e1 = glm::highp_dvec3(e11.x, e11.y, e11.z);
+   glm::highp_dvec3 e2 = glm::highp_dvec3(e22.x, e22.y, e22.z);
+   std::cout << std::setprecision(300) << glm::to_string(glm::cross(e1, e2)) << glm::dot(e1, e2) << "\n";
+   std::cout << " " << std::setprecision(300) << e11.cross(e11, e22).toString() << e11.dot(e11, e22) << "\n";
+
+
+    /////////////////////////////
+
+    while (!glfwWindowShouldClose(window))
+    {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
