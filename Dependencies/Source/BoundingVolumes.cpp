@@ -679,14 +679,14 @@ bool Ray::checkCollision(Ray* r) {
            fabs(distance3 + distance4 - r->length) <= EPS;
 }
 bool Ray::checkCollision(Triangle *t) {
-    glm::vec3 A = this->origin, B = this->origin + this->direction;
+    glm::dvec3 A = this->origin, B = this->origin + this->length * this->direction;
 
-    if (!t->twoway && glm::dot(t->norm, B) < 0)
+    if (!t->twoway && glm::dot((glm::dvec3)t->norm, (glm::dvec3)direction) > 0)
         return false;
 
     // The intersection is an infinite number on points
-    if (glm::dot(t->norm, B) == 0) {
-        if (t->isInside(A) || t->isInside(A + this->direction * this->length))
+    if (glm::dot((glm::dvec3)t->norm, B - A) == 0) {
+        if (t->isInside(A) || t->isInside(B))
             return true;
     }
 
@@ -755,7 +755,7 @@ bool Ray::checkCollision(Triangle *t) {
     }
 
     long double distance1 = getEuclidianDistance2(A, solution.point);
-    long double distance2 = getEuclidianDistance2(A + this->direction * this->length, solution.point);
+    long double distance2 = getEuclidianDistance2(B, solution.point);
 
     if (distance1 > this->length || distance2 > this->length)
         return false;
@@ -785,12 +785,32 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
     int total = 0;
 
     for (int i = 0; i < mesh->body->indices.size(); i+=3) {
+        glm::vec3 meanNormal = (mesh->body->vertices[i].Normal + mesh->body->vertices[i + 1].Normal + mesh->body->vertices[i + 2].Normal) / 3.0f;
+        glm::vec3 faceNormal = glm::normalize(glm::cross(mesh->body->vertices[i].Position - mesh->body->vertices[i + 2].Position, mesh->body->vertices[i].Position - mesh->body->vertices[i + 1].Position));
+        if (glm::dot(faceNormal, meanNormal) < 0)
+            faceNormal = -1.0f * faceNormal;
+
+
+        //////
+        glm::vec3 v0 = glm::vec3(-0.444100, 0.613228, 0.303201);
+        if (glm::length(mesh->body->vertices[mesh->body->indices[i]].Position - v0) < 0.001 ||
+            glm::length(mesh->body->vertices[mesh->body->indices[i+1]].Position - v0) < 0.001 ||
+            glm::length(mesh->body->vertices[mesh->body->indices[i+2]].Position - v0) < 0.001)
+            std::cout << glm::to_string(mesh->body->vertices[mesh->body->indices[i]].Position) <<
+                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 1]].Position) <<
+                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 2]].Position) <<
+                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i]].Normal) <<
+                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 1]].Normal) <<
+                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 2]].Normal) <<
+                      "\n" << glm::to_string(faceNormal) <<"\n\n";
+        ///////
         Triangle t(
                 getTransformedVertex(mesh->transform, mesh->body->vertices[i].Position),
                 getTransformedVertex(mesh->transform, mesh->body->vertices[i+1].Position),
                 getTransformedVertex(mesh->transform, mesh->body->vertices[i+2].Position),
-                glm::mat3(transpose(inverse(mesh->transform))) * mesh->body->vertices[i].Normal
+                glm::mat3(transpose(inverse(mesh->transform))) * faceNormal
         );
+
         result = col->checkCollision(&t);
         if (result) {
             hit->vertices.push_back(mesh->body->vertices[i]);
@@ -847,33 +867,28 @@ bool TriangleMesh::checkCollision(Triangle *t) {
 }
 bool TriangleMesh::checkCollisionByTriangle(Collider *col) {
 
-    Mesh* hit = new Mesh(), *not_hit = new Mesh();
-
     bool result = false;
-    int total = 0;
-    for (int i = 0; i < this->body->indices.size(); i+=3) {
+
+    for (int i = 0; i < body->indices.size(); i+=3) {
+        glm::vec3 meanNormal = body->vertices[i].Normal + body->vertices[i + 1].Normal + body->vertices[i + 2].Normal;
+        glm::vec3 faceNormal = glm::normalize(glm::cross(body->vertices[i].Position - body->vertices[i + 2].Position, body->vertices[i].Position - body->vertices[i + 1].Position));
+        if (glm::dot(faceNormal, meanNormal) < 0)
+            faceNormal = -1.0f * faceNormal;
+
         Triangle t(
                 getTransformedVertex(transform, body->vertices[i].Position),
                 getTransformedVertex(transform, body->vertices[i+1].Position),
                 getTransformedVertex(transform, body->vertices[i+2].Position),
-                glm::mat3(transpose(inverse(transform))) * body->vertices[i].Normal
-                );
-        std::cout << i << " ";
+                glm::mat3(transpose(inverse(transform))) * faceNormal
+        );
+
         result = col->checkCollision(&t);
-        if (result) {
-            hit->vertices.push_back(body->vertices[i]);
-            hit->vertices.push_back(body->vertices[i+1]);
-            hit->vertices.push_back(body->vertices[i+2]);
-            total++;
-        } else {
-            not_hit->vertices.push_back(body->vertices[i]);
-            not_hit->vertices.push_back(body->vertices[i+1]);
-            not_hit->vertices.push_back(body->vertices[i+2]);
-        }
+
+        if (result)
+            return result;
     }
-    //std::cout << body->indices.size()/3 << "\n";
-    //std::cout << total << "\n";
-    return total > 0;
+
+    return result;
 }
 bool TriangleMesh::checkCollision(Capsule *col) {
     return checkCollisionByTriangle(col);
@@ -932,17 +947,22 @@ bool Triangle::checkCollision(Triangle *t) {
 
     return result;
 }
-bool Triangle::isInside(glm::vec3 point) {
+bool Triangle::isInside(glm::dvec3 point) {
     long double area = getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1]);
 
+    long double subarea1 = getTriangleArea2((glm::dvec3)vertices[0] - (glm::dvec3)vertices[1], (glm::dvec3)vertices[1] - point);
+    long double subarea2 = getTriangleArea2((glm::dvec3)vertices[1] - (glm::dvec3)vertices[2], (glm::dvec3)vertices[2] - point);
+    long double subarea3 = getTriangleArea2((glm::dvec3)vertices[0] - (glm::dvec3)vertices[2], (glm::dvec3)vertices[2] - point);
+
     //if (area < 0.0001)
-    //    std::cout << area << "\n";
+    //std::cout << area << " area ";
+    //std::cout << subarea1 + subarea2 + subarea3 << " sub ";
+    //std::cout << subarea1 + subarea2 + subarea3 - area << " diff\n";
+    //std::cout << fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2((glm::dvec3)vertices[0] - (glm::dvec3)vertices[2], (glm::dvec3)vertices[0] - (glm::dvec3)vertices[1])) << "\n";
+    //std::cout << (fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2((glm::dvec3)vertices[0] - (glm::dvec3)vertices[2], (glm::dvec3)vertices[0] - (glm::dvec3)vertices[1])) <= EPS) << "\n";
 
-    long double subarea1 = getTriangleArea2(vertices[0] - vertices[1], vertices[1] - point);
-    long double subarea2 = getTriangleArea2(vertices[1] - vertices[2], vertices[2] - point);
-    long double subarea3 = getTriangleArea2(vertices[0] - vertices[2], vertices[2] - point);
 
-    return fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1])) <= EPS;
+    return fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2((glm::dvec3)vertices[0] - (glm::dvec3)vertices[2], (glm::dvec3)vertices[0] - (glm::dvec3)vertices[1])) <= EPS;
 }
 void Triangle::toString() {
     std::cout << "Triangle:\n";

@@ -135,8 +135,33 @@ int main() {
     Mesh* Mercy = readObj("Mercy2.obj");
     Mercy->bv = new TriangleMesh(Mercy);
     Mercy->solidON = false;
+
     meshes.push_back(Mercy);
 
+
+
+   //Mesh* m2 = new Mesh();
+   //glm::vec3 v0, v1, v2;
+   //v0 = glm::vec3(-0.024991,
+   //               3.49906,
+   //               -0.398497);
+   //v1 = glm::vec3(
+   //        -0.005798,
+   //        3.49385,
+   //        -0.37145);
+   //v2 = glm::vec3(-0.001703,
+   //               3.46245,
+   //               -0.399689);
+   //glm::vec3 N = - glm::cross(v0 - v1, v1 - v2);
+   //m2->vertices.push_back(Vertex{v0, N});
+   //m2->vertices.push_back(Vertex{v1, N});
+   //m2->vertices.push_back(Vertex{v2, N});
+   //m2->indices.push_back(0);
+   //m2->indices.push_back(1);
+   //m2->indices.push_back(2);
+   //m2->bv = new TriangleMesh(m2);
+   //m2->prepare();
+   //meshes.push_back(m2);
 
     //Mesh* test = new Mesh();
     //test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
