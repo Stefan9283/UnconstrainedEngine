@@ -123,3 +123,15 @@ void Mesh::gui(int outIndex = 0) {
     }
 
 }
+
+int Mesh::getTriangleCount() {
+    return indices.size()/3;
+}
+
+std::vector<Vertex> Mesh::getTriangle(int index) {
+    std::vector<Vertex> v;
+    for (int i = index * 3; i < index * 3 + 3; i += 3) {
+        v.push_back(vertices[i]);
+    }
+    return v;
+}

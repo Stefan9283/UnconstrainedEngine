@@ -27,9 +27,12 @@ public:
     glm::mat4 getTransform();
 
 
-        unsigned int VAO{}, VBO{}, EBO{};
+    unsigned int VAO{}, VBO{}, EBO{};
 
     void prepare();
     void Draw(Shader* shader);
     void gui(int outIndex);
+
+    std::vector<Vertex> getTriangle(int index);
+    int getTriangleCount();
 };

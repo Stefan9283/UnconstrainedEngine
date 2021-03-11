@@ -16,7 +16,6 @@
 
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
-#include <vec3.h>
 #include <iomanip>
 #include "ObjLoad.h"
 #include "Camera.h"
@@ -243,17 +242,10 @@ int main() {
 
     bool continuouslyChecking = false;
 
-    std::vector<Mesh*> hit_or_nah;
+    //std::vector<Mesh*> hit_or_nah;
 
     //////////////////////////// TEST ZONE
 
-
-   pe::vec3<long double> e11(112254.63246236/213521516326234.0f, 0.72341125435 ,112254632.46236/21352151632.62340f), e22(1, 1.121256675 ,0);
-
-   glm::highp_dvec3 e1 = glm::highp_dvec3(e11.x, e11.y, e11.z);
-   glm::highp_dvec3 e2 = glm::highp_dvec3(e22.x, e22.y, e22.z);
-   std::cout << std::setprecision(300) << glm::to_string(glm::cross(e1, e2)) << glm::dot(e1, e2) << "\n";
-   std::cout << " " << std::setprecision(300) << e11.cross(e11, e22).toString() << e11.dot(e11, e22) << "\n";
 
 
     /////////////////////////////
@@ -325,14 +317,14 @@ int main() {
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
         if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
 
-            if (hit_or_nah.size()) {
-                delete hit_or_nah[0];
-                delete hit_or_nah[1];
-            }
+            //if (hit_or_nah.size()) {
+            //    delete hit_or_nah[0];
+            //    delete hit_or_nah[1];
+            //}
 
-            hit_or_nah = wasMeshHit(meshes[0]->bv, r);
+            //hit_or_nah = wasMeshHit(meshes[0]->bv, r);
 
-            /*
+
             for (int l = 0; l < collision.size(); ++l) {
                 collision[l] = false;
             }
@@ -355,17 +347,17 @@ int main() {
                         collision[collision.size() - 1] = true;
                     }
                 }
-            }*/
+            }
         }
 
 
-        if (hit_or_nah.size()) {
-            //std::cout << "sup\n";
-            s->setVec3("color", glm::vec3(1,0,0));
-            hit_or_nah[0]->Draw(s);
-            s->setVec3("color", glm::vec3(0,1,0));
-            hit_or_nah[1]->Draw(s);
-        }
+        //if (hit_or_nah.size()) {
+        //    //std::cout << "sup\n";
+        //    s->setVec3("color", glm::vec3(1,0,0));
+        //    hit_or_nah[0]->Draw(s);
+        //    s->setVec3("color", glm::vec3(0,1,0));
+        //    hit_or_nah[1]->Draw(s);
+        //}
 
 
         Ray* tmp_r = Ray::generateRay(window, c);

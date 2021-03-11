@@ -8,8 +8,6 @@
 #include "Mesh.h"
 #include "glm/gtx/string_cast.hpp"
 
-#include "vec3.h"
-
 //#include "boost/multiprecision/cpp_bin_float.hpp"
 //#include <boost/multiprecision/mpfr.hpp>  // Defines the Backend type that wraps MPFR.
 //
@@ -269,8 +267,6 @@ AABB::AABB(Mesh* mesh) {
     min0 = mesh->vertices[0].Position;
     max0 = mesh->vertices[0].Position;
 
-
-
     for (auto v : mesh->vertices) {
         if (min0.x > v.Position.x) min0.x = v.Position.x;
         if (min0.y > v.Position.y) min0.y = v.Position.y;
@@ -448,11 +444,11 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && wasHeld) {
         int wi, he;
         glfwGetWindowSize(window, &wi, &he);
-        float x = cam->lastx_mouse - (float) wi / 2.0f;
-        float y = he - cam->lasty_mouse - (float) he / 2.0f;
+        double x = cam->lastx_mouse - (float) wi / 2.0f;
+        double y = he - cam->lasty_mouse - (float) he / 2.0f;
 
-        x /= (float) wi / 2.0f;
-        y /= (float) he / 2.0f;
+        x /= (double) wi / 2.0f;
+        y /= (double) he / 2.0f;
 
         float aspectRatio = (float) wi / (float) he;
 
@@ -548,8 +544,8 @@ bool Ray::checkCollision(BoundingSphere* bv) {
             solution = zIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
 
         // Check the distance between the ray's origin and the first point
-        float distance1 = getEuclidianDistance2(A, solution.point);
-        float distance2 = getEuclidianDistance2(A + this->direction * this->length, solution.point);
+        long double distance1 = getEuclidianDistance2(A, solution.point);
+        long double distance2 = getEuclidianDistance2(A + this->direction * this->length, solution.point);
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return true;
@@ -790,20 +786,6 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
         if (glm::dot(faceNormal, meanNormal) < 0)
             faceNormal = -1.0f * faceNormal;
 
-
-        //////
-        glm::vec3 v0 = glm::vec3(-0.444100, 0.613228, 0.303201);
-        if (glm::length(mesh->body->vertices[mesh->body->indices[i]].Position - v0) < 0.001 ||
-            glm::length(mesh->body->vertices[mesh->body->indices[i+1]].Position - v0) < 0.001 ||
-            glm::length(mesh->body->vertices[mesh->body->indices[i+2]].Position - v0) < 0.001)
-            std::cout << glm::to_string(mesh->body->vertices[mesh->body->indices[i]].Position) <<
-                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 1]].Position) <<
-                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 2]].Position) <<
-                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i]].Normal) <<
-                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 1]].Normal) <<
-                      "\n" << glm::to_string(mesh->body->vertices[mesh->body->indices[i + 2]].Normal) <<
-                      "\n" << glm::to_string(faceNormal) <<"\n\n";
-        ///////
         Triangle t(
                 getTransformedVertex(mesh->transform, mesh->body->vertices[i].Position),
                 getTransformedVertex(mesh->transform, mesh->body->vertices[i+1].Position),
@@ -830,8 +812,6 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
             not_hit->indices.push_back(hit->indices.size());
         }
     }
-
-    std::cout << hit->vertices.size() << "  " << not_hit->vertices.size() << "\n";
 
     hit->prepare();
     not_hit->prepare();
