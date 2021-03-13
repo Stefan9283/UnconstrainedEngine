@@ -39,7 +39,6 @@ include_directories(
 					Dependencies/Vendor/glfw/include
 					Dependencies/Vendor/glad/include
 					Dependencies/Vendor/ImGuizmo
-					Dependencies/Vendor/boost/libs/multiprecision/include
 					)
 
 

@@ -15,25 +15,27 @@
 #include "BoundingVolumes.h"
 #include "Vertex.h"
 
+class Shader;
 class Mesh;
 class OctreeNode;
 
 class Octree {
 public:
-    OctreeNode* root;
-
-    Octree(Mesh* mesh);
+    OctreeNode* root = nullptr;
+    Octree(Mesh* mesh, int level = 1);
 };
 
 class OctreeNode {
 public:
-    AABB* box;
+    AABB* box = nullptr;
     std::vector<OctreeNode*> children;
     std::vector<uint32_t> triangleIndices;
 
-    OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles);
+    void Draw(Shader* s);
+
+    OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles, int level);
+    void divide(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles, int level);
     ~OctreeNode();
-    void divide(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles);
 };
 
 #endif //TRIANGLE_OCTREE_H

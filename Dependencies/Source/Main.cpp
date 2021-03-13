@@ -20,6 +20,7 @@
 #include "ObjLoad.h"
 #include "Camera.h"
 #include "BoundingVolumes.h"
+#include "Octree.h"
 #include "Mesh.h"
 
 #include "imconfig.h"
@@ -36,219 +37,96 @@
 static void error_callback(int error, const char* description) {
     fprintf(stderr, "Error: %s\n", description);
 }
-
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
-
 void resize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
-
-Shader* s;
 extern ImGuizmo::OPERATION mCurrentGizmoOperation;
 
-int main() {
-#pragma region prepare OGL
-    GLFWwindow* window;
 
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
+bool continuouslyChecking = false;
+GLFWwindow* window;
+Shader* s;
+Camera* c;
+Ray* r;
+Mesh* crosshair;
+std::vector<Mesh*> meshes;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
+    std::vector<glm::vec3> verticesPos;
+    verticesPos.emplace_back(glm::vec3(min.x, min.y, min.z));
+    verticesPos.emplace_back(glm::vec3(min.x, min.y, max.z));
+    verticesPos.emplace_back(glm::vec3(min.x, max.y, min.z));
+    verticesPos.emplace_back(glm::vec3(min.x, max.y, max.z));
+    verticesPos.emplace_back(glm::vec3(max.x, min.y, min.z));
+    verticesPos.emplace_back(glm::vec3(max.x, min.y, max.z));
+    verticesPos.emplace_back(glm::vec3(max.x, max.y, min.z));
+    verticesPos.emplace_back(glm::vec3(max.x, max.y, max.z));
 
-    window = glfwCreateWindow(1040, 1040, "Window name", NULL, NULL);
+    Mesh* body = new Mesh();
 
-    if (!window) {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+    for (auto v : verticesPos)
+        body->vertices.push_back(Vertex{v, v});
 
-    glfwSetKeyCallback(window, key_callback);
-    glfwMakeContextCurrent(window);
-    gladLoadGL();
-    glfwSwapInterval(1);
+    body->indices.push_back(3);
+    body->indices.push_back(2);
+    body->indices.push_back(0);
 
-    glDepthMask(GL_TRUE);
+    body->indices.push_back(0);
+    body->indices.push_back(1);
+    body->indices.push_back(3);
 
+    body->indices.push_back(6);
+    body->indices.push_back(7);
+    body->indices.push_back(4);
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    body->indices.push_back(4);
+    body->indices.push_back(7);
+    body->indices.push_back(5);
 
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
+    body->indices.push_back(7);
+    body->indices.push_back(3);
+    body->indices.push_back(5);
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init( "#version 330");
-    glEnable(GL_DEPTH_TEST);
+    body->indices.push_back(5);
+    body->indices.push_back(3);
+    body->indices.push_back(1);
 
-#pragma endregion
-    s = new Shader("Dependencies/Shaders/simpleVert.glsl", "Dependencies/Shaders/simpleFrag.glsl");
-    s->bind();
+    body->indices.push_back(2);
+    body->indices.push_back(6);
+    body->indices.push_back(0);
 
-    Camera* c = new Camera(window);
-    glClearColor(0.1, 0.1, 0.3, 1);
+    body->indices.push_back(0);
+    body->indices.push_back(6);
+    body->indices.push_back(4);
 
-#pragma region meshes
-    std::vector<Mesh*> meshes;
+    body->indices.push_back(0);
+    body->indices.push_back(4);
+    body->indices.push_back(1);
 
-    //Mesh* cube = readObj("Box.obj");
-    //cube->bv = new AABB(cube);
-    //cube->translation = glm::vec3(1.76, 1.76, 0);
-    //cube->rotation = glm::vec3 (0, -145, 0);
-    //cube->solidON = false;
-    //meshes.push_back(cube);
+    body->indices.push_back(4);
+    body->indices.push_back(5);
+    body->indices.push_back(1);
 
-    //Mesh* sphere = readObj("Sphere.obj");
-    //sphere->translation += glm::vec3(0,-1,0);
-    //sphere->bv = new BoundingSphere(sphere);
-    //sphere->solidON = false;
-    //sphere->translation = glm::vec3(-1.76, 1.11, 0);
-    //sphere->solidON = false;
-    //meshes.push_back(sphere);
+    body->indices.push_back(2);
+    body->indices.push_back(3);
+    body->indices.push_back(7);
 
-    //////Mesh* Yen = readObj("Yen.obj");
-    //////Yen->bv = Capsule::generateCapsule(Yen);
-    //////meshes.push_back(Yen);
+    body->indices.push_back(7);
+    body->indices.push_back(6);
+    body->indices.push_back(2);
+    body->prepare();
+    return body;
+}
 
-    //Mesh* triangle = readObj("Triangle.obj");
-    //triangle->bv = new TriangleMesh(triangle);
-    //triangle->rotation = glm::vec3(0, -180, 0);
-    //triangle->translation = glm::vec3(0, 1.11, 0);
-    //triangle->solidON = false;
-    //meshes.push_back(triangle);
-
-    //Mesh* triangle2 = readObj("Triangle.obj");
-    //triangle2->bv = new TriangleMesh(triangle2);
-    //triangle2->rotation = glm::vec3(0, -180, -49);
-    //triangle2->translation = glm::vec3(0, 1.316, 0);
-    //triangle2->solidON = false;
-    //meshes.push_back(triangle2);
-
-    Mesh* Mercy = readObj("Mercy2.obj");
-    Mercy->bv = new TriangleMesh(Mercy);
-    Mercy->solidON = false;
-
-    meshes.push_back(Mercy);
-
-
-
-   //Mesh* m2 = new Mesh();
-   //glm::vec3 v0, v1, v2;
-   //v0 = glm::vec3(-0.024991,
-   //               3.49906,
-   //               -0.398497);
-   //v1 = glm::vec3(
-   //        -0.005798,
-   //        3.49385,
-   //        -0.37145);
-   //v2 = glm::vec3(-0.001703,
-   //               3.46245,
-   //               -0.399689);
-   //glm::vec3 N = - glm::cross(v0 - v1, v1 - v2);
-   //m2->vertices.push_back(Vertex{v0, N});
-   //m2->vertices.push_back(Vertex{v1, N});
-   //m2->vertices.push_back(Vertex{v2, N});
-   //m2->indices.push_back(0);
-   //m2->indices.push_back(1);
-   //m2->indices.push_back(2);
-   //m2->bv = new TriangleMesh(m2);
-   //m2->prepare();
-   //meshes.push_back(m2);
-
-    //Mesh* test = new Mesh();
-    //test->vertices.push_back(Vertex{glm::vec3(0.5f, 1, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //test->vertices.push_back(Vertex{glm::vec3(-1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //test->vertices.push_back(Vertex{glm::vec3(1, 0, 0), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //test->indices.push_back(0);
-    //test->indices.push_back(1);
-    //test->indices.push_back(2);
-    //test->bv = new TriangleMesh(test);
-    //test->prepare();
-    //meshes.push_back(test);
-
-    //std::vector<Mesh*> mamalLor;
-
-    //Mesh* m1 = new Mesh();
-    //m1->vertices.push_back(Vertex{glm::vec3(0.013611, 1.564913, 0.044879), glm::vec3(0.741500, 0.415300, -0.527000)});
-    //m1->vertices.push_back(Vertex{glm::vec3(0.014145, 1.565383, 0.046110), glm::vec3(0.741500, 0.415300, -0.527000)});
-    //m1->vertices.push_back(Vertex{glm::vec3(0.013871, 1.564592, 0.045128), glm::vec3(0.741500, 0.415300, -0.527000)});
-    //m1->indices.push_back(0);
-    //m1->indices.push_back(1);
-    //m1->indices.push_back(2);
-    //m1->bv = new TriangleMesh(m1);
-    //m1->prepare();
-    //meshes.push_back(m1);
-
-    //Mesh* m2 = new Mesh();
-    //m2->vertices.push_back(Vertex{glm::vec3(0.013871, 1.564592, 0.045128), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //m2->vertices.push_back(Vertex{glm::vec3(0.014145, 1.565383, 0.046110), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //m2->vertices.push_back(Vertex{glm::vec3(0.014555, 1.565118, 0.046085), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-//
-    //Mesh* m3 = new Mesh();
-    //m3->vertices.push_back(Vertex{glm::vec3(-0.024256, 1.565797, 0.040848), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //m3->vertices.push_back(Vertex{glm::vec3(-0.024852, 1.566274, 0.040575), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //m3->vertices.push_back(Vertex{glm::vec3(-0.025058, 1.565326, 0.040927), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-//
-    //Mesh* m4 = new Mesh();
-    //m4->vertices.push_back(Vertex{glm::vec3(-0.024000, 1.566069, 0.040335), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //m4->vertices.push_back(Vertex{glm::vec3(-0.024256, 1.565797, 0.040848), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-    //m4->vertices.push_back(Vertex{glm::vec3(-0.023475, 1.565964, 0.040644), glm::vec3(glm::cross(glm::vec3(0.5f, 1, 0), glm::vec3(-1, 0, 0)))});
-
-    //mamalLor.push_back(m1);
-    //mamalLor.push_back(m2);
-    //mamalLor.push_back(m3);
-    //mamalLor.push_back(m4);
-
-    //for (int n = 0; n < mamalLor.size(); ++n) {
-    //    mamalLor[n]->indices.push_back(0);
-    //    mamalLor[n]->indices.push_back(1);
-    //    mamalLor[n]->indices.push_back(2);
-    //    mamalLor[n]->bv = new TriangleMesh(mamalLor[n]);
-    //    mamalLor[n]->prepare();
-    //}
-
-
-    Ray* r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
-
-
-
-    Mesh* crosshair = new Mesh();
-    crosshair->vertices.push_back(Vertex{glm::vec3(0,  1,  -25.0f)});
-    crosshair->vertices.push_back(Vertex{glm::vec3(0, -1,  -25.0f)});
-    crosshair->vertices.push_back(Vertex{glm::vec3(1,  0,  -25.0f)});
-    crosshair->vertices.push_back(Vertex{glm::vec3(-1, 0,  -25.0f)});
-    crosshair->indices.push_back(0);
-    crosshair->indices.push_back(1);
-    crosshair->indices.push_back(0);
-    crosshair->indices.push_back(2);
-    crosshair->indices.push_back(3);
-    crosshair->indices.push_back(2);
-    crosshair->wireframeON = true;
-    crosshair->solidON = true;
-    crosshair->prepare();
-#pragma endregion
-
+void testBasicCollision() {
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)
         collision.push_back(false);
     collision.push_back(false);
-
-    bool continuouslyChecking = false;
-
-    //std::vector<Mesh*> hit_or_nah;
-
-    //////////////////////////// TEST ZONE
-
-
-
-    /////////////////////////////
 
     while (!glfwWindowShouldClose(window))
     {
@@ -302,9 +180,7 @@ int main() {
         s->setMat4("model", &model);
         glViewport(0, 0, display_w, display_h);
 
-
         ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
-
 
         s->setFloat("flatColorsON", 1);
         crosshair->Draw(s);
@@ -350,16 +226,6 @@ int main() {
             }
         }
 
-
-        //if (hit_or_nah.size()) {
-        //    //std::cout << "sup\n";
-        //    s->setVec3("color", glm::vec3(1,0,0));
-        //    hit_or_nah[0]->Draw(s);
-        //    s->setVec3("color", glm::vec3(0,1,0));
-        //    hit_or_nah[1]->Draw(s);
-        //}
-
-
         Ray* tmp_r = Ray::generateRay(window, c);
         if (tmp_r) {
             if (r) delete r;
@@ -373,13 +239,137 @@ int main() {
                     r->origin.z,
                     1
             },
-                end[4] = {
-                        r->direction.x,
-                        r->direction.y,
-                        r->direction.z,
-                        1
+                    end[4] = {
+                    r->direction.x,
+                    r->direction.y,
+                    r->direction.z,
+                    1
             },
-                length = r->length;
+                    length = r->length;
+
+
+            ImGui::SliderFloat3("origin", start, -10, 10);
+            ImGui::SliderFloat3("direction", end, -1, 1);
+            ImGui::SliderFloat("length", &length, 0, 10);
+            delete r;
+            r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length, true);
+        }
+
+        if(ImGui::Button("Toggle bounding volumes all" )) {
+            for (int i = 0; i < meshes.size(); ++i) {
+                Mesh* m = meshes[i];
+                m->boundingBoxON = !m->boundingBoxON;
+            }
+        }
+        if(ImGui::Button("Toggle solid all" )) {
+            for (int i = 0; i < meshes.size(); ++i) {
+                Mesh* m = meshes[i];
+                m->solidON = !m->solidON;
+            }
+        }
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+}
+void testRayMeshIntersection(Mesh* mesh) {
+    bool rayCollision = false;
+    std::vector<Mesh*> hit_or_nah;
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        s->setFloat("flatColorsON", 0);
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+        s->setVec3("cameraPos", c->position);
+        c->update_proj(window);
+        c->Move(window);
+
+        ImGuizmo::BeginFrame();
+
+        float* camviewvec = (float*)glm::value_ptr(c->view);
+        float* projvec = (float*)glm::value_ptr(c->proj);
+        float* identity = (float*)glm::value_ptr(glm::mat4(1));
+        //ImGuizmo::DrawGrid(camviewvec, projvec, identity, 100.f);
+
+        s->setFloat("flatColorsON", 0);
+
+
+        s->setFloat("flatColorsON", 1);
+
+        if (r) r->body->Draw(s);
+
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glm::mat4 proj = *c->getprojmatrix();
+        glm::mat4 model = glm::mat4(1);
+        s->setMat4("proj", &proj);
+        s->setMat4("view", &model);
+        model = glm::translate(model, c->goFront);
+        s->setMat4("model", &model);
+        glViewport(0, 0, display_w, display_h);
+
+
+        ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
+
+        s->setVec3("color", glm::vec3(0, 1, 0));
+
+        s->setFloat("flatColorsON", 1);
+        crosshair->Draw(s);
+
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+        ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
+        if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
+            if (hit_or_nah.size()) {
+                delete hit_or_nah[0];
+                delete hit_or_nah[1];
+            }
+
+            hit_or_nah = wasMeshHit(mesh->bv, r);
+        }
+
+        s->setFloat("flatColorsON", 0);
+        mesh->Draw(s);
+
+        if (hit_or_nah.size()) {
+            s->setVec3("color", glm::vec3(1,0,0));
+            hit_or_nah[0]->Draw(s);
+            s->setVec3("color", glm::vec3(0,1,0));
+            hit_or_nah[1]->Draw(s);
+        }
+
+
+        Ray* tmp_r = Ray::generateRay(window, c);
+        if (tmp_r) {
+            if (r) delete r;
+            r = tmp_r;
+            rayCollision = false;
+        }
+        if (r) {
+            float start[4] = {
+                    r->origin.x,
+                    r->origin.y,
+                    r->origin.z,
+                    1
+            },
+                    end[4] = {
+                    r->direction.x,
+                    r->direction.y,
+                    r->direction.z,
+                    1
+            },
+                    length = r->length;
 
 
             ImGui::SliderFloat3("origin", start, -10, 10);
@@ -403,19 +393,8 @@ int main() {
             }
         }
 
-        /*
-        s->setFloat("flatColorsON", 1);
-        s->setVec3("color", glm::vec3(1,1,1));
-        for (int n = 0; n < mamalLor.size(); ++n) {
-            mamalLor[n]->Draw(s);
-        }*/
-
-
 
         ImGui::Render();
-
-
-
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -424,6 +403,149 @@ int main() {
 
         glfwPollEvents();
     }
+}
+void testOctree(Mesh* mesh) {
+    Octree* octree = nullptr;
+
+    while (!glfwWindowShouldClose(window)) {
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        s->setFloat("flatColorsON", 0);
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+        s->setVec3("cameraPos", c->position);
+        c->update_proj(window);
+        c->Move(window);
+        s->setVec3("color", glm::vec3(1,0,0));
+
+        if(ImGui::Button("Build Octree")) {
+            delete octree;
+            octree = new Octree(mesh);
+        }
+
+        if (octree)
+            octree->root->Draw(s);
+        //mesh->Draw(s);
+
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE))
+            break;
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+    delete octree;
+}
+
+int main() {
+#pragma region prepare OGL
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+
+    window = glfwCreateWindow(1040, 1040, "Window name", NULL, NULL);
+
+    if (!window) {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+
+    glfwSetKeyCallback(window, key_callback);
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
+    glfwSwapInterval(1);
+
+    glDepthMask(GL_TRUE);
+
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init( "#version 330");
+    glEnable(GL_DEPTH_TEST);
+
+#pragma endregion
+    s = new Shader("Dependencies/Shaders/simpleVert.glsl", "Dependencies/Shaders/simpleFrag.glsl");
+    s->bind();
+
+    c = new Camera(window);
+    glClearColor(0.1, 0.1, 0.3, 1);
+
+#pragma region meshes
+
+    Mesh* cube = readObj("Box.obj");
+    cube->bv = new AABB(cube);
+    cube->translation = glm::vec3(1.76, 1.76, 0);
+    cube->rotation = glm::vec3 (0, -145, 0);
+    cube->solidON = false;
+    meshes.push_back(cube);
+
+    Mesh* sphere = readObj("Sphere.obj");
+    sphere->translation += glm::vec3(0,-1,0);
+    sphere->bv = new BoundingSphere(sphere);
+    sphere->solidON = false;
+    sphere->translation = glm::vec3(-1.76, 1.11, 0);
+    sphere->solidON = false;
+    meshes.push_back(sphere);
+
+    Mesh* Yen = readObj("Yen.obj");
+    Yen->bv = Capsule::generateCapsule(Yen);
+    meshes.push_back(Yen);
+
+    Mesh* triangle = readObj("Triangle.obj");
+    triangle->bv = new TriangleMesh(triangle);
+    triangle->rotation = glm::vec3(0, -180, 0);
+    triangle->translation = glm::vec3(0, 1.11, 0);
+    triangle->solidON = false;
+    meshes.push_back(triangle);
+
+    Mesh* triangle2 = readObj("Triangle.obj");
+    triangle2->bv = new TriangleMesh(triangle2);
+    triangle2->rotation = glm::vec3(0, -180, -49);
+    triangle2->translation = glm::vec3(0, 1.316, 0);
+    triangle2->solidON = false;
+    meshes.push_back(triangle2);
+
+    Mesh* Mercy = readObj("Mercy2.obj");
+    Mercy->bv = new TriangleMesh(Mercy);
+    Mercy->solidON = false;
+
+    meshes.push_back(Mercy);
+
+    r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
+
+    crosshair = new Mesh();
+    crosshair->vertices.push_back(Vertex{glm::vec3(0,  1,  -25.0f)});
+    crosshair->vertices.push_back(Vertex{glm::vec3(0, -1,  -25.0f)});
+    crosshair->vertices.push_back(Vertex{glm::vec3(1,  0,  -25.0f)});
+    crosshair->vertices.push_back(Vertex{glm::vec3(-1, 0,  -25.0f)});
+    crosshair->indices.push_back(0);
+    crosshair->indices.push_back(1);
+    crosshair->indices.push_back(0);
+    crosshair->indices.push_back(2);
+    crosshair->indices.push_back(3);
+    crosshair->indices.push_back(2);
+    crosshair->wireframeON = true;
+    crosshair->solidON = true;
+    crosshair->prepare();
+#pragma endregion
+
+    testOctree(meshes[5]);
 
     s->unbind();
 
