@@ -27,24 +27,26 @@
       <config projectName="Triangle" targetName="glad" />
     </generated>
   </component>
-  <component name="CMakeSettings">
+  <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
       <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
     </configurations>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="259312f1-4481-46ad-b2f6-bf8afc467866" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/PhysicsEngine.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitmodules" beforeDir="false" afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/SANDBOX.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Octree.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Octree.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/BVH.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/BVH.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/BVH.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BVH.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/Mesh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Mesh.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/boost" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Triangle.mtl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Triangle.obj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/clear.sh" beforeDir="false" afterPath="$PROJECT_DIR$/clear.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,7 +75,7 @@
     <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
   </component>
   <component name="RunManager" selected="CMake Application.Triangle">
-    <configuration name="Triangle" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Triangle" TARGET_NAME="Triangle" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Triangle" RUN_TARGET_NAME="Triangle">
+    <configuration name="Triangle" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Triangle" TARGET_NAME="Triangle" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Triangle" RUN_TARGET_NAME="Triangle">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -117,6 +119,10 @@
       <option name="presentableId" value="Default" />
       <updated>1615676328178</updated>
       <workItem from="1615676329608" duration="566000" />
+      <workItem from="1615682334066" duration="623000" />
+      <workItem from="1615691687600" duration="176000" />
+      <workItem from="1615691877488" duration="27000" />
+      <workItem from="1615691937054" duration="4165000" />
     </task>
     <servers />
   </component>
@@ -133,11 +139,56 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="2352" y="836" width="585" height="530" key="find.popup" timestamp="1615676883459">
+    <state x="847" y="901" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1615692307149">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state x="2352" y="836" width="585" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1615676883459" />
+    <state x="847" y="901" key="#com.intellij.execution.impl.EditConfigurationsDialog/62.0.4034.2160@62.0.4034.2160" timestamp="1615692307149" />
+    <state width="413" height="466" key="DebuggerActiveHint" timestamp="1615692449885">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="413" height="466" key="DebuggerActiveHint/62.0.4034.2160@62.0.4034.2160" timestamp="1615692449885" />
+    <state x="1173" y="1001" key="FileChooserDialogImpl" timestamp="1615692304897">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state x="1173" y="1001" key="FileChooserDialogImpl/62.0.4034.2160@62.0.4034.2160" timestamp="1615692304897" />
+    <state width="1908" height="649" key="GridCell.Tab.0.bottom" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.0.center" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.0.left" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.0.right" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.1.bottom" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.1.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.1.center" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.1.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.1.left" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.1.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="1908" height="649" key="GridCell.Tab.1.right" timestamp="1615696140364">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state width="1908" height="649" key="GridCell.Tab.1.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state x="2352" y="836" width="585" height="530" key="find.popup" timestamp="1615693697863">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state x="2352" y="836" width="585" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1615693697863" />
   </component>
 </project>

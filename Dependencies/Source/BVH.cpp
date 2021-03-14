@@ -1,4 +1,4 @@
-
+/*
 #include "BVH.h"
 #include "Mesh.h"
 #include "BVH.h"
@@ -19,3 +19,4 @@ BVHNode::~BVHNode() {
     for (auto& c : children)
         delete c;
 }
+ */

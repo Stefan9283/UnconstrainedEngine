@@ -414,22 +414,30 @@ void testOctree(Mesh* mesh) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        ImGuizmo::BeginFrame();
+
         s->setFloat("flatColorsON", 0);
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
+        glm::mat4 model = glm::mat4(1);
+        s->setMat4("model", &model);
         s->setVec3("cameraPos", c->position);
         c->update_proj(window);
         c->Move(window);
         s->setVec3("color", glm::vec3(1,0,0));
 
+
         if(ImGui::Button("Build Octree")) {
             delete octree;
-            octree = new Octree(mesh);
+            octree = new Octree(mesh, 3);
+            for (Vertex v : octree->root->children[0]->box->body->vertices) {
+                std::cout << glm::to_string(v.Position) << "\n";
+            }
         }
 
         if (octree)
             octree->root->Draw(s);
-        //mesh->Draw(s);
+        mesh->Draw(s);
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE))
             break;
@@ -438,10 +446,12 @@ void testOctree(Mesh* mesh) {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         glfwPollEvents();
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        resize(window, display_w, display_h);
     }
     delete octree;
 }
-
 int main() {
 #pragma region prepare OGL
     if (!glfwInit())
@@ -496,30 +506,16 @@ int main() {
     meshes.push_back(cube);
 
     Mesh* sphere = readObj("Sphere.obj");
-    sphere->translation += glm::vec3(0,-1,0);
+    //sphere->translation += glm::vec3(0,-1,0);
     sphere->bv = new BoundingSphere(sphere);
     sphere->solidON = false;
-    sphere->translation = glm::vec3(-1.76, 1.11, 0);
+    //sphere->translation = glm::vec3(-1.76, 1.11, 0);
     sphere->solidON = false;
     meshes.push_back(sphere);
 
     Mesh* Yen = readObj("Yen.obj");
     Yen->bv = Capsule::generateCapsule(Yen);
     meshes.push_back(Yen);
-
-    Mesh* triangle = readObj("Triangle.obj");
-    triangle->bv = new TriangleMesh(triangle);
-    triangle->rotation = glm::vec3(0, -180, 0);
-    triangle->translation = glm::vec3(0, 1.11, 0);
-    triangle->solidON = false;
-    meshes.push_back(triangle);
-
-    Mesh* triangle2 = readObj("Triangle.obj");
-    triangle2->bv = new TriangleMesh(triangle2);
-    triangle2->rotation = glm::vec3(0, -180, -49);
-    triangle2->translation = glm::vec3(0, 1.316, 0);
-    triangle2->solidON = false;
-    meshes.push_back(triangle2);
 
     Mesh* Mercy = readObj("Mercy2.obj");
     Mercy->bv = new TriangleMesh(Mercy);
@@ -545,11 +541,12 @@ int main() {
     crosshair->prepare();
 #pragma endregion
 
-    testOctree(meshes[5]);
+    testOctree(meshes[1]);
 
     s->unbind();
 
     if (r) delete r;
+
 
     for(Mesh* m : meshes)
         delete m;

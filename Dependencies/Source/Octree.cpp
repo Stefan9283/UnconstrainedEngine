@@ -1,8 +1,7 @@
-
-#include <minwindef.h>
 #include "Octree.h"
 #include "Mesh.h"
 #include "Shader.h"
+#include <glm/gtx/string_cast.hpp>
 
 Octree::Octree(Mesh *mesh, int level) {
     std::vector<std::pair<int, std::vector<Vertex>>> triangles;
@@ -24,18 +23,26 @@ OctreeNode::OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>> remainin
         triangleIndices.push_back(remainingTriangles[i].first);
         for (int j = 0; j < remainingTriangles[i].second.size(); ++j) {
             min = glm::min(min, remainingTriangles[i].second[j].Position);
-            max = glm::max(min, remainingTriangles[i].second[j].Position);
+            max = glm::max(max, remainingTriangles[i].second[j].Position);
         }
     }
 
     box = new AABB(min, max);
+    box->generateNewMesh();
+    box->body->solidON = false;
+    box->body->wireframeON = true;
+
+    level--;
+
+    std::cout << level << " " << remainingTriangles.size() << "\n";
+
 
     if (level)
-        divide(remainingTriangles, level - 1);
+        divide(remainingTriangles, level);
 }
 
 
-/* z0      < z1          < z2
+/*  z0      < z1          < z2
  * plane 1  plane 2 (mid) plane 3
  * 1 2 3    10 11 12      19 20 21 (max)
  * 4 5 6    13 14 15      22 23 24
@@ -49,7 +56,7 @@ OctreeNode::OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>> remainin
  * 16 23  13 20
  * 8 15   5 12
  * 17 24  14 21
- * */
+ */
 void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles, int level) {
     // divide box in 8 sectors if more than 0 triangles are in vec and add the new nodes
 
@@ -57,6 +64,7 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>> remaini
     glm::vec3 max = box->max;
 
     glm::vec3 mid = (min + max) / 2.0f;
+
 
     std::vector<std::pair<AABB, std::vector<std::pair<int, std::vector<Vertex>>>>> boxes;
 
@@ -81,15 +89,16 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>> remaini
         }
     }
 
-    level--;
-    if (level)
+    if (level > 0) {
         for (int j = 0; j < boxes.size(); ++j) {
-            if (!boxes[j].second.empty()) {
+            std::cout << j << "    " << boxes[j].second.size() << "\n";
+            std::cout << glm::to_string(boxes[j].first.min) << glm::to_string(boxes[j].first.max) << "\n";
+            if (!boxes[j].second.empty())
                 children.push_back(new OctreeNode(boxes[j].second, level));
-            }
         }
-
+    }
 }
+// TODO
 
 void OctreeNode::Draw(Shader* s) {
     if (!children.empty())
@@ -98,5 +107,4 @@ void OctreeNode::Draw(Shader* s) {
         children[i]->Draw(s);
     }
 }
-// TODO
 

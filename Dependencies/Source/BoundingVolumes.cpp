@@ -296,8 +296,9 @@ Mesh *AABB::generateNewMesh() {
 
     body = new Mesh();
 
-    for (auto v : verticesPos)
+    for (auto v : verticesPos) {
         body->vertices.push_back(Vertex{v, v});
+    }
 
     body->indices.push_back(3);
     body->indices.push_back(2);
@@ -401,6 +402,8 @@ bool AABB::checkCollision(Capsule *col) {
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
     min0 = min;
     max0 = max;
+    this->min = min0;
+    this->max = max0;
     offset = glm::vec3(0);
     transform = glm::mat4(1);
 }

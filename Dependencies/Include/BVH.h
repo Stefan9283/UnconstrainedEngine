@@ -1,3 +1,4 @@
+/*
 
 #ifndef TRIANGLE_BVH_H
 #define TRIANGLE_BVH_H
@@ -25,3 +26,4 @@ public:
 };
 
 #endif //TRIANGLE_BVH_H
+*/

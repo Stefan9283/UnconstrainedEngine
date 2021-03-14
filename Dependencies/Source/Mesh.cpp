@@ -130,7 +130,7 @@ int Mesh::getTriangleCount() {
 
 std::vector<Vertex> Mesh::getTriangle(int index) {
     std::vector<Vertex> v;
-    for (int i = index * 3; i < index * 3 + 3; i += 3) {
+    for (int i = index * 3; i < index * 3 + 3; i++) {
         v.push_back(vertices[i]);
     }
     return v;
