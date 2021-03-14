@@ -33,8 +33,8 @@ public:
 
     void Draw(Shader* s);
 
-    OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles, int level);
-    void divide(std::vector<std::pair<int, std::vector<Vertex>>> remainingTriangles, int level);
+    OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level);
+    void divide(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level);
     ~OctreeNode();
 };
 

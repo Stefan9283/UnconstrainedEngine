@@ -430,14 +430,17 @@ void testOctree(Mesh* mesh) {
         if(ImGui::Button("Build Octree")) {
             delete octree;
             octree = new Octree(mesh, 3);
-            for (Vertex v : octree->root->children[0]->box->body->vertices) {
-                std::cout << glm::to_string(v.Position) << "\n";
-            }
+            //for (Vertex v : octree->root->children[0]->box->body->vertices) {
+            //        std::cout << glm::to_string(v.Position) << "\n";
+            //}
         }
 
+
+        mesh->Draw(s);
+
+        s->setVec3("color", glm::vec3(0,1,0));
         if (octree)
             octree->root->Draw(s);
-        mesh->Draw(s);
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE))
             break;

@@ -20,11 +20,11 @@
   </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="Triangle" targetName="glfw" />
       <config projectName="Triangle" targetName="glad-generate-files" />
+      <config projectName="Triangle" targetName="glad" />
+      <config projectName="Triangle" targetName="glfw" />
       <config projectName="Triangle" targetName="uninstall" />
       <config projectName="Triangle" targetName="Triangle" />
-      <config projectName="Triangle" targetName="glad" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -35,17 +35,11 @@
   <component name="ChangeListManager">
     <list default="true" id="259312f1-4481-46ad-b2f6-bf8afc467866" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/BVH.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/BVH.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Source/BVH.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BVH.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Camera.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Octree.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Octree.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Source/Mesh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Mesh.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Triangle.mtl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Triangle.obj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/clear.sh" beforeDir="false" afterPath="$PROJECT_DIR$/clear.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -123,6 +117,7 @@
       <workItem from="1615691687600" duration="176000" />
       <workItem from="1615691877488" duration="27000" />
       <workItem from="1615691937054" duration="4165000" />
+      <workItem from="1615738820070" duration="2986000" />
     </task>
     <servers />
   </component>
@@ -154,22 +149,22 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="1173" y="1001" key="FileChooserDialogImpl/62.0.4034.2160@62.0.4034.2160" timestamp="1615692304897" />
-    <state width="1908" height="649" key="GridCell.Tab.0.bottom" timestamp="1615696140364">
+    <state width="3991" height="367" key="GridCell.Tab.0.bottom" timestamp="1615745678105">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="1908" height="649" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
-    <state width="1908" height="649" key="GridCell.Tab.0.center" timestamp="1615696140364">
+    <state width="3991" height="367" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
+    <state width="3991" height="367" key="GridCell.Tab.0.center" timestamp="1615745678105">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="1908" height="649" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
-    <state width="1908" height="649" key="GridCell.Tab.0.left" timestamp="1615696140364">
+    <state width="3991" height="367" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
+    <state width="3991" height="367" key="GridCell.Tab.0.left" timestamp="1615745678105">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="1908" height="649" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
-    <state width="1908" height="649" key="GridCell.Tab.0.right" timestamp="1615696140364">
+    <state width="3991" height="367" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
+    <state width="3991" height="367" key="GridCell.Tab.0.right" timestamp="1615745678105">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="1908" height="649" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
+    <state width="3991" height="367" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
     <state width="1908" height="649" key="GridCell.Tab.1.bottom" timestamp="1615696140364">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
