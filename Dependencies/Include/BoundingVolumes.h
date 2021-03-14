@@ -11,7 +11,7 @@
 #include <GLFW/glfw3.h>
 
 class Mesh;
-
+#include "Vertex.h"
 class Collider;
 class AABB;
 class BoundingSphere;
@@ -74,7 +74,7 @@ public:
 
     void updateMinMax(glm::mat4 transform);
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
-    std::vector<glm::vec3> generateVerices(glm::vec3 min, glm::vec3 max);
+    std::vector<Vertex> generateVerices(glm::vec3 min, glm::vec3 max);
     Mesh* generateNewMesh();
     bool checkCollision(AABB* bv) override;
     bool checkCollision(BoundingSphere* bv) override;

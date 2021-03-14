@@ -152,7 +152,7 @@ void testBasicCollision() {
 
         s->setFloat("flatColorsON", 0);
         for (int i = 0; i < collision.size() - 1 ; ++i) {
-            EditTransform(c, &c->view, &c->proj, meshes[i]);
+            //EditTransform(c, &c->view, &c->proj, meshes[i]);
             meshes[i]->gui(i);
             if (collision[i])
                 s->setVec3("color", glm::vec3(1,0,0));
@@ -429,12 +429,8 @@ void testOctree(Mesh* mesh) {
 
         if(ImGui::Button("Build Octree")) {
             delete octree;
-            octree = new Octree(mesh, 3);
-            //for (Vertex v : octree->root->children[0]->box->body->vertices) {
-            //        std::cout << glm::to_string(v.Position) << "\n";
-            //}
+            octree = new Octree(mesh, 4);
         }
-
 
         mesh->Draw(s);
 
@@ -503,8 +499,8 @@ int main() {
 
     Mesh* cube = readObj("Box.obj");
     cube->bv = new AABB(cube);
-    cube->translation = glm::vec3(1.76, 1.76, 0);
-    cube->rotation = glm::vec3 (0, -145, 0);
+    //cube->translation = glm::vec3(1.76, 1.76, 0);
+    //cube->rotation = glm::vec3 (0, -145, 0);
     cube->solidON = false;
     meshes.push_back(cube);
 
@@ -516,17 +512,22 @@ int main() {
     sphere->solidON = false;
     meshes.push_back(sphere);
 
-    Mesh* Yen = readObj("Yen.obj");
-    Yen->bv = Capsule::generateCapsule(Yen);
-    meshes.push_back(Yen);
+    //Mesh* Yen = readObj("Yen.obj");
+    //Yen->bv = Capsule::generateCapsule(Yen);
+    //meshes.push_back(Yen);
 
     Mesh* Mercy = readObj("Mercy2.obj");
     Mercy->bv = new TriangleMesh(Mercy);
     Mercy->solidON = false;
-
     meshes.push_back(Mercy);
 
-    r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
+    //Mesh* Triangle = readObj("Triangle.obj");
+    //Triangle->bv = new TriangleMesh(Triangle);
+    //Triangle->solidON = false;
+    //Triangle->rotation = glm::vec3(0, 180, 0);
+    //meshes.push_back(Triangle);
+
+    r = nullptr; //new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
 
     crosshair = new Mesh();
     crosshair->vertices.push_back(Vertex{glm::vec3(0,  1,  -25.0f)});
@@ -544,7 +545,8 @@ int main() {
     crosshair->prepare();
 #pragma endregion
 
-    testOctree(meshes[1]);
+    testOctree(meshes[2]);
+    //testBasicCollision();
 
     s->unbind();
 

@@ -34,9 +34,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="259312f1-4481-46ad-b2f6-bf8afc467866" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/Triangle.obj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Camera.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Octree.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Octree.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/Debug.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Debug.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" afterDir="false" />
@@ -117,7 +119,7 @@
       <workItem from="1615691687600" duration="176000" />
       <workItem from="1615691877488" duration="27000" />
       <workItem from="1615691937054" duration="4165000" />
-      <workItem from="1615738820070" duration="2986000" />
+      <workItem from="1615738820070" duration="8551000" />
     </task>
     <servers />
   </component>
@@ -141,6 +143,10 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="847" y="901" key="#com.intellij.execution.impl.EditConfigurationsDialog/62.0.4034.2160@62.0.4034.2160" timestamp="1615692307149" />
+    <state x="1704" y="959" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1615752067749">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state x="1704" y="959" key="#com.intellij.fileTypes.FileTypeChooser/62.0.4034.2160@62.0.4034.2160" timestamp="1615752067749" />
     <state width="413" height="466" key="DebuggerActiveHint" timestamp="1615692449885">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
@@ -149,22 +155,22 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="1173" y="1001" key="FileChooserDialogImpl/62.0.4034.2160@62.0.4034.2160" timestamp="1615692304897" />
-    <state width="3991" height="367" key="GridCell.Tab.0.bottom" timestamp="1615745678105">
+    <state width="3477" height="251" key="GridCell.Tab.0.bottom" timestamp="1615757325180">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3991" height="367" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
-    <state width="3991" height="367" key="GridCell.Tab.0.center" timestamp="1615745678105">
+    <state width="3477" height="251" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
+    <state width="3477" height="251" key="GridCell.Tab.0.center" timestamp="1615757325180">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3991" height="367" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
-    <state width="3991" height="367" key="GridCell.Tab.0.left" timestamp="1615745678105">
+    <state width="3477" height="251" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
+    <state width="3477" height="251" key="GridCell.Tab.0.left" timestamp="1615757325180">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3991" height="367" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
-    <state width="3991" height="367" key="GridCell.Tab.0.right" timestamp="1615745678105">
+    <state width="3477" height="251" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
+    <state width="3477" height="251" key="GridCell.Tab.0.right" timestamp="1615757325180">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3991" height="367" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615745678105" />
+    <state width="3477" height="251" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
     <state width="1908" height="649" key="GridCell.Tab.1.bottom" timestamp="1615696140364">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
@@ -181,9 +187,9 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state width="1908" height="649" key="GridCell.Tab.1.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
-    <state x="2352" y="836" width="585" height="530" key="find.popup" timestamp="1615693697863">
+    <state x="2352" y="836" width="585" height="530" key="find.popup" timestamp="1615756581979">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state x="2352" y="836" width="585" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1615693697863" />
+    <state x="2352" y="836" width="585" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1615756581979" />
   </component>
 </project>

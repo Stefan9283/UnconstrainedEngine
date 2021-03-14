@@ -279,25 +279,25 @@ AABB::AABB(Mesh* mesh) {
     min = min0;
     max = max0;
 }
-std::vector<glm::vec3> AABB::generateVerices(glm::vec3 min_, glm::vec3 max_) {
-    std::vector<glm::vec3> vertices;
-    vertices.emplace_back(glm::vec3(min_.x, min_.y, min_.z));
-    vertices.emplace_back(glm::vec3(min_.x, min_.y, max_.z));
-    vertices.emplace_back(glm::vec3(min_.x, max_.y, min_.z));
-    vertices.emplace_back(glm::vec3(min_.x, max_.y, max_.z));
-    vertices.emplace_back(glm::vec3(max_.x, min_.y, min_.z));
-    vertices.emplace_back(glm::vec3(max_.x, min_.y, max_.z));
-    vertices.emplace_back(glm::vec3(max_.x, max_.y, min_.z));
-    vertices.emplace_back(glm::vec3(max_.x, max_.y, max_.z));
+std::vector<Vertex> AABB::generateVerices(glm::vec3 min_, glm::vec3 max_) {
+    std::vector<Vertex> vertices;
+    vertices.push_back(Vertex{glm::vec3(min_.x, min_.y, min_.z),  glm::vec3(min_.x, min_.y, min_.z)});
+    vertices.push_back(Vertex{glm::vec3(min_.x, min_.y, max_.z),  glm::vec3(min_.x, min_.y, max_.z)});
+    vertices.push_back(Vertex{glm::vec3(min_.x, max_.y, min_.z),  glm::vec3(min_.x, max_.y, min_.z)});
+    vertices.push_back(Vertex{glm::vec3(min_.x, max_.y, max_.z),  glm::vec3(min_.x, max_.y, max_.z)});
+    vertices.push_back(Vertex{glm::vec3(max_.x, min_.y, min_.z),  glm::vec3(max_.x, min_.y, min_.z)});
+    vertices.push_back(Vertex{glm::vec3(max_.x, min_.y, max_.z),  glm::vec3(max_.x, min_.y, max_.z)});
+    vertices.push_back(Vertex{glm::vec3(max_.x, max_.y, min_.z),  glm::vec3(max_.x, max_.y, min_.z)});
+    vertices.push_back(Vertex{glm::vec3(max_.x, max_.y, max_.z),  glm::vec3(max_.x, max_.y, max_.z)});
     return vertices;
 }
 Mesh *AABB::generateNewMesh() {
-    std::vector<glm::vec3> verticesPos = generateVerices(min, max);
+    std::vector<Vertex> verticesPos = generateVerices(min, max);
 
     body = new Mesh();
 
     for (auto v : verticesPos) {
-        body->vertices.push_back(Vertex{v, v});
+        body->vertices.push_back(v);
     }
 
     body->indices.push_back(3);
@@ -347,7 +347,9 @@ Mesh *AABB::generateNewMesh() {
     body->indices.push_back(7);
     body->indices.push_back(6);
     body->indices.push_back(2);
+
     body->prepare();
+
     return body;
 }
 void AABB::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
@@ -357,16 +359,16 @@ void AABB::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     body = generateNewMesh();
 }
 void AABB::updateMinMax(glm::mat4 transform) {
-    std::vector<glm::vec3> verticesPos = generateVerices(min0, max0);
+    std::vector<Vertex> verticesPos = generateVerices(min0, max0);
     for (int i = 0; i < verticesPos.size(); ++i)
-        verticesPos[i] = getTransformedVertex(transform, verticesPos[i]);
+        verticesPos[i].Position = getTransformedVertex(transform, verticesPos[i].Position);
 
-    min = verticesPos[0];
-    max = verticesPos[0];
+    min = verticesPos[0].Position;
+    max = verticesPos[0].Position;
 
     for (int i = 1; i < verticesPos.size(); ++i) {
-        min = glm::min(min, verticesPos[i]);
-        max = glm::max(max, verticesPos[i]);
+        min = glm::min(min, verticesPos[i].Position);
+        max = glm::max(max, verticesPos[i].Position);
     }
 }
 bool AABB::checkCollision(TriangleMesh *col) {
@@ -849,15 +851,14 @@ bool TriangleMesh::checkCollision(Triangle *t) {
     return checkCollisionByTriangle(t);
 }
 bool TriangleMesh::checkCollisionByTriangle(Collider *col) {
-
     bool result = false;
 
-    for (int i = 0; i < body->indices.size(); i+=3) {
+    for (int i = 0; i < body->indices.size(); i += 3) {
         glm::vec3 meanNormal = body->vertices[i].Normal + body->vertices[i + 1].Normal + body->vertices[i + 2].Normal;
         glm::vec3 faceNormal = glm::normalize(glm::cross(body->vertices[i].Position - body->vertices[i + 2].Position, body->vertices[i].Position - body->vertices[i + 1].Position));
         if (glm::dot(faceNormal, meanNormal) < 0)
             faceNormal = -1.0f * faceNormal;
-
+        std::cout << i << "\n";
         Triangle t(
                 getTransformedVertex(transform, body->vertices[i].Position),
                 getTransformedVertex(transform, body->vertices[i+1].Position),
@@ -899,7 +900,7 @@ bool Triangle::checkCollision(Capsule *col) {
 // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
 bool Triangle::checkCollision(AABB *bv) {
     for (int i = 0; i < 3; ++i)
-        if (isInside(vertices[i])) return true;
+        if (bv->isInside(vertices[i])) return true;
     Ray r0(vertices[0], glm::normalize(-vertices[0] + vertices[1]), glm::length(vertices[0] - vertices[1]));
     Ray r1(vertices[1], glm::normalize(-vertices[1] + vertices[2]), glm::length(vertices[1] - vertices[2]));
     Ray r2(vertices[0], glm::normalize(-vertices[0] + vertices[2]), glm::length(vertices[0] - vertices[2]));

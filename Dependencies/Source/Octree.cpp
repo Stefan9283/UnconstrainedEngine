@@ -34,9 +34,6 @@ OctreeNode::OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remaini
 
     level--;
 
-    std::cout << level << " " << remainingTriangles.size() << "\n";
-
-
     if (level > 1)
         divide(remainingTriangles, level);
 }
@@ -85,14 +82,11 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
         for (int i = 0; i < 8; ++i) {
             if (boxes[i].first.checkCollision(&t))
                 boxes[i].second.push_back(triangle);
-            else std::cout << false << "\n";
         }
     }
 
     if (level > 0) {
         for (int j = 0; j < boxes.size(); ++j) {
-            //std::cout << j << "    " << boxes[j].second.size() << "\n";
-            //std::cout << glm::to_string(boxes[j].first.min) << glm::to_string(boxes[j].first.max) << "\n";
             if (!boxes[j].second.empty())
                 children.push_back(new OctreeNode(boxes[j].second, level));
         }
@@ -101,10 +95,10 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
 // TODO
 
 void OctreeNode::Draw(Shader* s) {
-    //if (!children.empty())
-    box->body->Draw(s);
-    //else
-        for (auto & i : children)
+    if (!children.size())
+        box->body->Draw(s);
+    else {
+        for (auto &i : children)
             i->Draw(s);
+    }
 }
-
