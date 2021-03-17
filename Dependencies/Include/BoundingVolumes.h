@@ -20,6 +20,14 @@ class TriangleMesh;
 class Triangle;
 class Capsule;
 
+struct CollisionPoint {
+    glm::vec3 A; // furthest point of A in collider B
+    glm::vec3 B; // furthest point of B in collider A
+    glm::vec3 normal; // normalized B - A
+    float depth; // length B - A
+    bool hasCollision;
+};
+
 class Collider {
 public:
     Mesh* body = nullptr;
@@ -33,13 +41,13 @@ public:
         S = glm::scale(glm::mat4(1), scale);
         transform = T * R * S;
     };
-    bool checkCollision(Collider* col);
-    virtual bool checkCollision(BoundingSphere* col) = 0;
-    virtual bool checkCollision(AABB* col) = 0;
-    virtual bool checkCollision(Triangle* t) = 0;
-    virtual bool checkCollision(TriangleMesh* col) = 0;
-    virtual bool checkCollision(Ray* col) = 0;
-    virtual bool checkCollision(Capsule* col) = 0;
+    CollisionPoint checkCollision(Collider* col);
+    virtual CollisionPoint checkCollision(BoundingSphere* col) = 0;
+    virtual CollisionPoint checkCollision(AABB* col) = 0;
+    virtual CollisionPoint checkCollision(Triangle* t) = 0;
+    virtual CollisionPoint checkCollision(TriangleMesh* col) = 0;
+    virtual CollisionPoint checkCollision(Ray* col) = 0;
+    virtual CollisionPoint checkCollision(Capsule* col) = 0;
     virtual void toString() = 0;
 
     virtual ~Collider();
@@ -53,12 +61,12 @@ public:
 
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
 
-    bool checkCollision(BoundingSphere* bv) override;
-    bool checkCollision(AABB* bv) override;
-    bool checkCollision(Ray* r) override;
-    bool checkCollision(TriangleMesh* col) override;
-    bool checkCollision(Triangle* t) override;
-    bool checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(BoundingSphere* bv) override;
+    CollisionPoint checkCollision(AABB* bv) override;
+    CollisionPoint checkCollision(Ray* r) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(Capsule* col) override;
 
     explicit BoundingSphere(Mesh* mesh);
     BoundingSphere(glm::vec3 pos, float radius);
@@ -71,17 +79,16 @@ class AABB : public Collider{
 public:
     glm::vec3 max{}, min{}, max0, min0, offset{};
 
-
     void updateMinMax(glm::mat4 transform);
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
     std::vector<Vertex> generateVerices(glm::vec3 min, glm::vec3 max);
     Mesh* generateNewMesh();
-    bool checkCollision(AABB* bv) override;
-    bool checkCollision(BoundingSphere* bv) override;
-    bool checkCollision(Ray* r) override;
-    bool checkCollision(TriangleMesh* col) override;
-    bool checkCollision(Triangle* t) override;
-    bool checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(AABB* bv) override;
+    CollisionPoint checkCollision(BoundingSphere* bv) override;
+    CollisionPoint checkCollision(Ray* r) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(Capsule* col) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
@@ -91,14 +98,14 @@ public:
 
 class TriangleMesh : public Collider {
 public:
-    bool checkCollision(TriangleMesh* col) override;
-    bool checkCollision(AABB* bv) override;
-    bool checkCollision(BoundingSphere* bv) override;
-    bool checkCollision(Ray* r) override;
-    bool checkCollision(Triangle* t) override;
-    bool checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(AABB* bv) override;
+    CollisionPoint checkCollision(BoundingSphere* bv) override;
+    CollisionPoint checkCollision(Ray* r) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(Capsule* col) override;
 
-    bool checkCollisionByTriangle(Collider* col);
+    CollisionPoint checkCollisionByTriangle(Collider* col);
 
     TriangleMesh(Mesh* mesh);
     ~TriangleMesh() { body = nullptr; }
@@ -113,12 +120,12 @@ public:
     glm::vec3 norm;
     bool twoway = false;
 
-    bool checkCollision(AABB* bv) override;
-    bool checkCollision(BoundingSphere* bv) override;
-    bool checkCollision(Ray* r) override;
-    bool checkCollision(TriangleMesh* col) override;
-    bool checkCollision(Triangle* t) override;
-    bool checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(AABB* bv) override;
+    CollisionPoint checkCollision(BoundingSphere* bv) override;
+    CollisionPoint checkCollision(Ray* r) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(Capsule* col) override;
 
     bool isInside(glm::dvec3 point);
 
@@ -131,12 +138,12 @@ public:
     float length;
     glm::vec3 origin, direction;
 
-    bool checkCollision(BoundingSphere* bv) override;
-    bool checkCollision(AABB* bv) override;
-    bool checkCollision(Ray* r) override;
-    bool checkCollision(TriangleMesh* col) override;
-    bool checkCollision(Triangle* t) override;
-    bool checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(BoundingSphere* bv) override;
+    CollisionPoint checkCollision(AABB* bv) override;
+    CollisionPoint checkCollision(Ray* r) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(Capsule* col) override;
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
     Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh);
@@ -154,12 +161,12 @@ public:
     static Capsule* generateCapsule(Mesh* mesh);
     void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
     Capsule(glm::vec3 start, glm::vec3 end, float radius);
-    bool checkCollision(BoundingSphere* col) override;
-    bool checkCollision(AABB* col) override;
-    bool checkCollision(Triangle* t) override;
-    bool checkCollision(TriangleMesh* col) override;
-    bool checkCollision(Ray* col) override;
-    bool checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(BoundingSphere* col) override;
+    CollisionPoint checkCollision(AABB* col) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(Ray* col) override;
+    CollisionPoint checkCollision(Capsule* col) override;
     void toString() override;
 
 

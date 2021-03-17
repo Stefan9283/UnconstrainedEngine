@@ -429,7 +429,7 @@ void testOctree(Mesh* mesh) {
 
         if(ImGui::Button("Build Octree")) {
             delete octree;
-            octree = new Octree(mesh, 4);
+            octree = new Octree(mesh, 7);
         }
 
         mesh->Draw(s);
@@ -497,20 +497,20 @@ int main() {
 
 #pragma region meshes
 
-    Mesh* cube = readObj("Box.obj");
-    cube->bv = new AABB(cube);
-    //cube->translation = glm::vec3(1.76, 1.76, 0);
-    //cube->rotation = glm::vec3 (0, -145, 0);
-    cube->solidON = false;
-    meshes.push_back(cube);
+    //Mesh* cube = readObj("Box.obj");
+    //cube->bv = new AABB(cube);
+    ////cube->translation = glm::vec3(1.76, 1.76, 0);
+    ////cube->rotation = glm::vec3 (0, -145, 0);
+    //cube->solidON = false;
+    //meshes.push_back(cube);
 
-    Mesh* sphere = readObj("Sphere.obj");
-    //sphere->translation += glm::vec3(0,-1,0);
-    sphere->bv = new BoundingSphere(sphere);
-    sphere->solidON = false;
-    //sphere->translation = glm::vec3(-1.76, 1.11, 0);
-    sphere->solidON = false;
-    meshes.push_back(sphere);
+    //Mesh* sphere = readObj("Sphere.obj");
+    ////sphere->translation += glm::vec3(0,-1,0);
+    //sphere->bv = new BoundingSphere(sphere);
+    //sphere->solidON = false;
+    ////sphere->translation = glm::vec3(-1.76, 1.11, 0);
+    //sphere->solidON = false;
+    //meshes.push_back(sphere);
 
     //Mesh* Yen = readObj("Yen.obj");
     //Yen->bv = Capsule::generateCapsule(Yen);
@@ -545,8 +545,9 @@ int main() {
     crosshair->prepare();
 #pragma endregion
 
-    testOctree(meshes[2]);
+    testOctree(meshes[0]);
     //testBasicCollision();
+    //testRayMeshIntersection(meshes[0]);
 
     s->unbind();
 

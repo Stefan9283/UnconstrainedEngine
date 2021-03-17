@@ -34,11 +34,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="259312f1-4481-46ad-b2f6-bf8afc467866" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Triangle.obj" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dependencies/Include/CollisionAlgos.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dependencies/Source/CollisionAlgos.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Source/Debug.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Debug.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" afterDir="false" />
@@ -98,10 +98,10 @@
     </configuration>
     <list>
       <item itemvalue="CMake Application.Triangle" />
-      <item itemvalue="CMake Application.glad" />
       <item itemvalue="CMake Application.glad-generate-files" />
-      <item itemvalue="CMake Application.uninstall" />
+      <item itemvalue="CMake Application.glad" />
       <item itemvalue="CMake Application.glfw" />
+      <item itemvalue="CMake Application.uninstall" />
     </list>
   </component>
   <component name="SvnConfiguration">
@@ -120,6 +120,10 @@
       <workItem from="1615691877488" duration="27000" />
       <workItem from="1615691937054" duration="4165000" />
       <workItem from="1615738820070" duration="8551000" />
+      <workItem from="1615824909269" duration="684000" />
+      <workItem from="1615852258616" duration="2545000" />
+      <workItem from="1615889911538" duration="727000" />
+      <workItem from="1615927371154" duration="5430000" />
     </task>
     <servers />
   </component>
@@ -155,22 +159,22 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="1173" y="1001" key="FileChooserDialogImpl/62.0.4034.2160@62.0.4034.2160" timestamp="1615692304897" />
-    <state width="3477" height="251" key="GridCell.Tab.0.bottom" timestamp="1615757325180">
+    <state width="3477" height="322" key="GridCell.Tab.0.bottom" timestamp="1615825597994">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="251" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
-    <state width="3477" height="251" key="GridCell.Tab.0.center" timestamp="1615757325180">
+    <state width="3477" height="322" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
+    <state width="3477" height="322" key="GridCell.Tab.0.center" timestamp="1615825597994">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="251" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
-    <state width="3477" height="251" key="GridCell.Tab.0.left" timestamp="1615757325180">
+    <state width="3477" height="322" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
+    <state width="3477" height="322" key="GridCell.Tab.0.left" timestamp="1615825597994">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="251" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
-    <state width="3477" height="251" key="GridCell.Tab.0.right" timestamp="1615757325180">
+    <state width="3477" height="322" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
+    <state width="3477" height="322" key="GridCell.Tab.0.right" timestamp="1615825597994">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="251" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615757325180" />
+    <state width="3477" height="322" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
     <state width="1908" height="649" key="GridCell.Tab.1.bottom" timestamp="1615696140364">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
@@ -187,9 +191,17 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state width="1908" height="649" key="GridCell.Tab.1.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615696140364" />
-    <state x="2352" y="836" width="585" height="530" key="find.popup" timestamp="1615756581979">
+    <state x="160" y="1006" width="1885" height="1096" key="dock-window-1" timestamp="1615853397002">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state x="2352" y="836" width="585" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1615756581979" />
+    <state x="160" y="1006" width="1885" height="1096" key="dock-window-1/62.0.4034.2160@62.0.4034.2160" timestamp="1615853397002" />
+    <state x="62" y="1188" width="1885" height="848" key="dock-window-2" timestamp="1615853935587">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state x="62" y="1188" width="1885" height="848" key="dock-window-2/62.0.4034.2160@62.0.4034.2160" timestamp="1615853935587" />
+    <state x="2352" y="836" width="585" height="530" key="find.popup" timestamp="1615853291502">
+      <screen x="62" y="0" width="4034" height="2160" />
+    </state>
+    <state x="2352" y="836" width="585" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1615853291502" />
   </component>
 </project>

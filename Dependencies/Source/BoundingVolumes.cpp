@@ -176,7 +176,7 @@ glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
 #pragma endregion
 
 #pragma region Collider
-bool Collider::checkCollision(Collider* col) {
+CollisionPoint Collider::checkCollision(Collider* col) {
     if (dynamic_cast<BoundingSphere*>(col)) {
         return checkCollision(dynamic_cast<BoundingSphere*>(col));
     }
@@ -196,7 +196,7 @@ bool Collider::checkCollision(Collider* col) {
         return checkCollision(dynamic_cast<Capsule*>(col));
     }
 
-    return false;
+    assert("Collider type was not identified");
 }
 Collider::~Collider() {
     if (body)
@@ -224,10 +224,10 @@ BoundingSphere::BoundingSphere(Mesh *mesh) {
         body->vertices[i].Position *= radius;
     body->prepare();
 }
-bool BoundingSphere::checkCollision(TriangleMesh *col) {
+CollisionPoint BoundingSphere::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
 }
-bool BoundingSphere::checkCollision(AABB* bv) {
+CollisionPoint BoundingSphere::checkCollision(AABB* bv) {
     glm::vec3 newMin = bv->min + bv->offset, newMax = bv->max + bv->offset;
 
     float x = std::max(newMin.x, std::min(this->pos.x, newMax.x));
@@ -235,20 +235,20 @@ bool BoundingSphere::checkCollision(AABB* bv) {
     float z = std::max(newMin.z, std::min(this->pos.z, newMax.z));
 
     return (x - this->pos.x) * (x - this->pos.x) + (y - this->pos.y) * (y - this->pos.y) + (z - this->pos.z) * (z - this->pos.z) <= this->radius * this->radius;
-}
-bool BoundingSphere::checkCollision(BoundingSphere* bv) {
+} // TODO return CollisionPoint
+CollisionPoint BoundingSphere::checkCollision(BoundingSphere* bv) {
     float radius2radiusDistance = glm::length(pos - bv->pos);
     return radius2radiusDistance <= radius + bv->radius;
-}
-bool BoundingSphere::checkCollision(Ray *r) {
+} // TODO return CollisionPoint
+CollisionPoint BoundingSphere::checkCollision(Ray *r) {
     return r->checkCollision(this);
 }
-bool BoundingSphere::checkCollision(Triangle *t) {
+CollisionPoint BoundingSphere::checkCollision(Triangle *t) {
     return t->checkCollision(this);
 }
-bool BoundingSphere::checkCollision(Capsule *col) {
+CollisionPoint BoundingSphere::checkCollision(Capsule *col) {
     return false;
-}
+} // TODO return CollisionPoint
 void BoundingSphere::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     //transform = glm::translate(glm::mat4(1), pos) * glm::scale(glm::mat4(1), scale);
     this->pos = pos;
@@ -371,10 +371,10 @@ void AABB::updateMinMax(glm::mat4 transform) {
         max = glm::max(max, verticesPos[i].Position);
     }
 }
-bool AABB::checkCollision(TriangleMesh *col) {
+CollisionPoint AABB::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
 }
-bool AABB::checkCollision(AABB* bv) {
+CollisionPoint AABB::checkCollision(AABB* bv) {
     glm::vec3 newMin1 = bv->min + bv->offset, newMax1 = bv->max + bv->offset;
     glm::vec3 newMin2 = this->min + this->offset, newMax2 = this->max + this->offset;
 
@@ -388,17 +388,17 @@ bool AABB::checkCollision(AABB* bv) {
         return false;
 
     return true;
-}
-bool AABB::checkCollision(BoundingSphere* bv) {
+} // TODO return CollisionPoint
+CollisionPoint AABB::checkCollision(BoundingSphere* bv) {
     return bv->checkCollision(this);
 }
-bool AABB::checkCollision(Ray *r) {
+CollisionPoint AABB::checkCollision(Ray *r) {
     return r->checkCollision(this);
 }
-bool AABB::checkCollision(Triangle *t) {
+CollisionPoint AABB::checkCollision(Triangle *t) {
     return t->checkCollision(this);
 }
-bool AABB::checkCollision(Capsule *col) {
+CollisionPoint AABB::checkCollision(Capsule *col) {
     return col->checkCollision(this);
 }
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
@@ -471,10 +471,10 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
 
     return nullptr;
 }
-bool Ray::checkCollision(TriangleMesh *col) {
+CollisionPoint Ray::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
 }
-bool Ray::checkCollision(BoundingSphere* bv) {
+CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
     glm::vec3 A = this->origin, B = this->origin + this->direction;
 
     float x0 = A.x, y0 = A.y, z0 = A.z;
@@ -571,8 +571,8 @@ bool Ray::checkCollision(BoundingSphere* bv) {
     }
 
     return false;
-}
-bool Ray::checkCollision(AABB* bv) {
+} // TODO return CollisionPoint
+CollisionPoint Ray::checkCollision(AABB* bv) {
     glm::vec3 newMin = bv->min + bv->offset, newMax = bv->max + bv->offset;
     glm::vec3 A = this->origin, B = this->origin - this->direction;
 
@@ -654,8 +654,8 @@ bool Ray::checkCollision(AABB* bv) {
     }
 
     return false;
-}
-bool Ray::checkCollision(Ray* r) {
+} // TODO return CollisionPoint
+CollisionPoint Ray::checkCollision(Ray* r) {
     glm::vec3 A = this->origin, B = this->origin + this->direction * length;
     glm::vec3 C = r->origin, D = r->origin + r->direction * r->length;
 
@@ -678,8 +678,8 @@ bool Ray::checkCollision(Ray* r) {
            solution.point.x != INF &&
            fabs(distance1 + distance2 - this->length) <= EPS &&
            fabs(distance3 + distance4 - r->length) <= EPS;
-}
-bool Ray::checkCollision(Triangle *t) {
+} // TODO return CollisionPoint
+CollisionPoint Ray::checkCollision(Triangle *t) {
     glm::dvec3 A = this->origin, B = this->origin + this->length * this->direction;
 
     if (!t->twoway && glm::dot((glm::dvec3)t->norm, (glm::dvec3)direction) > 0)
@@ -762,8 +762,8 @@ bool Ray::checkCollision(Triangle *t) {
         return false;
 
     return t->isInside(solution.point);
-}
-bool Ray::checkCollision(Capsule *col) {
+} // TODO return CollisionPoint
+CollisionPoint Ray::checkCollision(Capsule *col) {
     return col->checkCollision(this);
 }
 void Ray::toString() {
@@ -774,6 +774,7 @@ void Ray::toString() {
               << glm::to_string(origin + direction * length) << "\n";
 }
 #pragma endregion
+
 #pragma region TriangleMesh
 
 std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
@@ -830,27 +831,27 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
     not_hit->scale = mesh->body->scale;
 
     return meshes;
-}
+} // adapt for CollisionPoint
 
 TriangleMesh::TriangleMesh(Mesh *mesh) {
     body = mesh;
 }
-bool TriangleMesh::checkCollision(TriangleMesh *col) {
+CollisionPoint TriangleMesh::checkCollision(TriangleMesh *col) {
     return checkCollisionByTriangle(col);
 }
-bool TriangleMesh::checkCollision(AABB *bv) {
+CollisionPoint TriangleMesh::checkCollision(AABB *bv) {
     return checkCollisionByTriangle(bv);
 }
-bool TriangleMesh::checkCollision(BoundingSphere *bv) {
+CollisionPoint TriangleMesh::checkCollision(BoundingSphere *bv) {
     return checkCollisionByTriangle(bv);
 }
-bool TriangleMesh::checkCollision(Ray *r) {
+CollisionPoint TriangleMesh::checkCollision(Ray *r) {
     return checkCollisionByTriangle(r);
 }
-bool TriangleMesh::checkCollision(Triangle *t) {
+CollisionPoint TriangleMesh::checkCollision(Triangle *t) {
     return checkCollisionByTriangle(t);
 }
-bool TriangleMesh::checkCollisionByTriangle(Collider *col) {
+CollisionPoint TriangleMesh::checkCollisionByTriangle(Collider *col) {
     bool result = false;
 
     for (int i = 0; i < body->indices.size(); i += 3) {
@@ -873,14 +874,15 @@ bool TriangleMesh::checkCollisionByTriangle(Collider *col) {
     }
 
     return result;
-}
-bool TriangleMesh::checkCollision(Capsule *col) {
+} // TODO return CollisionPoint
+CollisionPoint TriangleMesh::checkCollision(Capsule *col) {
     return checkCollisionByTriangle(col);
 }
 void TriangleMesh::toString() {
     std::cout << "TriangleMesh:\n\tvertices count:" << body->vertices.size() << "\n\ttriangle count" << body->indices.size() << "\n";
 }
 #pragma endregion
+
 #pragma region Triangle
 Triangle::Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm) {
     this->vertices[0] = v0;
@@ -888,35 +890,35 @@ Triangle::Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm) {
     this->vertices[2] = v2;
     this->norm = norm;
 }
-bool Triangle::checkCollision(TriangleMesh *col) {
+CollisionPoint Triangle::checkCollision(TriangleMesh *col) {
     return col->checkCollisionByTriangle(this);
 }
-bool Triangle::checkCollision(Ray *r) {
+CollisionPoint Triangle::checkCollision(Ray *r) {
     return r->checkCollision(this);
 }
-bool Triangle::checkCollision(Capsule *col) {
+CollisionPoint Triangle::checkCollision(Capsule *col) {
     return col->checkCollision(this);
 }
 // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
-bool Triangle::checkCollision(AABB *bv) {
+CollisionPoint Triangle::checkCollision(AABB *bv) {
     for (int i = 0; i < 3; ++i)
         if (bv->isInside(vertices[i])) return true;
     Ray r0(vertices[0], glm::normalize(-vertices[0] + vertices[1]), glm::length(vertices[0] - vertices[1]));
     Ray r1(vertices[1], glm::normalize(-vertices[1] + vertices[2]), glm::length(vertices[1] - vertices[2]));
     Ray r2(vertices[0], glm::normalize(-vertices[0] + vertices[2]), glm::length(vertices[0] - vertices[2]));
     return r0.checkCollision(bv) || r1.checkCollision(bv) || r2.checkCollision(bv);
-}
+} // TODO return CollisionPoint
 // https://wickedengine.net/2020/04/26/capsule-collision-detection/
-bool Triangle::checkCollision(BoundingSphere *bv) {
+CollisionPoint Triangle::checkCollision(BoundingSphere *bv) {
     for (int i = 0; i < 3; ++i)
         if (isInside(vertices[i])) return true;
     Ray r0(vertices[0], glm::normalize(-vertices[0] + vertices[1]), glm::length(vertices[0] - vertices[1]));
     Ray r1(vertices[1], glm::normalize(-vertices[1] + vertices[2]), glm::length(vertices[1] - vertices[2]));
     Ray r2(vertices[0], glm::normalize(-vertices[0] + vertices[2]), glm::length(vertices[0] - vertices[2]));
     return r0.checkCollision(bv) || r1.checkCollision(bv) || r2.checkCollision(bv);
-}
+} // TODO return CollisionPoint
 // http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
-bool Triangle::checkCollision(Triangle *t) {
+CollisionPoint Triangle::checkCollision(Triangle *t) {
     bool twoway0 = twoway;
 
     twoway = true;
@@ -930,7 +932,7 @@ bool Triangle::checkCollision(Triangle *t) {
     twoway = twoway0;
 
     return result;
-}
+} // TODO return CollisionPoint
 bool Triangle::isInside(glm::dvec3 point) {
     long double area = getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1]);
 
@@ -956,6 +958,7 @@ void Triangle::toString() {
     std::cout << "\tn " << glm::to_string(norm) << "\n";
 }
 #pragma endregion
+
 #pragma region Capsule
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     this->start0 = start;
@@ -1043,21 +1046,21 @@ void Capsule::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     body->scale = scale;
     body->rotation = rot;
 }
-bool Capsule::checkCollision(TriangleMesh *col) {
+CollisionPoint Capsule::checkCollision(TriangleMesh *col) {
     return col->checkCollision(this);
 }
-bool Capsule::checkCollision(BoundingSphere *col) {
+CollisionPoint Capsule::checkCollision(BoundingSphere *col) {
     glm::vec3 bestPoint = ClosestPointOnLineSegment(start, end, col->pos);
     BoundingSphere s(bestPoint, radius);
     return s.checkCollision(col);
 }
-bool Capsule::checkCollision(AABB *col) {
+CollisionPoint Capsule::checkCollision(AABB *col) {
     glm::vec3 bestPoint = ClosestPointOnLineSegment(start, end, (col->max + col->min)/2.0f);
     BoundingSphere s(bestPoint, radius);
     return s.checkCollision(col);
 }
 // https://wickedengine.net/2020/04/26/capsule-collision-detection/
-bool Capsule::checkCollision(Triangle *t) {
+CollisionPoint Capsule::checkCollision(Triangle *t) {
     // for triangle inside a capsule
     for (int i = 0; i < 3; ++i) {
         glm::vec3 mid = getMidPoint(start, end, t->vertices[i]);
@@ -1073,8 +1076,8 @@ bool Capsule::checkCollision(Triangle *t) {
     bool result = r0.checkCollision(this) || r1.checkCollision(this) || r2.checkCollision(this);
     t->twoway = twoway;
     return result;
-}
-bool Capsule::checkCollision(Ray *col) {
+} // TODO return CollisionPoint
+CollisionPoint Capsule::checkCollision(Ray *col) {
 // capsule:
     glm::vec3 a_Normal = normalize(this->start - this->end);
     glm::vec3 a_LineEndOffset = a_Normal * this->radius;
@@ -1118,7 +1121,7 @@ bool Capsule::checkCollision(Ray *col) {
     return s.checkCollision(col);
 }
 // !source of inspiration: https://wickedengine.net/2020/04/26/capsule-collision-detection/
-bool Capsule::checkCollision(Capsule *col) {
+CollisionPoint Capsule::checkCollision(Capsule *col) {
 // capsule A:
     glm::vec3 a_Normal = normalize(this->start - this->end);
     glm::vec3 a_LineEndOffset = a_Normal * this->radius;

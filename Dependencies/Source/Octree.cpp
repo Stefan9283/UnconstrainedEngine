@@ -92,7 +92,6 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
         }
     }
 }
-// TODO
 
 void OctreeNode::Draw(Shader* s) {
     if (!children.size())
