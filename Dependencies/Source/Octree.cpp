@@ -80,7 +80,7 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
         this->triangleIndices.push_back(triangle.first);
         Triangle t(triangle.second[0].Position, triangle.second[1].Position, triangle.second[2].Position, glm::vec3(0));
         for (int i = 0; i < 8; ++i) {
-            if (boxes[i].first.checkCollision(&t))
+            if (boxes[i].first.checkCollision(&t).hasCollision)
                 boxes[i].second.push_back(triangle);
         }
     }

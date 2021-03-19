@@ -209,7 +209,7 @@ void testBasicCollision() {
                 for (int j=0; j<meshes.size(); j++) {
                     Mesh* m2 = meshes[j];
                     if (m != m2)
-                        if(m->bv->checkCollision(m2->bv)) {
+                        if(m->bv->checkCollision(m2->bv).hasCollision) {
                             collision[i] = true;
                             collision[j] = true;
                         }
@@ -218,7 +218,7 @@ void testBasicCollision() {
             if(r) {
                 for (int i=0; i<meshes.size(); i++) {
                     Mesh* m = meshes[i];
-                    if (m->bv->checkCollision(r)) {
+                    if (m->bv->checkCollision(r).hasCollision) {
                         collision[i] = true;
                         collision[collision.size() - 1] = true;
                     }
@@ -545,7 +545,7 @@ int main() {
     crosshair->prepare();
 #pragma endregion
 
-    testOctree(meshes[0]);
+    //testOctree(meshes[0]);
     //testBasicCollision();
     //testRayMeshIntersection(meshes[0]);
 

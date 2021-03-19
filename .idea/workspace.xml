@@ -34,15 +34,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="259312f1-4481-46ad-b2f6-bf8afc467866" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Dependencies/Include/CollisionAlgos.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dependencies/Source/CollisionAlgos.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -124,6 +120,9 @@
       <workItem from="1615852258616" duration="2545000" />
       <workItem from="1615889911538" duration="727000" />
       <workItem from="1615927371154" duration="5430000" />
+      <workItem from="1616023880375" duration="858000" />
+      <workItem from="1616108912157" duration="1884000" />
+      <workItem from="1616124854010" duration="282000" />
     </task>
     <servers />
   </component>
@@ -159,22 +158,22 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="1173" y="1001" key="FileChooserDialogImpl/62.0.4034.2160@62.0.4034.2160" timestamp="1615692304897" />
-    <state width="3477" height="322" key="GridCell.Tab.0.bottom" timestamp="1615825597994">
+    <state width="2282" height="96" key="GridCell.Tab.0.bottom" timestamp="1616119710784">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="322" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
-    <state width="3477" height="322" key="GridCell.Tab.0.center" timestamp="1615825597994">
+    <state width="2282" height="96" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1616119710784" />
+    <state width="2282" height="96" key="GridCell.Tab.0.center" timestamp="1616119710783">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="322" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
-    <state width="3477" height="322" key="GridCell.Tab.0.left" timestamp="1615825597994">
+    <state width="2282" height="96" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1616119710783" />
+    <state width="2282" height="96" key="GridCell.Tab.0.left" timestamp="1616119710783">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="322" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
-    <state width="3477" height="322" key="GridCell.Tab.0.right" timestamp="1615825597994">
+    <state width="2282" height="96" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1616119710783" />
+    <state width="2282" height="96" key="GridCell.Tab.0.right" timestamp="1616119710784">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="3477" height="322" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1615825597994" />
+    <state width="2282" height="96" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1616119710784" />
     <state width="1908" height="649" key="GridCell.Tab.1.bottom" timestamp="1615696140364">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
