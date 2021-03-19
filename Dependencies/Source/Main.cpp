@@ -228,7 +228,7 @@ void testBasicCollision() {
 
         Ray* tmp_r = Ray::generateRay(window, c);
         if (tmp_r) {
-            if (r) delete r;
+            delete r;
             r = tmp_r;
             collision[collision.size() - 1] = false;
         }
@@ -352,7 +352,7 @@ void testRayMeshIntersection(Mesh* mesh) {
 
         Ray* tmp_r = Ray::generateRay(window, c);
         if (tmp_r) {
-            if (r) delete r;
+            delete r;
             r = tmp_r;
             rayCollision = false;
         }
@@ -451,6 +451,150 @@ void testOctree(Mesh* mesh) {
     }
     delete octree;
 }
+void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
+    CollisionPoint p{};
+
+    Mesh *pointA = nullptr, *pointB = nullptr;
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        s->setFloat("flatColorsON", 0);
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+        s->setVec3("cameraPos", c->position);
+        c->update_proj(window);
+        c->Move(window);
+
+        ImGuizmo::BeginFrame();
+
+        auto* camviewvec = (float*)glm::value_ptr(c->view);
+        auto* projvec = (float*)glm::value_ptr(c->proj);
+        float* identity = (float*)glm::value_ptr(glm::mat4(1));
+        //ImGuizmo::DrawGrid(camviewvec, projvec, identity, 100.f);
+
+        s->setFloat("flatColorsON", 0);
+
+        if (p.hasCollision) s->setVec3("color", glm::vec3(1,0,0));
+        else s->setVec3("color", glm::vec3(0,1,0));
+
+        m1->gui(1);
+        m2->gui(2);
+        m1->Draw(s);
+        m2->Draw(s);
+
+        if (pointA) {
+            s->setVec3("color", glm::vec3(152, 3, 252)/255.0f);
+            pointA->Draw(s);
+        }
+        if (pointB) {
+            //s->setVec3("color", glm::vec3(252, 223, 3)/255.0f);
+            pointB->Draw(s);
+        }
+
+
+        s->setVec3("color", glm::vec3(0,1,0));
+        if (r) r->body->Draw(s);
+
+
+
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glm::mat4 proj = *c->getprojmatrix();
+        glm::mat4 model = glm::mat4(1);
+        s->setMat4("proj", &proj);
+        s->setMat4("view", &model);
+
+        model = glm::translate(model, c->goFront);
+        s->setMat4("model", &model);
+        glViewport(0, 0, display_w, display_h);
+
+        ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
+
+        s->setFloat("flatColorsON", 1);
+        crosshair->Draw(s);
+
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+        ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
+        if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
+            p = m1->bv->checkCollision(m2->bv);
+
+            delete pointA;
+            delete pointB;
+            pointA = nullptr;
+            pointB = nullptr;
+
+            if (p.hasCollision) {
+                pointA = readObj("Sphere.obj");
+                pointA->scale = glm::vec3(0.1f);
+                pointA->translation = p.A;
+
+                pointB = readObj("Sphere.obj");
+                pointB->scale = glm::vec3(0.1f);
+                pointB->translation = p.B;
+            }
+        }
+
+        Ray* tmp_r = Ray::generateRay(window, c);
+        if (tmp_r) {
+            delete r;
+            r = tmp_r;
+            //collision[collision.size() - 1] = false;
+        }
+        if (r) {
+            float start[4] = {
+                    r->origin.x,
+                    r->origin.y,
+                    r->origin.z,
+                    1
+            },
+                    end[4] = {
+                    r->direction.x,
+                    r->direction.y,
+                    r->direction.z,
+                    1
+            },
+                    length = r->length;
+
+
+            ImGui::SliderFloat3("origin", start, -10, 10);
+            ImGui::SliderFloat3("direction", end, -1, 1);
+            ImGui::SliderFloat("length", &length, 0, 10);
+            delete r;
+            r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length, true);
+        }
+
+        if(ImGui::Button("Toggle bounding volumes all" )) {
+            for (int i = 0; i < meshes.size(); ++i) {
+                Mesh* m = meshes[i];
+                m->boundingBoxON = !m->boundingBoxON;
+            }
+        }
+        if(ImGui::Button("Toggle solid all" )) {
+            for (int i = 0; i < meshes.size(); ++i) {
+                Mesh* m = meshes[i];
+                m->solidON = !m->solidON;
+            }
+        }
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+    delete pointA;
+    delete pointB;
+    delete r;
+}
 int main() {
 #pragma region prepare OGL
     if (!glfwInit())
@@ -493,28 +637,37 @@ int main() {
     s->bind();
 
     c = new Camera(window);
-    glClearColor(0.1, 0.1, 0.3, 1);
+    glClearColor(0.1, 0.3, 0.5, 1);
 
 #pragma region meshes
 
-    //Mesh* cube = readObj("Box.obj");
-    //cube->bv = new AABB(cube);
-    ////cube->translation = glm::vec3(1.76, 1.76, 0);
-    ////cube->rotation = glm::vec3 (0, -145, 0);
-    //cube->solidON = false;
-    //meshes.push_back(cube);
+    Mesh* cube = readObj("Box.obj");
+    cube->bv = new AABB(cube);
+    cube->solidON = false;
+    meshes.push_back(cube);
 
-    //Mesh* sphere = readObj("Sphere.obj");
-    ////sphere->translation += glm::vec3(0,-1,0);
-    //sphere->bv = new BoundingSphere(sphere);
-    //sphere->solidON = false;
-    ////sphere->translation = glm::vec3(-1.76, 1.11, 0);
-    //sphere->solidON = false;
-    //meshes.push_back(sphere);
+    Mesh* sphere = readObj("Sphere.obj");
+    sphere->bv = new BoundingSphere(sphere);
+    sphere->solidON = false;
+    sphere->solidON = false;
+    meshes.push_back(sphere);
 
-    //Mesh* Yen = readObj("Yen.obj");
-    //Yen->bv = Capsule::generateCapsule(Yen);
-    //meshes.push_back(Yen);
+    Mesh* cube2 = readObj("Box.obj");
+    cube2->bv = new AABB(cube2);
+    cube2->solidON = false;
+    meshes.push_back(cube2);
+
+    Mesh* sphere2 = readObj("Sphere.obj");
+    sphere2->bv = new BoundingSphere(sphere2);
+    sphere2->solidON = false;
+    sphere2->solidON = false;
+    meshes.push_back(sphere2);
+
+
+    Mesh* Yen = readObj("Yen.obj");
+    Yen->bv = Capsule::generateCapsule(Yen);
+    sphere->solidON = false;
+    meshes.push_back(Yen);
 
     Mesh* Mercy = readObj("Mercy2.obj");
     Mercy->bv = new TriangleMesh(Mercy);
@@ -549,9 +702,40 @@ int main() {
     //testBasicCollision();
     //testRayMeshIntersection(meshes[0]);
 
+    /* README
+     * Pastreaza un singur apel dintre cele de mai jos activ la un moment de timp.
+     * Fiecare porneste un loop in care se va face desenarea.
+     * Din GUI poti verifica coliziunea dintre cele doua obiecte. Daca aceasta exista
+     * se vor genera doua puncte sub forma unor sfere de raza 0.1 la coordonatele A si B.
+     * Sfera B este cea galbena iar cealalalta este A.
+     * Ordinea lor este importanta iar coliziunea se verifica dinspre prima mesha spre a doua.
+     * Practic punctul A este cel mai departat fata de primul argument al functiei/prima mesha
+     * care apartine de mesha a doua.
+     * Ordinea lor este mentionata si in GUI printr-un numar care sa-ti sugereze ordinea (1 sau 2)
+     *
+     * Pentru simplitate atunci cand vrei sa generezi un CollisionPoint poti folosi
+     * unul dintre cei doi constructori definiti in clasa.
+     *
+     * Testele de mai sus nu vor functiona pana nu se va implementa coliziunea cu
+     * CollisionPoint ca rezultat de return.
+     *
+     * Nu trebuie sa te ocupi (teoretic) de cazurile in care coliziunea nu exista pentru ca deja
+     * m-am ocupat eu ca ramurile alea sa dea "return {};"
+     *
+     * Deocamdata ocupa-te de coliziunile dintre AABB, Sfera si Capsula
+     */
+
+    testBasicCollisionWithPoints(meshes[0], meshes[1]); // AABB Sphere
+    //testBasicCollisionWithPoints(meshes[3], meshes[1]); // Sphere Sphere
+    //testBasicCollisionWithPoints(meshes[0], meshes[2]); // AABB AABB
+    //testBasicCollisionWithPoints(meshes[4], meshes[1]); // Capsule Sphere
+    //testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
+
+
+#pragma region cleanUp
     s->unbind();
 
-    if (r) delete r;
+    delete r;
 
 
     for(Mesh* m : meshes)
@@ -561,5 +745,7 @@ int main() {
     delete c;
 
     glfwTerminate();
+#pragma endregion
+
     return 0;
 }
