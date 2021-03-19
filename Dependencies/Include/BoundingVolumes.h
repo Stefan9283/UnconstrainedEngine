@@ -20,12 +20,15 @@ class TriangleMesh;
 class Triangle;
 class Capsule;
 
-struct CollisionPoint {
-    glm::vec3 A; // furthest point of A in collider B
-    glm::vec3 B; // furthest point of B in collider A
-    glm::vec3 normal; // normalized B - A
+class CollisionPoint {
+public:
+    glm::vec3 A{}; // furthest point of A in collider B
+    glm::vec3 B{}; // furthest point of B in collider A
+    glm::vec3 normal{}; // normalized B - A
     float depth; // length B - A
     bool hasCollision;
+    CollisionPoint(glm::vec3 A, glm::vec3 B);
+    CollisionPoint();
 };
 
 class Collider {

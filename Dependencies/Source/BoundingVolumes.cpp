@@ -16,6 +16,25 @@
 
 extern Shader *s;
 
+
+#pragma region CollisionPoint
+CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
+    this->B = B;
+    this->A = A;
+    glm::vec3 AB = B - A;
+    this->depth = glm::length(AB);
+    this->normal = glm::normalize(AB);
+    this->hasCollision = true;
+}
+CollisionPoint::CollisionPoint() {
+    this->hasCollision = false;
+    this->normal = glm::vec3 (0);
+    this->B = glm::vec3 (0);
+    this->A = glm::vec3 (0);
+    this->depth = 0;
+}
+#pragma endregion
+
 #pragma region Functii Ovidiu
 
 #define EPS 0.00001
@@ -238,7 +257,9 @@ CollisionPoint BoundingSphere::checkCollision(AABB* bv) {
 } // TODO return CollisionPoint
 CollisionPoint BoundingSphere::checkCollision(BoundingSphere* bv) {
     float radius2radiusDistance = glm::length(pos - bv->pos);
-    return {}; // return radius2radiusDistance <= radius + bv->radius;
+    if(radius2radiusDistance > radius + bv->radius)
+        return {};
+    //else ???
 } // TODO return CollisionPoint
 CollisionPoint BoundingSphere::checkCollision(Ray *r) {
     return r->checkCollision(this);
@@ -777,7 +798,6 @@ void Ray::toString() {
               << glm::to_string(origin + direction * length) << "\n";
 }
 #pragma endregion
-
 #pragma region TriangleMesh
 
 std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
@@ -885,7 +905,6 @@ void TriangleMesh::toString() {
     std::cout << "TriangleMesh:\n\tvertices count:" << body->vertices.size() << "\n\ttriangle count" << body->indices.size() << "\n";
 }
 #pragma endregion
-
 #pragma region Triangle
 Triangle::Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm) {
     this->vertices[0] = v0;
@@ -961,7 +980,6 @@ void Triangle::toString() {
     std::cout << "\tn " << glm::to_string(norm) << "\n";
 }
 #pragma endregion
-
 #pragma region Capsule
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     this->start0 = start;
@@ -1175,4 +1193,6 @@ void Capsule::toString() {
     std::cout << "Capsule:\nStart Point: " << glm::to_string(start) << "\n\tEnd Point: "<< glm::to_string(end) << "\n\tRadius: " << radius << "\n";
 }
 #pragma endregion
+
+
 
