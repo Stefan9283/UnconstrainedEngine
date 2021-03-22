@@ -192,6 +192,12 @@ glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
     }
     return result;
 }
+CollisionPoint reverseCollisionPoint(CollisionPoint p) {
+    glm::vec3 B = p.B;
+    p.B = p.A;
+    p.A = B;
+    return p;
+}
 #pragma endregion
 
 #pragma region Collider
@@ -244,7 +250,7 @@ BoundingSphere::BoundingSphere(Mesh *mesh) {
     body->prepare();
 }
 CollisionPoint BoundingSphere::checkCollision(TriangleMesh *col) {
-    return col->checkCollisionByTriangle(this);
+    return reverseCollisionPoint(col->checkCollisionByTriangle(this));
 }
 CollisionPoint BoundingSphere::checkCollision(AABB* bv) {
     glm::vec3 newMin = bv->min + bv->offset, newMax = bv->max + bv->offset;
@@ -262,13 +268,13 @@ CollisionPoint BoundingSphere::checkCollision(BoundingSphere* bv) {
     //else ???
 } // TODO return CollisionPoint
 CollisionPoint BoundingSphere::checkCollision(Ray *r) {
-    return r->checkCollision(this);
+    return reverseCollisionPoint(r->checkCollision(this));
 }
 CollisionPoint BoundingSphere::checkCollision(Triangle *t) {
-    return t->checkCollision(this);
+    return reverseCollisionPoint(t->checkCollision(this));
 }
 CollisionPoint BoundingSphere::checkCollision(Capsule *col) {
-    return col->checkCollision(this);
+    return reverseCollisionPoint(col->checkCollision(this));
 } // TODO return CollisionPoint
 void BoundingSphere::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     //transform = glm::translate(glm::mat4(1), pos) * glm::scale(glm::mat4(1), scale);
@@ -393,7 +399,7 @@ void AABB::updateMinMax(glm::mat4 transform) {
     }
 }
 CollisionPoint AABB::checkCollision(TriangleMesh *col) {
-    return col->checkCollisionByTriangle(this);
+    return reverseCollisionPoint(col->checkCollisionByTriangle(this));
 }
 CollisionPoint AABB::checkCollision(AABB* bv) {
     glm::vec3 newMin1 = bv->min + bv->offset, newMax1 = bv->max + bv->offset;
@@ -411,16 +417,16 @@ CollisionPoint AABB::checkCollision(AABB* bv) {
     return {}; // return true;
 } // TODO return CollisionPoint
 CollisionPoint AABB::checkCollision(BoundingSphere* bv) {
-    return bv->checkCollision(this);
+    return reverseCollisionPoint(bv->checkCollision(this));
 }
 CollisionPoint AABB::checkCollision(Ray *r) {
-    return r->checkCollision(this);
+    return reverseCollisionPoint(r->checkCollision(this));
 }
 CollisionPoint AABB::checkCollision(Triangle *t) {
-    return t->checkCollision(this);
+    return reverseCollisionPoint(t->checkCollision(this));
 }
 CollisionPoint AABB::checkCollision(Capsule *col) {
-    return col->checkCollision(this);
+    return reverseCollisionPoint(col->checkCollision(this));
 }
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
     min0 = min;
@@ -493,7 +499,7 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
     return nullptr;
 }
 CollisionPoint Ray::checkCollision(TriangleMesh *col) {
-    return col->checkCollisionByTriangle(this);
+    return reverseCollisionPoint(col->checkCollisionByTriangle(this));
 }
 CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
     glm::vec3 A = this->origin, B = this->origin + this->direction;
@@ -788,7 +794,7 @@ CollisionPoint Ray::checkCollision(Triangle *t) {
     return {}; // return t->isInside(solution.point);
 } // TODO return CollisionPoint
 CollisionPoint Ray::checkCollision(Capsule *col) {
-    return col->checkCollision(this);
+    return reverseCollisionPoint(col->checkCollision(this));
 }
 void Ray::toString() {
     std::cout << "Ray:\n\torigin: "
@@ -913,13 +919,13 @@ Triangle::Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm) {
     this->norm = norm;
 }
 CollisionPoint Triangle::checkCollision(TriangleMesh *col) {
-    return col->checkCollisionByTriangle(this);
+    return reverseCollisionPoint(col->checkCollisionByTriangle(this));
 }
 CollisionPoint Triangle::checkCollision(Ray *r) {
-    return r->checkCollision(this);
+    return reverseCollisionPoint(r->checkCollision(this));
 }
 CollisionPoint Triangle::checkCollision(Capsule *col) {
-    return col->checkCollision(this);
+    return reverseCollisionPoint(col->checkCollision(this));
 }
 // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
 CollisionPoint Triangle::checkCollision(AABB *bv) {
@@ -1068,7 +1074,7 @@ void Capsule::setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
     body->rotation = rot;
 }
 CollisionPoint Capsule::checkCollision(TriangleMesh *col) {
-    return col->checkCollision(this);
+    return reverseCollisionPoint(col->checkCollision(this));
 }
 CollisionPoint Capsule::checkCollision(BoundingSphere *col) {
     glm::vec3 bestPoint = ClosestPointOnLineSegment(start, end, col->pos);
