@@ -7,10 +7,14 @@
 
 #include "BoundingVolumes.h"
 
-struct RigidBody {
+class RigidBody {
+public:
     Collider* collider;
-    glm::vec3 force, velocity;
+    glm::vec3 force, velocity, position;
     float mass;
+    RigidBody(Collider* c,  float m = 1);
+    void setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
+    glm::mat4 getTransform();
 };
 
 class Solver {

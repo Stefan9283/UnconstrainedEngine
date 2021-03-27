@@ -63,7 +63,7 @@ Mesh* readObj(const char* filepath) {
 
     }
 
-
+    fclose(f);
     m->prepare();
     return m;
 }

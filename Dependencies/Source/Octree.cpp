@@ -31,6 +31,7 @@ OctreeNode::OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remaini
     box->generateNewMesh();
     box->body->solidON = false;
     box->body->wireframeON = true;
+    box->parent = nullptr;
 
     level--;
 
@@ -95,7 +96,7 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
 
 void OctreeNode::Draw(Shader* s) {
     if (!children.size())
-        box->body->Draw(s);
+        box->Draw(s);
     else {
         for (auto &i : children)
             i->Draw(s);

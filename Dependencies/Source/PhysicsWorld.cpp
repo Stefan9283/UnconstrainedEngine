@@ -16,6 +16,8 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
         r->force += r->mass * gravity;
         r->velocity += r->force / r->mass * dt;
         r->force = glm::vec3(0);
+
+        r->position += r->velocity * dt;
     }
 
 }
@@ -31,7 +33,6 @@ std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> Phys
             CollisionPoint p = rb1->collider->checkCollision(rb2->collider);
             if (p.hasCollision)
                 collisionPoints.emplace_back(std::make_pair(rb1, rb2), p);
-
         }
     }
 
@@ -60,4 +61,22 @@ void ImpulseSolver::solve(float dt, std::vector<std::pair<std::pair<RigidBody *,
 void PositionSolver::solve(float dt, std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> col) {
 }
 void RotationSolver::solve(float dt, std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> col) {
+}
+
+RigidBody::RigidBody(Collider* c, float m) {
+    collider = c;
+    c->parent = this;
+    force = glm::vec3(0);
+    mass = m;
+    velocity = glm::vec3(0);
+    position = glm::vec3(0);
+}
+void RigidBody::setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale) {
+    collider->setTransform(translation, rotation, scale);
+}
+glm::mat4 RigidBody::getTransform() {
+    glm::mat4 T = glm::mat4(1), R = glm::mat4(1), S = glm::mat4(1); //TODO
+    T = glm::translate(glm::mat4(1), position);
+    return T;
+
 }

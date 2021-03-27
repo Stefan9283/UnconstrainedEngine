@@ -13,6 +13,6 @@
 
 typedef struct objVert {
     unsigned int pos, norm, tex;
-};
+} objVert;
 
 Mesh* readObj(const char* filepath);

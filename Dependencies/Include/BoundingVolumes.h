@@ -5,13 +5,19 @@
 #ifndef TRIANGLE_BoundingVolume_H
 #define TRIANGLE_BoundingVolume_H
 
-#include "glm/glm.hpp"
-#include "Camera.h"
+#include <glm/glm.hpp>
 #include <vector>
 #include <GLFW/glfw3.h>
+#include <glm/detail/type_quat.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <string>
+
+
+#include "Camera.h"
 
 class Mesh;
-#include "Vertex.h"
+class Shader;
+
 class Collider;
 class AABB;
 class BoundingSphere;
@@ -19,6 +25,29 @@ class Ray;
 class TriangleMesh;
 class Triangle;
 class Capsule;
+
+class RigidBody;
+
+#include "Vertex.h"
+
+class ColliderMesh {
+public:
+    std::string name;
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+    transform localTransform;
+
+    bool wireframeON = true, solidON = false;
+    ColliderMesh();
+    ~ColliderMesh();
+
+    unsigned int VAO{}, VBO{}, EBO{};
+
+    void prepare();
+    void Draw(glm::mat4 parentMatrix, Shader* shader);
+
+    glm::mat4 getTransform();
+};
 
 class CollisionPoint {
 public:
@@ -33,17 +62,18 @@ public:
 
 class Collider {
 public:
-    Mesh* body = nullptr;
-    glm::mat4 transform;
-    virtual void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
+    ColliderMesh* body = nullptr;
+    glm::mat4 localTransform = glm::mat4(1);
+    RigidBody* parent;
+
+    virtual void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
         glm::mat4 T, R = glm::mat4(1), S;
         T = glm::translate(glm::mat4(1), pos);
-        R = glm::rotate(R, glm::radians(rot.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        R = glm::rotate(R, glm::radians(rot.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        R = glm::rotate(R, glm::radians(rot.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        R = glm::toMat4(rot);
         S = glm::scale(glm::mat4(1), scale);
-        transform = T * R * S;
+        localTransform = T * R * S;
     };
+    virtual void Draw(Shader* shader);
     CollisionPoint checkCollision(Collider* col);
     virtual CollisionPoint checkCollision(BoundingSphere* col) = 0;
     virtual CollisionPoint checkCollision(AABB* col) = 0;
@@ -62,7 +92,7 @@ public:
     float radius;
     glm::vec3 pos{};
 
-    void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
+    void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
 
     CollisionPoint checkCollision(BoundingSphere* bv) override;
     CollisionPoint checkCollision(AABB* bv) override;
@@ -83,9 +113,11 @@ public:
     glm::vec3 max{}, min{}, max0, min0, offset{};
 
     void updateMinMax(glm::mat4 transform);
-    void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
+    void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
     std::vector<Vertex> generateVerices(glm::vec3 min, glm::vec3 max);
-    Mesh* generateNewMesh();
+    ColliderMesh * generateNewMesh();
+    glm::vec3 closestPoint(glm::vec3 p);
+
     CollisionPoint checkCollision(AABB* bv) override;
     CollisionPoint checkCollision(BoundingSphere* bv) override;
     CollisionPoint checkCollision(Ray* r) override;
@@ -162,7 +194,7 @@ public:
 
 
     static Capsule* generateCapsule(Mesh* mesh);
-    void setTransform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) override;
+    void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
     Capsule(glm::vec3 start, glm::vec3 end, float radius);
     CollisionPoint checkCollision(BoundingSphere* col) override;
     CollisionPoint checkCollision(AABB* col) override;

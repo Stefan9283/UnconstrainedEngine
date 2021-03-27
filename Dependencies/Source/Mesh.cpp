@@ -4,12 +4,15 @@
 
 #include "Mesh.h"
 #include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 Mesh::Mesh() {
     bv = nullptr;
-    translation = glm::vec3(0);
-    rotation = glm::vec3(0);
-    scale = glm::vec3(1);
+    localTransform = transform{
+        glm::vec3(0),
+        glm::vec3(1),
+        glm::quat()};
 }
 Mesh::~Mesh() {
     if (bv) delete bv;
@@ -19,11 +22,9 @@ Mesh::~Mesh() {
 
 glm::mat4 Mesh::getTransform() {
     glm::mat4 T, R = glm::mat4(1), S;
-    T = glm::translate(glm::mat4(1), translation);
-    R = glm::rotate(R, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    R = glm::rotate(R, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    R = glm::rotate(R, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    S = glm::scale(glm::mat4(1), scale);
+    T = glm::translate(glm::mat4(1), localTransform.tr);
+    R = glm::toMat4(localTransform.rot);
+    S = glm::scale(glm::mat4(1), localTransform.sc);
     return T * R * S;
 }
 
@@ -54,30 +55,15 @@ void Mesh::prepare() {
 void Mesh::Draw(Shader* shader) {
 
     if (bv && boundingBoxON) {
-        bv->setTransform(translation, rotation, scale);
+        //bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        if (bv->body == this) {
-            bool bound = boundingBoxON;
-            bool wireframe = wireframeON;
-            bool solid = solidON;
-
-            boundingBoxON = false;
-            wireframeON = true;
-            solidON = false;
-
-            bv->body->Draw(shader);
-
-            solidON = solid;
-            boundingBoxON = bound;
-            wireframeON = wireframe;
-        }
-        else
-            bv->body->Draw(shader);
+        bv->collider->Draw(shader);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
     glm::mat4 model = getTransform();
+    if (bv) model = bv->getTransform() * model;
     shader->setMat4("model", &model);
 
     glBindVertexArray(VAO);
@@ -94,7 +80,6 @@ void Mesh::Draw(Shader* shader) {
         glDrawElements(GL_TRIANGLES, (GLsizei) indices.size(), GL_UNSIGNED_INT, nullptr);
     }
     glBindVertexArray(0);
-
     shader->unbind();
 }
 void Mesh::gui(int outIndex = 0) {
@@ -109,15 +94,17 @@ void Mesh::gui(int outIndex = 0) {
         s = "boundingBoxON " + std::to_string(outIndex);
         ImGui::Checkbox(s.c_str(), &boundingBoxON);
 
-        float t[4] = {translation.x, translation.y, translation.z, 1.0f};
+        float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
         s = "position " + std::to_string(outIndex);
         ImGui::SliderFloat3(s.c_str(), t, -10, 10);
-        translation = glm::vec3(t[0], t[1], t[2]);
+        localTransform.tr = glm::vec3(t[0], t[1], t[2]);
 
-        float r[4] = {rotation.x, rotation.y, rotation.z, 1.0f};
+        float r[4] = {localTransform.rot.x, localTransform.rot.y, localTransform.rot.z, 1.0f};
         s = "rotation " + std::to_string(outIndex);
-        ImGui::SliderFloat3(s.c_str(), r, -180, 180);
-        rotation = glm::vec3(r[0], r[1], r[2]);
+        //ImGui::SliderFloat3(s.c_str(), r, -180, 180);
+        //localTransform.rot = glm::vec3(r[0], r[1], r[2]);
+
+        bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
 
         ImGui::TreePop();
     }
@@ -125,7 +112,7 @@ void Mesh::gui(int outIndex = 0) {
 }
 
 int Mesh::getTriangleCount() {
-    return indices.size()/3;
+    return (int)indices.size()/3;
 }
 
 std::vector<Vertex> Mesh::getTriangle(int index) {
@@ -134,4 +121,9 @@ std::vector<Vertex> Mesh::getTriangle(int index) {
         v.push_back(vertices[i]);
     }
     return v;
+}
+
+void Mesh::addBody(RigidBody* rigidBody) {
+    bv = rigidBody;
+    bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
 }

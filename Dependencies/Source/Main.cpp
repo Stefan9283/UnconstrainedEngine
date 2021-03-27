@@ -17,6 +17,7 @@
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
 #include <iomanip>
+#include <PhysicsWorld.h>
 #include "ObjLoad.h"
 #include "Camera.h"
 #include "BoundingVolumes.h"
@@ -164,7 +165,7 @@ void testBasicCollision() {
         if (collision[collision.size() - 1])
             s->setVec3("color", glm::vec3(1,0,0));
         else s->setVec3("color", glm::vec3(0,1,0));
-        if (r) r->body->Draw(s);
+        if (r) r->Draw(s);
 
 
 
@@ -180,7 +181,7 @@ void testBasicCollision() {
         s->setMat4("model", &model);
         glViewport(0, 0, display_w, display_h);
 
-        ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
+        ImGui::SliderFloat("cam speed", &c->speed, 0.001f, 0.5f);
 
         s->setFloat("flatColorsON", 1);
         crosshair->Draw(s);
@@ -209,7 +210,7 @@ void testBasicCollision() {
                 for (int j=0; j<meshes.size(); j++) {
                     Mesh* m2 = meshes[j];
                     if (m != m2)
-                        if(m->bv->checkCollision(m2->bv).hasCollision) {
+                        if(m->bv->collider->checkCollision(m2->bv->collider).hasCollision) {
                             collision[i] = true;
                             collision[j] = true;
                         }
@@ -218,7 +219,7 @@ void testBasicCollision() {
             if(r) {
                 for (int i=0; i<meshes.size(); i++) {
                     Mesh* m = meshes[i];
-                    if (m->bv->checkCollision(r).hasCollision) {
+                    if (m->bv->collider->checkCollision(r).hasCollision) {
                         collision[i] = true;
                         collision[collision.size() - 1] = true;
                     }
@@ -304,7 +305,7 @@ void testRayMeshIntersection(Mesh* mesh) {
 
         s->setFloat("flatColorsON", 1);
 
-        if (r) r->body->Draw(s);
+        if (r) r->Draw(s);
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -317,7 +318,7 @@ void testRayMeshIntersection(Mesh* mesh) {
         glViewport(0, 0, display_w, display_h);
 
 
-        ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
+        ImGui::SliderFloat("cam speed", &c->speed, 0.001f, 0.5f);
 
         s->setVec3("color", glm::vec3(0, 1, 0));
 
@@ -331,12 +332,14 @@ void testRayMeshIntersection(Mesh* mesh) {
 
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
         if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
-            if (hit_or_nah.size()) {
+            if (!hit_or_nah.empty()) {
                 delete hit_or_nah[0];
                 delete hit_or_nah[1];
             }
 
-            hit_or_nah = wasMeshHit(mesh->bv, r);
+            if (r)
+                hit_or_nah = wasMeshHit(mesh->bv->collider, r);
+            else std::cout << "You need to generate a ray first\n";
         }
 
         s->setFloat("flatColorsON", 0);
@@ -429,7 +432,7 @@ void testOctree(Mesh* mesh) {
 
         if(ImGui::Button("Build Octree")) {
             delete octree;
-            octree = new Octree(mesh, 7);
+            octree = new Octree(mesh, 8);
         }
 
         mesh->Draw(s);
@@ -451,6 +454,51 @@ void testOctree(Mesh* mesh) {
     }
     delete octree;
 }
+void testSimulation(std::vector<Mesh*> meshes) {
+    PhysicsWorld physicsWorld;
+
+    std::vector<RigidBody*> rbs;
+    for (auto* m : meshes) {
+        rbs.push_back(m->bv);
+    }
+
+    bool runWithPhysics = false;
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        //std::cout << glm::to_string(rbs[0]->velocity) << "\n";
+
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Checkbox("run with physics", &runWithPhysics);
+        if(runWithPhysics)
+            physicsWorld.step(1/160.0f, rbs);
+
+        c->Move(window);
+
+        s->setMat4("proj", c->getprojmatrix());
+        s->setMat4("view", c->getviewmatrix());
+
+
+        for (auto* rb : rbs) {
+            s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
+            rb->collider->Draw(s);
+        }
+
+
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+}
+
 void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
     CollisionPoint p{};
 
@@ -493,14 +541,9 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             pointA->Draw(s);
         }
         if (pointB) {
-            //s->setVec3("color", glm::vec3(252, 223, 3)/255.0f);
+            s->setVec3("color", glm::vec3(252, 223, 3)/255.0f);
             pointB->Draw(s);
         }
-
-
-        s->setVec3("color", glm::vec3(0,1,0));
-        if (r) r->body->Draw(s);
-
 
 
         int display_w, display_h;
@@ -514,7 +557,7 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
         s->setMat4("model", &model);
         glViewport(0, 0, display_w, display_h);
 
-        ImGui::SliderFloat("cam speed", &c->speed, 0.001, 0.5);
+        ImGui::SliderFloat("cam speed", &c->speed, 0.001f, 0.5f);
 
         s->setFloat("flatColorsON", 1);
         crosshair->Draw(s);
@@ -526,7 +569,7 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
 
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
         if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
-            p = m1->bv->checkCollision(m2->bv);
+            p = m1->bv->collider->checkCollision(m2->bv->collider);
 
             delete pointA;
             delete pointB;
@@ -535,12 +578,14 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
 
             if (p.hasCollision) {
                 pointA = readObj("Sphere.obj");
-                pointA->scale = glm::vec3(0.1f);
-                pointA->translation = p.A;
+                pointA->localTransform.sc = glm::vec3(0.1f);
+                pointA->localTransform.rot = glm::quat();
+                pointA->localTransform.tr = p.A;
 
                 pointB = readObj("Sphere.obj");
-                pointB->scale = glm::vec3(0.1f);
-                pointB->translation = p.B;
+                pointB->localTransform.sc = glm::vec3(0.1f);
+                pointB->localTransform.rot = glm::quat();
+                pointB->localTransform.tr = p.B;
             }
         }
 
@@ -571,6 +616,9 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             ImGui::SliderFloat("length", &length, 0, 10);
             delete r;
             r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length, true);
+
+            s->setVec3("color", glm::vec3(0,1,0));
+            if (r) r->Draw(s);
         }
 
         if(ImGui::Button("Toggle bounding volumes all" )) {
@@ -593,7 +641,6 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
     }
     delete pointA;
     delete pointB;
-    delete r;
 }
 int main() {
 #pragma region prepare OGL
@@ -637,40 +684,40 @@ int main() {
     s->bind();
 
     c = new Camera(window);
-    glClearColor(0.1, 0.3, 0.5, 1);
+    glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
 
 #pragma region meshes
 
     Mesh* cube = readObj("Box.obj");
-    cube->bv = new AABB(cube);
+    cube->addBody(new RigidBody(new AABB(cube)));
     cube->solidON = false;
     meshes.push_back(cube);
 
     Mesh* sphere = readObj("Sphere.obj");
-    sphere->bv = new BoundingSphere(sphere);
+    sphere->addBody(new RigidBody(new BoundingSphere(sphere)));
     sphere->solidON = false;
     sphere->solidON = false;
     meshes.push_back(sphere);
 
     Mesh* cube2 = readObj("Box.obj");
-    cube2->bv = new AABB(cube2);
+    cube2->addBody(new RigidBody(new AABB(cube2)));
     cube2->solidON = false;
     meshes.push_back(cube2);
 
     Mesh* sphere2 = readObj("Sphere.obj");
-    sphere2->bv = new BoundingSphere(sphere2);
+    sphere2->addBody(new RigidBody(new BoundingSphere(sphere2)));
     sphere2->solidON = false;
     sphere2->solidON = false;
     meshes.push_back(sphere2);
 
 
     Mesh* Yen = readObj("Yen.obj");
-    Yen->bv = Capsule::generateCapsule(Yen);
-    sphere->solidON = false;
+    Yen->addBody(new RigidBody(new Capsule(glm::vec3(0, -3, 0), glm::vec3(0, 3, 0), 2))); //Capsule::generateCapsule(Yen);
+    Yen->solidON = false;
     meshes.push_back(Yen);
 
     Mesh* Mercy = readObj("Mercy2.obj");
-    Mercy->bv = new TriangleMesh(Mercy);
+    Mercy->addBody(new RigidBody(new TriangleMesh(Mercy)));
     Mercy->solidON = false;
     meshes.push_back(Mercy);
 
@@ -680,7 +727,7 @@ int main() {
     //Triangle->rotation = glm::vec3(0, 180, 0);
     //meshes.push_back(Triangle);
 
-    r = nullptr; //new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
+    r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
 
     crosshair = new Mesh();
     crosshair->vertices.push_back(Vertex{glm::vec3(0,  1,  -25.0f)});
@@ -698,9 +745,10 @@ int main() {
     crosshair->prepare();
 #pragma endregion
 
-    //testOctree(meshes[0]);
+
+    testOctree(meshes[5]);
     //testBasicCollision();
-    //testRayMeshIntersection(meshes[0]);
+    //testRayMeshIntersection(meshes[5]);
 
     /* README
      * Pastreaza un singur apel dintre cele de mai jos activ la un moment de timp.
@@ -725,12 +773,17 @@ int main() {
      * Deocamdata ocupa-te de coliziunile dintre AABB, Sfera si Capsula
      */
 
-    testBasicCollisionWithPoints(meshes[0], meshes[1]); // AABB Sphere
+    //testBasicCollisionWithPoints(meshes[0], meshes[1]); // AABB Sphere
     //testBasicCollisionWithPoints(meshes[3], meshes[1]); // Sphere Sphere
     //testBasicCollisionWithPoints(meshes[0], meshes[2]); // AABB AABB
+
     //testBasicCollisionWithPoints(meshes[4], meshes[1]); // Capsule Sphere
     //testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
 
+    //std::vector<Mesh*> m;
+    //m.push_back(meshes[3]);
+    //m.push_back(meshes[1]);
+    //testSimulation(m);
 
 #pragma region cleanUp
     s->unbind();

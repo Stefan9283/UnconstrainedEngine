@@ -35,17 +35,17 @@ void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjecti
     ///    mCurrentGizmoOperation = ImGuizmo::SCALE;
     float matrixTranslation[3], matrixRotation[3], matrixScale[3];
 
-    matrixTranslation[0] = mesh->translation[0];
-    matrixTranslation[1] = mesh->translation[1];
-    matrixTranslation[2] = mesh->translation[2];
+    matrixTranslation[0] = mesh->localTransform.tr[0];
+    matrixTranslation[1] = mesh->localTransform.tr[1];
+    matrixTranslation[2] = mesh->localTransform.tr[2];
 
-    matrixRotation[0] = mesh->rotation[0];
-    matrixRotation[1] = mesh->rotation[1];
-    matrixRotation[2] = mesh->rotation[2];
+    matrixRotation[0] = mesh->localTransform.rot[0];
+    matrixRotation[1] = mesh->localTransform.rot[1];
+    matrixRotation[2] = mesh->localTransform.rot[2];
 
-    matrixScale[0] = mesh->scale[0];
-    matrixScale[1] = mesh->scale[1];
-    matrixScale[2] = mesh->scale[2];
+    matrixScale[0] = mesh->localTransform.sc[0];
+    matrixScale[1] = mesh->localTransform.sc[1];
+    matrixScale[2] = mesh->localTransform.sc[2];
 
     //ImGuizmo::DecomposeMatrixToComponents(matrix, matrixTranslation, matrixRotation, matrixScale); // TODO scapa de asta
 
@@ -108,7 +108,7 @@ void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjecti
 
     ImGuizmo::DecomposeMatrixToComponents(matrix, matrixTranslation, matrixRotation, matrixScale);
 
-    mesh->translation = glm::vec3(matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]);
-    mesh->rotation = glm::vec3(mesh->rotation[0], mesh->rotation[1], mesh->rotation[2]);
-    mesh->scale = glm::vec3(mesh->scale[0], mesh->scale[1], mesh->scale[2]);
+    mesh->localTransform.tr = glm::vec3(matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]);
+    //mesh->localTransform.rot = glm::vec3(mesh->rotation[0], mesh->rotation[1], mesh->rotation[2]);
+    //mesh->localTransform.sc = glm::vec3(mesh->scale[0], mesh->scale[1], mesh->scale[2]);
 }

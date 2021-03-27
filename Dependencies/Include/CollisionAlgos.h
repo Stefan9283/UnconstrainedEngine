@@ -14,7 +14,7 @@ class TriangleMesh;
 class Triangle;
 class Capsule;
 
-struct CollisionPoint;
+class CollisionPoint;
 
 namespace collisionAlgos {
     CollisionPoint checkCollision(BoundingSphere* col1, BoundingSphere* col);
