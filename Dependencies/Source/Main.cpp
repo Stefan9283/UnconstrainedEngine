@@ -458,11 +458,15 @@ void testSimulation(std::vector<Mesh*> meshes) {
     PhysicsWorld physicsWorld;
 
     std::vector<RigidBody*> rbs;
-    for (auto* m : meshes) {
+    rbs.reserve(meshes.size());
+
+    for (auto* m : meshes)
         rbs.push_back(m->bv);
-    }
 
     bool runWithPhysics = false;
+
+    physicsWorld.addSolver(new ImpulseSolver);
+    physicsWorld.addSolver(new RestingForceSolver);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -475,7 +479,7 @@ void testSimulation(std::vector<Mesh*> meshes) {
         ImGui::NewFrame();
 
         ImGui::Checkbox("run with physics", &runWithPhysics);
-        if(runWithPhysics)
+        if(runWithPhysics || ImGui::Button("Do one simulation step"))
             physicsWorld.step(1/160.0f, rbs);
 
         c->Move(window);
@@ -483,6 +487,10 @@ void testSimulation(std::vector<Mesh*> meshes) {
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
 
+        //std::cout << glm::to_string((dynamic_cast<AABB*>(rbs[0]->collider)->max + dynamic_cast<AABB*>(rbs[0]->collider)->min) / 2.0f)
+        //            << glm::to_string(rbs[0]->position) << "\n";
+
+        //std::cout << glm::to_string((dynamic_cast<BoundingSphere*>(rbs[1]->collider)->pos)) << "\n";
 
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
@@ -496,6 +504,9 @@ void testSimulation(std::vector<Mesh*> meshes) {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        resize(window, display_w, display_h);
     }
 }
 
@@ -528,6 +539,8 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
 
         s->setFloat("flatColorsON", 0);
 
+
+
         if (p.hasCollision) s->setVec3("color", glm::vec3(1,0,0));
         else s->setVec3("color", glm::vec3(0,1,0));
 
@@ -545,6 +558,21 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             pointB->Draw(s);
         }
 
+
+        if(dynamic_cast<Ray*>(m1->bv->collider)) {
+            Ray* tmp_r = Ray::generateRay(window, c);
+            if (tmp_r) {
+                delete m1->bv->collider;
+                m1->bv->collider = tmp_r;
+            }
+        }
+        if(dynamic_cast<Ray*>(m2->bv->collider)) {
+            Ray* tmp_r = Ray::generateRay(window, c);
+            if (tmp_r) {
+                delete m2->bv->collider;
+                m2->bv->collider = tmp_r;
+            }
+        }
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -570,7 +598,6 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
         if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
             p = m1->bv->collider->checkCollision(m2->bv->collider);
-
             delete pointA;
             delete pointB;
             pointA = nullptr;
@@ -587,38 +614,6 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
                 pointB->localTransform.rot = glm::quat();
                 pointB->localTransform.tr = p.B;
             }
-        }
-
-        Ray* tmp_r = Ray::generateRay(window, c);
-        if (tmp_r) {
-            delete r;
-            r = tmp_r;
-            //collision[collision.size() - 1] = false;
-        }
-        if (r) {
-            float start[4] = {
-                    r->origin.x,
-                    r->origin.y,
-                    r->origin.z,
-                    1
-            },
-                    end[4] = {
-                    r->direction.x,
-                    r->direction.y,
-                    r->direction.z,
-                    1
-            },
-                    length = r->length;
-
-
-            ImGui::SliderFloat3("origin", start, -10, 10);
-            ImGui::SliderFloat3("direction", end, -1, 1);
-            ImGui::SliderFloat("length", &length, 0, 10);
-            delete r;
-            r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length, true);
-
-            s->setVec3("color", glm::vec3(0,1,0));
-            if (r) r->Draw(s);
         }
 
         if(ImGui::Button("Toggle bounding volumes all" )) {
@@ -650,7 +645,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 
-    window = glfwCreateWindow(1040, 1040, "Window name", NULL, NULL);
+    window = glfwCreateWindow(1040, 1040, "Window name", nullptr, nullptr);
 
     if (!window) {
         glfwTerminate();
@@ -691,12 +686,15 @@ int main() {
     Mesh* cube = readObj("Box.obj");
     cube->addBody(new RigidBody(new AABB(cube)));
     cube->solidON = false;
+    cube->bv->movable = false;
+    cube->bv->position = glm::vec3(0, 0, 0);
     meshes.push_back(cube);
 
     Mesh* sphere = readObj("Sphere.obj");
     sphere->addBody(new RigidBody(new BoundingSphere(sphere)));
     sphere->solidON = false;
-    sphere->solidON = false;
+    sphere->bv->mass = 1;
+    sphere->bv->setTransform(glm::vec3(0, 5, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere);
 
     Mesh* cube2 = readObj("Box.obj");
@@ -707,8 +705,30 @@ int main() {
     Mesh* sphere2 = readObj("Sphere.obj");
     sphere2->addBody(new RigidBody(new BoundingSphere(sphere2)));
     sphere2->solidON = false;
-    sphere2->solidON = false;
+    sphere2->bv->mass = 1;
+    sphere2->bv->setTransform(glm::vec3(0, 10, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere2);
+
+    Mesh* sphere3 = readObj("Sphere.obj");
+    sphere3->addBody(new RigidBody(new BoundingSphere(sphere2)));
+    sphere3->solidON = false;
+    sphere3->bv->mass = 1.f;
+    sphere3->bv->setTransform(glm::vec3(0, 20, 0), glm::quat(), glm::vec3(1));
+    meshes.push_back(sphere3);
+
+    Mesh* sphere4 = readObj("Sphere.obj");
+    sphere4->addBody(new RigidBody(new BoundingSphere(sphere2)));
+    sphere4->solidON = false;
+    sphere4->bv->mass = 1.f;
+    sphere4->bv->setTransform(glm::vec3(0, 30, 0), glm::quat(), glm::vec3(1));
+    meshes.push_back(sphere4);
+
+    Mesh* sphere5 = readObj("Sphere.obj");
+    sphere5->addBody(new RigidBody(new BoundingSphere(sphere2)));
+    sphere5->solidON = false;
+    sphere5->bv->mass = 1.f;
+    sphere5->bv->setTransform(glm::vec3(0, 100, 0), glm::quat(), glm::vec3(1));
+    meshes.push_back(sphere5);
 
 
     Mesh* Yen = readObj("Yen.obj");
@@ -746,7 +766,7 @@ int main() {
 #pragma endregion
 
 
-    testOctree(meshes[5]);
+    //testOctree(meshes[5]);
     //testBasicCollision();
     //testRayMeshIntersection(meshes[5]);
 
@@ -773,6 +793,14 @@ int main() {
      * Deocamdata ocupa-te de coliziunile dintre AABB, Sfera si Capsula
      */
 
+    Mesh ray;
+    ray.addBody(new RigidBody(r));
+    ray.solidON = false;
+    ray.wireframeON = false;
+
+    //testBasicCollisionWithPoints(&ray, meshes[1]); // Ray Sphere
+    //testBasicCollisionWithPoints(&ray, meshes[0]); // Ray AABB
+
     //testBasicCollisionWithPoints(meshes[0], meshes[1]); // AABB Sphere
     //testBasicCollisionWithPoints(meshes[3], meshes[1]); // Sphere Sphere
     //testBasicCollisionWithPoints(meshes[0], meshes[2]); // AABB AABB
@@ -780,19 +808,32 @@ int main() {
     //testBasicCollisionWithPoints(meshes[4], meshes[1]); // Capsule Sphere
     //testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
 
-    //std::vector<Mesh*> m;
-    //m.push_back(meshes[3]);
-    //m.push_back(meshes[1]);
-    //testSimulation(m);
+    std::vector<Mesh*> m;
+    m.push_back(cube);
+
+    //for (int i = 1; i < 100; ++i) {
+    //    Mesh* tmp = readObj("Sphere.obj");
+    //    tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
+    //    tmp->solidON = false;
+    //    tmp->bv->mass = 1;
+    //    tmp->bv->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
+    //    m.push_back(tmp);
+    //}
+
+    //m.push_back(sphere);
+    //m.push_back(sphere2);
+    //m.push_back(sphere3);
+    //m.push_back(sphere4);
+    //m.push_back(sphere5);
+
+    testSimulation(m);
 
 #pragma region cleanUp
     s->unbind();
 
-    delete r;
-
-
     for(Mesh* m : meshes)
         delete m;
+
     delete crosshair;
     delete s;
     delete c;

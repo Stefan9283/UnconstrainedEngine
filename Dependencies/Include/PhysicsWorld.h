@@ -7,11 +7,18 @@
 
 #include "BoundingVolumes.h"
 
+#define IMMUTABLE_MASS 9999
+
 class RigidBody {
 public:
     Collider* collider;
-    glm::vec3 force, velocity, position;
+    glm::vec3
+            force, velocity,
+            torque, angularVel,
+            position;
     float mass;
+    bool movable = true;
+    float drag = 0.01f;
     RigidBody(Collider* c,  float m = 1);
     void setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
     glm::mat4 getTransform();
@@ -22,10 +29,16 @@ public:
     virtual void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>> col) = 0;
 };
 
-class ImpulseSolver : Solver {
+class ImpulseSolver : public Solver {
 public:
     void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>> col) override;
 };
+
+class RestingForceSolver : public Solver {
+public:
+    void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>> col) override;
+};
+
 class PositionSolver : Solver {
 public:
     void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>> col) override;

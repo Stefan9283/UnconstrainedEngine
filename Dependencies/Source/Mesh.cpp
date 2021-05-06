@@ -54,6 +54,8 @@ void Mesh::prepare() {
 }
 void Mesh::Draw(Shader* shader) {
 
+    shader->bind();
+
     if (bv && boundingBoxON) {
         //bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
         glDisable(GL_CULL_FACE);

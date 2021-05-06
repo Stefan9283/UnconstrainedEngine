@@ -19,6 +19,7 @@ extern Shader *s;
 #pragma region Functii Ovidiu
 
 #define EPS 0.00001
+#define WEAK_EPS 0.0001
 #define INF 2000000000
 
 float getEuclidianDistance(glm::vec3 p1, glm::vec3 p2) {
@@ -189,7 +190,6 @@ ColliderMesh* convertMesh2ColliderMesh(Mesh* m) {
 }
 #pragma endregion
 
-
 #pragma region Collider
 CollisionPoint Collider::checkCollision(Collider* col) {
     if (dynamic_cast<BoundingSphere*>(col)) {
@@ -291,12 +291,20 @@ glm::mat4 ColliderMesh::getTransform() {
 #pragma endregion
 #pragma region CollisionPoint
 CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
-    this->B = B;
-    this->A = A;
-    glm::vec3 AB = B - A;
-    this->depth = glm::length(AB);
-    this->normal = glm::normalize(AB);
-    this->hasCollision = true;
+    if (A == B) {
+        this->hasCollision = false;
+        this->normal = glm::vec3 (0);
+        this->B = glm::vec3 (0);
+        this->A = glm::vec3 (0);
+        this->depth = 0;
+    } else {
+        this->B = B;
+        this->A = A;
+        glm::vec3 AB = B - A;
+        this->depth = glm::length(AB);
+        this->normal = glm::normalize(AB);
+        this->hasCollision = true;
+    }
 }
 CollisionPoint::CollisionPoint() {
     this->hasCollision = false;
@@ -307,7 +315,7 @@ CollisionPoint::CollisionPoint() {
 }
 #pragma endregion
 
-#pragma region BoundingSphereBoundingSphere
+#pragma region BoundingSphere
 BoundingSphere::BoundingSphere(glm::vec3 pos, float radius) {
     this->pos = pos;
     this->radius = radius;
@@ -359,9 +367,7 @@ CollisionPoint BoundingSphere::checkCollision(Capsule *col) {
     return reverseCollisionPoint(col->checkCollision(this));
 } // TODO return CollisionPoint
 void BoundingSphere::setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-    //transform = glm::translate(glm::mat4(1), pos) * glm::scale(glm::mat4(1), scale);
-    this->pos = pos;
-    this->body->localTransform.tr = pos;
+    this->pos += pos;
 }
 void BoundingSphere::toString() {
     std::cout << "Sphere center: " << glm::to_string(this->pos) << " " << this->radius << "\n";
@@ -462,7 +468,7 @@ ColliderMesh *AABB::generateNewMesh() {
     return body;
 }
 void AABB::setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-    Collider::setTransform(pos, rot, scale);
+    Collider::setTransform((min + max)/2.0f + pos, rot, scale);
     if (body) delete body;
     updateMinMax(localTransform);
     body = generateNewMesh();
@@ -580,7 +586,7 @@ Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh = 
     this->direction = direction;
     this->length = length;
     parent = nullptr;
-    if (createMesh)
+    if (true)
     {
         body = new ColliderMesh;
         body->vertices.push_back(Vertex{ origin });
@@ -624,7 +630,7 @@ CollisionPoint Ray::checkCollision(TriangleMesh *col) {
     return reverseCollisionPoint(col->checkCollisionByTriangle(this));
 }
 CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
-    glm::vec3 A = this->origin, B = this->origin + this->direction;
+    glm::vec3 A = this->origin, B = this->origin + this->direction * this->length;
 
     float x0 = A.x, y0 = A.y, z0 = A.z;
     float x1 = B.x, y1 = B.y, z1 = B.z;
@@ -668,9 +674,9 @@ CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
 
     float delta = b * b - 4 * a * c;
 
-    if (delta < 0)
+    if (delta < 0) {
         return {};
-
+    }
     if (delta == 0) {
         Solution solution;
 
@@ -685,42 +691,84 @@ CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
         float distance1 = getEuclidianDistance2(A, solution.point);
         float distance2 = getEuclidianDistance2(A + this->direction * this->length, solution.point);
 
-        if (fabs(distance1 + distance2 - this->length) <= EPS)
-            return {}; // return true;
+        if (fabs(distance1 + distance2 - this->length) <= EPS) {
+            std::cout << "brah0\n";
+            return CollisionPoint(solution.point, solution.point); // return true;
+        }
     } else {
-        Solution solution;
+        Solution solution1;
 
         if (x0 != x1)
-            solution = xIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
+            solution1 = xIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
         else if (y0 != y1)
-            solution = yIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
+            solution1 = yIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
         else
-            solution = zIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
+            solution1 = zIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
 
         // Check the distance between the ray's origin and the first point
-        long double distance1 = getEuclidianDistance2(A, solution.point);
-        long double distance2 = getEuclidianDistance2(A + this->direction * this->length, solution.point);
+        long double distance11 = getEuclidianDistance2(A, solution1.point);
+        long double distance12 = getEuclidianDistance2(A + this->direction * this->length, solution1.point);
 
-        if (fabs(distance1 + distance2 - this->length) <= EPS)
-            return {}; //return true;
+        /*
+        if (fabs(distance11 + distance12 - this->length) <= EPS) {
+            return CollisionPoint(solution1.point, solution1.point);; //return true;
+        }
+        */
+
+        Solution solution2;
 
         if (x0 != x1)
-            solution = xIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
+            solution2 = xIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
         else if (y0 != y1)
-            solution = yIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
+            solution2 = yIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
         else
-            solution = zIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
+            solution2 = zIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
 
+        long double distance21, distance22;
         // Check the distance between the ray's origin and the second point
-        distance1 = getEuclidianDistance2(A, solution.point);
-        distance2 = getEuclidianDistance2(A + this->direction * this->length, solution.point);
+        distance21 = getEuclidianDistance2(A, solution2.point);
+        distance22 = getEuclidianDistance2(A + this->direction * this->length, solution2.point);
 
-        if (fabs(distance1 + distance2 - this->length) <= EPS)
-            return {}; // return true;
+        /*
+        if (fabs(distance21 + distance22 - this->length) <= EPS) {
+            std::cout << "brah1\n";
+            return CollisionPoint(solution2.point, solution2.point);; // return true;
+        }
+        */
+
+
+        if ((fabs(distance11 + distance12 - this->length) > WEAK_EPS) && (fabs(distance21 + distance22 - this->length) > WEAK_EPS))
+        {
+            //std::cout << distance11 << " " << distance12 << " " << distance21 << " " << distance22 << "\n";
+            //std::cout << distance11 + distance12 - (long double)this->length << " " << distance21 + distance22 - (long double)this->length << "\n";
+            //std::cout << glm::to_string(solution1.point) << glm::to_string(solution2.point) << "2\n";
+            //std::cout << glm::to_string(origin) << glm::to_string(direction) << "2\n";
+            return {};
+        }
+
+        glm::vec3 start, end;
+
+        if (bv->isInside(A))
+            start = A;
+        else if (distance11 < distance21)
+            start = solution1.point;
+        else start = solution2.point;
+
+        if (bv->isInside(B))
+            end = B;
+        else if (distance12 < distance22)
+            end = solution1.point;
+        else end = solution2.point;
+
+        return CollisionPoint(start, end);
+
+
+
     }
 
     return {};
-} // TODO return CollisionPoint
+
+}
 CollisionPoint Ray::checkCollision(AABB* bv) {
     glm::vec3 newMin = bv->min + bv->offset, newMax = bv->max + bv->offset;
     glm::vec3 A = this->origin, B = this->origin - this->direction;
@@ -1011,7 +1059,6 @@ CollisionPoint TriangleMesh::checkCollisionByTriangle(Collider *col) {
         glm::vec3 faceNormal = glm::normalize(glm::cross(body->vertices[i].Position - body->vertices[i + 2].Position, body->vertices[i].Position - body->vertices[i + 1].Position));
         if (glm::dot(faceNormal, meanNormal) < 0)
             faceNormal = -1.0f * faceNormal;
-        std::cout << i << "\n";
         Triangle t(
                 getTransformedVertex(localTransform, body->vertices[i].Position),
                 getTransformedVertex(localTransform, body->vertices[i + 1].Position),
@@ -1322,4 +1369,3 @@ void Capsule::toString() {
     std::cout << "Capsule:\nStart Point: " << glm::to_string(start) << "\n\tEnd Point: "<< glm::to_string(end) << "\n\tRadius: " << radius << "\n";
 }
 #pragma endregion
-
