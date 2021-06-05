@@ -44,6 +44,7 @@ public:
     unsigned int VAO{}, VBO{}, EBO{};
 
     void prepare();
+    void gui(int outIndex);
     void Draw(glm::mat4 parentMatrix, Shader* shader);
 
     glm::mat4 getTransform();

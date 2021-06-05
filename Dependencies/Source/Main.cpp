@@ -473,6 +473,8 @@ void testPhysics(std::vector<Mesh*> meshes) {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         //std::cout << glm::to_string(rbs[0]->velocity) << "\n";
 
+        s->setVec3("cameraPos", c->position);
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -486,9 +488,11 @@ void testPhysics(std::vector<Mesh*> meshes) {
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
 
+        int index = 0;
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
             rb->collider->Draw(s);
+            rb->collider->body->gui(++index);
         }
 
 
@@ -673,7 +677,9 @@ int main() {
     s->bind();
 
     c = new Camera(window);
-    glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
+//    glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
+    glClearColor(0, 0, 0, 1);
+
 
 #pragma region meshes
 
@@ -808,6 +814,7 @@ int main() {
     cube->solidON = true;
 
     m.push_back(cube);
+
 
 
 //    for (int i = 1; i < 100; ++i) {

@@ -288,6 +288,24 @@ glm::mat4 ColliderMesh::getTransform() {
     S = glm::scale(glm::mat4(1), localTransform.sc);
     return T * R * S;
 }
+void ColliderMesh::gui(int outIndex = 0) {
+
+    std::string name;
+    name = name + " " + std::to_string(outIndex);
+    if (ImGui::TreeNode(name.c_str())) {
+        name = "wireframeON " + std::to_string(outIndex);
+        ImGui::Checkbox(name.c_str(), &wireframeON);
+        name = "solidON " + std::to_string(outIndex);
+        ImGui::Checkbox(name.c_str(), &solidON);
+
+        float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
+        name = "position " + std::to_string(outIndex);
+        ImGui::SliderFloat3(name.c_str(), t, -10, 10);
+        localTransform.tr = glm::vec3(t[0], t[1], t[2]);
+
+        ImGui::TreePop();
+    }
+}
 #pragma endregion
 #pragma region CollisionPoint
 CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
