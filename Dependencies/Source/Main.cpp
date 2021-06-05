@@ -454,7 +454,7 @@ void testOctree(Mesh* mesh) {
     }
     delete octree;
 }
-void testSimulation(std::vector<Mesh*> meshes) {
+void testPhysics(std::vector<Mesh*> meshes) {
     PhysicsWorld physicsWorld;
 
     std::vector<RigidBody*> rbs;
@@ -465,14 +465,13 @@ void testSimulation(std::vector<Mesh*> meshes) {
 
     bool runWithPhysics = false;
 
-    physicsWorld.addSolver(new ImpulseSolver);
+//    physicsWorld.addSolver(new ImpulseSolver);
     physicsWorld.addSolver(new RestingForceSolver);
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         //std::cout << glm::to_string(rbs[0]->velocity) << "\n";
-
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -486,11 +485,6 @@ void testSimulation(std::vector<Mesh*> meshes) {
 
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
-
-        //std::cout << glm::to_string((dynamic_cast<AABB*>(rbs[0]->collider)->max + dynamic_cast<AABB*>(rbs[0]->collider)->min) / 2.0f)
-        //            << glm::to_string(rbs[0]->position) << "\n";
-
-        //std::cout << glm::to_string((dynamic_cast<BoundingSphere*>(rbs[1]->collider)->pos)) << "\n";
 
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
@@ -692,7 +686,7 @@ int main() {
 
     Mesh* sphere = readObj("Sphere.obj");
     sphere->addBody(new RigidBody(new BoundingSphere(sphere)));
-    sphere->solidON = false;
+    sphere->solidON = true;
     sphere->bv->mass = 1;
     sphere->bv->setTransform(glm::vec3(0, 5, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere);
@@ -809,24 +803,30 @@ int main() {
     //testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
 
     std::vector<Mesh*> m;
+
+    sphere->solidON = true;
+    cube->solidON = true;
+
     m.push_back(cube);
 
-    //for (int i = 1; i < 100; ++i) {
-    //    Mesh* tmp = readObj("Sphere.obj");
-    //    tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
-    //    tmp->solidON = false;
-    //    tmp->bv->mass = 1;
-    //    tmp->bv->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
-    //    m.push_back(tmp);
-    //}
 
-    //m.push_back(sphere);
-    //m.push_back(sphere2);
+//    for (int i = 1; i < 100; ++i) {
+//        Mesh* tmp = readObj("Sphere.obj");
+//        tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
+//        tmp->solidON = false;
+//        tmp->bv->mass = 1;
+//        tmp->bv->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
+//        m.push_back(tmp);
+//    }
+    m.push_back(sphere);
+    sphere2->bv->position += glm::vec3(-0.5, 0, -0.5);
+    m.push_back(sphere2);
+
     //m.push_back(sphere3);
     //m.push_back(sphere4);
     //m.push_back(sphere5);
 
-    testSimulation(m);
+    testPhysics(m);
 
 #pragma region cleanUp
     s->unbind();

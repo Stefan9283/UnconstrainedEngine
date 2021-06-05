@@ -2,10 +2,10 @@
 // Created by Stefan on 22-Mar-21.
 //
 
-#include <iostream>
+#include <algorithm>
 #include <glm/gtx/string_cast.hpp>
+#include <iostream>
 #include "PhysicsWorld.h"
-
 
 
 PhysicsWorld *PhysicsWorld::addSolver(Solver *solver) {
@@ -38,9 +38,6 @@ std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> Phys
     return collisionPoints;
 }
 void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
-
-
-
     for (auto* r : rb) {
         if (r->movable) {
             // add gravity
@@ -51,6 +48,13 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     }
 
     std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
+
+
+    std::sort(collisionPoints.begin(), collisionPoints.end(),
+            [](std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>& a, std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>& b) {
+            return a.second.depth > b.second.depth;
+        });
+
 
     for (auto* solver : solvers)
         solver->solve(dt, collisionPoints);
@@ -68,8 +72,8 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
 }
 
 
+// TODO Solversa
 void ImpulseSolver::solve(float dt, std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> col) {
-
     for (auto c : col) {
         glm::vec3 reflected1, reflected2;
 
@@ -86,9 +90,18 @@ void ImpulseSolver::solve(float dt, std::vector<std::pair<std::pair<RigidBody *,
             float m1, m2;
             m1 = c.first.first->mass;
             m2 = c.first.second->mass;
-
             v1 = c.first.first->velocity;
             v2 = c.first.second->velocity;
+
+
+            glm::vec3 gravity = glm::normalize(glm::vec3(0, -90, 0));
+            glm::vec3 normal = glm::normalize(c.first.first->position - c.first.second->position);
+
+            std::cout << glm::to_string(normal) << "\n";
+            std::cout << glm::length(normal + gravity) << "\n";
+            std::cout << glm::length(- normal + gravity) << "\n";
+
+
 
             x1 = c.second.B;
             x2 = c.second.A;
