@@ -5,12 +5,7 @@
 #ifndef TRIANGLE_BoundingVolume_H
 #define TRIANGLE_BoundingVolume_H
 
-#include <glm/glm.hpp>
-#include <vector>
-#include <GLFW/glfw3.h>
-#include <glm/detail/type_quat.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <string>
+#include "Common.h"
 
 
 #include "Camera.h"

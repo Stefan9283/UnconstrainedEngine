@@ -2,7 +2,8 @@
 // Created by Stefan on 02-Mar-21.
 //
 #include "Debug.h"
-#include "glm/gtc/type_ptr.hpp"
+#include "Mesh.h"
+#include "Camera.h"
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 

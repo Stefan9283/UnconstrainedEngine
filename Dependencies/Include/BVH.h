@@ -3,7 +3,7 @@
 #ifndef TRIANGLE_BVH_H
 #define TRIANGLE_BVH_H
 
-#include <vector>
+#include <Common.h>
 
 class Mesh;
 class AABB;

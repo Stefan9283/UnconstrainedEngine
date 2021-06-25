@@ -33,6 +33,7 @@ endif()
 
 include_directories(
 					Dependencies/Include
+					Dependencies/Vendor/
 					Dependencies/Vendor/glm
 					Dependencies/Vendor/stb
 					Dependencies/Vendor/imgui

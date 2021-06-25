@@ -1,39 +1,15 @@
+#define USE_IMGUI_API
 #define STBI_IMAGE_IMPLEMENTATION
-
-#include <GLFW/glfw3.h>
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-
-#include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <ctime>
-#include <vector>
+#include "Common.h"
 
-#include <vector>
-#include <glm/gtc/type_ptr.hpp>
-#include <iomanip>
 #include <PhysicsWorld.h>
 #include "ObjLoad.h"
 #include "Camera.h"
 #include "BoundingVolumes.h"
 #include "Octree.h"
 #include "Mesh.h"
-
-#include "imconfig.h"
-#include "imgui.h"
-
-#define USE_IMGUI_API
-
-#include "ImGuizmo.h"
-#include "ImSequencer.h"
-#include "ImZoomSlider.h"
-#include "ImCurveEdit.h"
-#include "Debug.h"
 
 static void error_callback(int error, const char* description) {
     fprintf(stderr, "Error: %s\n", description);
@@ -463,10 +439,23 @@ void testPhysics(std::vector<Mesh*> meshes) {
     for (auto* m : meshes)
         rbs.push_back(m->bv);
 
-    bool runWithPhysics = false;
+    for (auto r1 : rbs)
+        for (auto r2 : rbs)
+            if (r1 != r2) {
+                Constraint contact(r1, r2);
+                contact.linearX = { DISTANCE, 1 };
+                contact.linearY = { DISTANCE, 1 };
+                contact.linearZ = { DISTANCE, 1 };
+                contact.angularX = { FREE, 90 };
+                contact.angularY = { FREE, 190 };
+                contact.angularZ = { FREE, 290 };
+                physicsWorld.addConstraint(contact, rbs);
+            } else break;
 
-//    physicsWorld.addSolver(new ImpulseSolver);
-    physicsWorld.addSolver(new RestingForceSolver);
+    bool runWithPhysics = true;
+
+    //physicsWorld.addSolver(new ImpulseSolver);
+    //physicsWorld.addSolver(new RestingForceSolver);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -479,9 +468,11 @@ void testPhysics(std::vector<Mesh*> meshes) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
         ImGui::Checkbox("run with physics", &runWithPhysics);
         if(runWithPhysics || ImGui::Button("Do one simulation step"))
-            physicsWorld.step(1/160.0f, rbs);
+              physicsWorld.step(1/160.0f, rbs);
 
         c->Move(window);
 
@@ -602,12 +593,12 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             pointB = nullptr;
 
             if (p.hasCollision) {
-                pointA = readObj("Sphere.obj");
+                pointA = readObj("3D/Sphere.obj");
                 pointA->localTransform.sc = glm::vec3(0.1f);
                 pointA->localTransform.rot = glm::quat();
                 pointA->localTransform.tr = p.A;
 
-                pointB = readObj("Sphere.obj");
+                pointB = readObj("3D/Sphere.obj");
                 pointB->localTransform.sc = glm::vec3(0.1f);
                 pointB->localTransform.rot = glm::quat();
                 pointB->localTransform.tr = p.B;
@@ -683,47 +674,47 @@ int main() {
 
 #pragma region meshes
 
-    Mesh* cube = readObj("Box.obj");
+    Mesh* cube = readObj("3D/Box.obj");
     cube->addBody(new RigidBody(new AABB(cube)));
     cube->solidON = false;
     cube->bv->movable = false;
     cube->bv->position = glm::vec3(0, 0, 0);
     meshes.push_back(cube);
 
-    Mesh* sphere = readObj("Sphere.obj");
+    Mesh* sphere = readObj("3D/Sphere.obj");
     sphere->addBody(new RigidBody(new BoundingSphere(sphere)));
     sphere->solidON = true;
     sphere->bv->mass = 1;
-    sphere->bv->setTransform(glm::vec3(0, 5, 0), glm::quat(), glm::vec3(1));
+    sphere->bv->setTransform(glm::vec3(0, 2, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere);
 
-    Mesh* cube2 = readObj("Box.obj");
+    Mesh* cube2 = readObj("3D/Box.obj");
     cube2->addBody(new RigidBody(new AABB(cube2)));
     cube2->solidON = false;
     meshes.push_back(cube2);
 
-    Mesh* sphere2 = readObj("Sphere.obj");
+    Mesh* sphere2 = readObj("3D/Sphere.obj");
     sphere2->addBody(new RigidBody(new BoundingSphere(sphere2)));
     sphere2->solidON = false;
     sphere2->bv->mass = 1;
-    sphere2->bv->setTransform(glm::vec3(0, 10, 0), glm::quat(), glm::vec3(1));
+    sphere2->bv->setTransform(glm::vec3(0, 4, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere2);
 
-    Mesh* sphere3 = readObj("Sphere.obj");
+    Mesh* sphere3 = readObj("3D/Sphere.obj");
     sphere3->addBody(new RigidBody(new BoundingSphere(sphere2)));
     sphere3->solidON = false;
     sphere3->bv->mass = 1.f;
     sphere3->bv->setTransform(glm::vec3(0, 20, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere3);
 
-    Mesh* sphere4 = readObj("Sphere.obj");
+    Mesh* sphere4 = readObj("3D/Sphere.obj");
     sphere4->addBody(new RigidBody(new BoundingSphere(sphere2)));
     sphere4->solidON = false;
     sphere4->bv->mass = 1.f;
     sphere4->bv->setTransform(glm::vec3(0, 30, 0), glm::quat(), glm::vec3(1));
     meshes.push_back(sphere4);
 
-    Mesh* sphere5 = readObj("Sphere.obj");
+    Mesh* sphere5 = readObj("3D/Sphere.obj");
     sphere5->addBody(new RigidBody(new BoundingSphere(sphere2)));
     sphere5->solidON = false;
     sphere5->bv->mass = 1.f;
@@ -731,17 +722,17 @@ int main() {
     meshes.push_back(sphere5);
 
 
-    Mesh* Yen = readObj("Yen.obj");
+    Mesh* Yen = readObj("3D/Yen.obj");
     Yen->addBody(new RigidBody(new Capsule(glm::vec3(0, -3, 0), glm::vec3(0, 3, 0), 2))); //Capsule::generateCapsule(Yen);
     Yen->solidON = false;
     meshes.push_back(Yen);
 
-    Mesh* Mercy = readObj("Mercy2.obj");
+    Mesh* Mercy = readObj("3D/Mercy2.obj");
     Mercy->addBody(new RigidBody(new TriangleMesh(Mercy)));
     Mercy->solidON = false;
     meshes.push_back(Mercy);
 
-    //Mesh* Triangle = readObj("Triangle.obj");
+    //Mesh* Triangle = readObj("3D/Triangle.obj");
     //Triangle->bv = new TriangleMesh(Triangle);
     //Triangle->solidON = false;
     //Triangle->rotation = glm::vec3(0, 180, 0);
@@ -815,19 +806,19 @@ int main() {
 
     m.push_back(cube);
 
+    for (int i = 1; i < 50; ++i) {
+        Mesh* tmp = readObj("3D/Sphere.obj");
+        tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
+        tmp->solidON = false;
+        tmp->bv->mass = 0.1;
+        tmp->bv->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
+        m.push_back(tmp);
+    }
 
 
-//    for (int i = 1; i < 100; ++i) {
-//        Mesh* tmp = readObj("Sphere.obj");
-//        tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
-//        tmp->solidON = false;
-//        tmp->bv->mass = 1;
-//        tmp->bv->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
-//        m.push_back(tmp);
-//    }
-    m.push_back(sphere);
-    sphere2->bv->position += glm::vec3(-0.5, 0, -0.5);
-    m.push_back(sphere2);
+//    m.push_back(sphere);
+    //sphere2->bv->position += glm::vec3(-0.5, 0, -0.5);
+//    m.push_back(sphere2);
 
     //m.push_back(sphere3);
     //m.push_back(sphere4);

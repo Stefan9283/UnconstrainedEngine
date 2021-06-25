@@ -1,14 +1,13 @@
 #pragma once
 
+#include "Common.h"
 
 #include "Vertex.h"
 #include "Shader.h"
 #include "BoundingVolumes.h"
 #include "PhysicsWorld.h"
 
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <glm/detail/type_quat.hpp>
+
 
 
 

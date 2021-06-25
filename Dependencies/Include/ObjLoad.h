@@ -7,9 +7,8 @@
 
 #endif //TRIANGLE_OBJLOAD_H
 
+#include "Common.h"
 #include "Mesh.h"
-#include "glm/gtx/string_cast.hpp"
-#include <vector>
 
 typedef struct objVert {
     unsigned int pos, norm, tex;

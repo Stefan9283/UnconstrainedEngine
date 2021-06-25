@@ -5,14 +5,10 @@
 #ifndef TRIANGLE_DEBUG_H
 #define TRIANGLE_DEBUG_H
 
+#include "Common.h"
 
-#include "ImGuizmo.h"
-#include "ImSequencer.h"
-#include "ImZoomSlider.h"
-#include "ImCurveEdit.h"
-
-#include "glm/glm.hpp"
-#include "Mesh.h"
+class Camera;
+class Mesh;
 
 void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjection, Mesh* mesh);
 
