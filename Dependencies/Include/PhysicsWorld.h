@@ -68,7 +68,7 @@ public:
     PhysicsWorld* addConstraint(Constraint c, std::vector<RigidBody*> &rbs);
 
     void step(float dt, const std::vector<RigidBody*>& rb);
-    std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> getCollisionPoints(const std::vector<RigidBody *>& rb);
+    std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> getCollisionPoints(const std::vector<RigidBody *>& rb);
     
     ~PhysicsWorld();
 };

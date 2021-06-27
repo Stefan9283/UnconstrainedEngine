@@ -144,8 +144,6 @@ void testBasicCollision() {
         if (r) r->Draw(s);
 
 
-
-
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glm::mat4 proj = *c->getprojmatrix();
@@ -452,7 +450,7 @@ void testPhysics(std::vector<Mesh*> meshes) {
                 physicsWorld.addConstraint(contact, rbs);
             } else break;
 
-    bool runWithPhysics = true;
+    bool runWithPhysics = false;
 
     //physicsWorld.addSolver(new ImpulseSolver);
     //physicsWorld.addSolver(new RestingForceSolver);
@@ -472,7 +470,7 @@ void testPhysics(std::vector<Mesh*> meshes) {
 
         ImGui::Checkbox("run with physics", &runWithPhysics);
         if(runWithPhysics || ImGui::Button("Do one simulation step"))
-              physicsWorld.step(1/160.0f, rbs);
+              physicsWorld.step(1/50.0f, rbs);
 
         c->Move(window);
 
@@ -668,8 +666,8 @@ int main() {
     s->bind();
 
     c = new Camera(window);
-//    glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
+//    glClearColor(0, 0, 0, 1);
 
 
 #pragma region meshes
@@ -791,11 +789,9 @@ int main() {
 
     //testBasicCollisionWithPoints(&ray, meshes[1]); // Ray Sphere
     //testBasicCollisionWithPoints(&ray, meshes[0]); // Ray AABB
-
-    //testBasicCollisionWithPoints(meshes[0], meshes[1]); // AABB Sphere
+    testBasicCollisionWithPoints(meshes[0], meshes[1]); // AABB Sphere
     //testBasicCollisionWithPoints(meshes[3], meshes[1]); // Sphere Sphere
     //testBasicCollisionWithPoints(meshes[0], meshes[2]); // AABB AABB
-
     //testBasicCollisionWithPoints(meshes[4], meshes[1]); // Capsule Sphere
     //testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
 
@@ -806,7 +802,7 @@ int main() {
 
     m.push_back(cube);
 
-    for (int i = 1; i < 50; ++i) {
+    for (int i = 499; i < 500; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
         tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
         tmp->solidON = false;
@@ -814,6 +810,14 @@ int main() {
         tmp->bv->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
         m.push_back(tmp);
     }
+
+    //Mesh* tmp = readObj("3D/Sphere.obj");
+    //tmp->addBody(new RigidBody(new BoundingSphere(sphere)));
+    //tmp->solidON = false;
+    //tmp->bv->mass = 0.1;
+    //tmp->bv->velocity = glm::vec3(15, 0, 0);
+    //tmp->bv->setTransform(glm::vec3(-20, 9, 0), glm::quat(), glm::vec3(1));
+    //m.push_back(tmp);
 
 
 //    m.push_back(sphere);
@@ -824,7 +828,7 @@ int main() {
     //m.push_back(sphere4);
     //m.push_back(sphere5);
 
-    testPhysics(m);
+    //testPhysics(m);
 
 #pragma region cleanUp
     s->unbind();

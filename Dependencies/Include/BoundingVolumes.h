@@ -158,7 +158,7 @@ public:
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
 
-    bool isInside(glm::dvec3 point);
+    bool isInside(glm::vec3 point);
 
     Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm);
     void toString() override;

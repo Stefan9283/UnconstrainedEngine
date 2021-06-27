@@ -13,14 +13,14 @@ typedef char constraint_type;
 
 #define FREE '\0'
 #define DISTANCE 'd'
-#define VELOCITY 'v'
+#define CONTACT 'v'
 #define FRICTION 'f'
 
 
 struct limit {
     constraint_type type;
     float force;
-    // int cmin, cmax;
+    // int cmin, cmax; // for capping the lambda values
 };
 
 class Constraint {
@@ -36,10 +36,13 @@ public:
 
     Eigen::MatrixXd Jacobian, invM;
 
+    Eigen::VectorXd cached_lambda;
+
     Constraint(RigidBody* rb1, RigidBody* rb2);
     void buildJacobian(CollisionPoint& p); // TODO
     void solve(CollisionPoint& p, float dt); // TODO
-
+    Eigen::VectorXd getCachedLambda(CollisionPoint& p);
+    void setCachedLambda(CollisionPoint& p, Eigen::VectorXd& l);
 };
 
 

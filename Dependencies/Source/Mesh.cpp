@@ -64,8 +64,11 @@ void Mesh::Draw(Shader* shader) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    glm::mat4 model = getTransform();
-    if (bv) model = bv->getTransform() * model;
+    glm::mat4 model;
+    if (bv) 
+        model = bv->getTransform();
+    else model = getTransform();
+    
     shader->setMat4("model", &model);
 
     glBindVertexArray(VAO);
@@ -96,6 +99,8 @@ void Mesh::gui(int outIndex = 0) {
         s = "boundingBoxON " + std::to_string(outIndex);
         ImGui::Checkbox(s.c_str(), &boundingBoxON);
 
+        transform localTransform_old = localTransform;
+
         float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
         s = "position " + std::to_string(outIndex);
         ImGui::SliderFloat3(s.c_str(), t, -10, 10);
@@ -106,7 +111,9 @@ void Mesh::gui(int outIndex = 0) {
         //ImGui::SliderFloat3(s.c_str(), r, -180, 180);
         //localTransform.rot = glm::vec3(r[0], r[1], r[2]);
 
-        bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+        if (localTransform.tr != localTransform_old.tr)
+            bv->setTransform(localTransform.tr, glm::vec3(0), glm::vec3(0));
+        //bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
 
         ImGui::TreePop();
     }
@@ -116,7 +123,6 @@ void Mesh::gui(int outIndex = 0) {
 int Mesh::getTriangleCount() {
     return (int)indices.size()/3;
 }
-
 std::vector<Vertex> Mesh::getTriangle(int index) {
     std::vector<Vertex> v;
     for (int i = index * 3; i < index * 3 + 3; i++) {

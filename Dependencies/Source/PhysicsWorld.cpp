@@ -12,7 +12,6 @@
 
 #include "PhysicsWorld.h"
 
-
 //PhysicsWorld *PhysicsWorld::addSolver(Solver *solver) {
 //    solvers.push_back(solver);
 //    return this;
@@ -26,33 +25,22 @@ PhysicsWorld::~PhysicsWorld() {
 //    for (auto* solv : solvers)
 //        delete solv;
 }
-std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
-    std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> collisionPoints;
-
+std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
+    std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints;
     // get all collision points
-    for (auto* rb1 : rb) {
-        for (auto* rb2 : rb) {
-            if (rb1 == rb2) break;
-
-            CollisionPoint p = rb1->collider->checkCollision(rb2->collider);
+    for (size_t i = 0; i < rb.size(); i++) {
+        for (size_t j = i + 1; j < rb.size(); j++) {
+            CollisionPoint p = rb[i]->collider->checkCollision(rb[j]->collider);
             if (p.hasCollision)
-                collisionPoints.emplace_back(std::make_pair(rb1, rb2), p);
+                collisionPoints.emplace_back(std::make_pair(i, j), p);
         }
     }
 
     return collisionPoints;
 }
 
-int getRbIndex(RigidBody* rb, const std::vector<RigidBody *>& rbs) {
-    int i = 0;
-    for (auto body : rbs) {
-        if (body == rb)
-            return i;
-        i++;
-    }
-    assert("RigidBody wasn't found in rbs vector " && rb);
-    return -1;
-}
+
+glm::vec3 max_velocity = glm::vec3(0);
 
 void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     for (auto* r : rb) {
@@ -64,18 +52,12 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
         }
     }
 
-    std::vector<std::pair<std::pair<RigidBody *, RigidBody *>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
+    std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
 
-    std::vector<std::pair<int, int>> indices(collisionPoints.size());
 
-    int i = 0;
-    int max = 0;
-    for (auto col : collisionPoints) {
-        indices[i].first = getRbIndex(col.first.first, rb);
-        indices[i].second = getRbIndex(col.first.second, rb);
-        max = std::max(max, std::max(indices[i].first, indices[i].second));
-        i++;
-    }
+    size_t max = 0;
+    for (auto col : collisionPoints)
+        max = std::max(max, std::max(col.first.first, col.first.second));
     max++;
 
     if (constraints.size() < max) {
@@ -84,18 +66,40 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
             constr.resize(max);
     }
 
-    for (int l = 0; l < 5; l++) {
+
+    //while (true) {
+    for (int l = 0; l < 1; l++) {
+        //bool satisfied = true;
         for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
             int i, j;
-            i = indices[colIndex].first;
-            j = indices[colIndex].second;
+            i = collisionPoints[colIndex].first.first;
+            j = collisionPoints[colIndex].first.second;
+            if (glm::length(rb[i]->velocity) > glm::length(max_velocity)) {
+                max_velocity = rb[i]->velocity;
+                std::cout << glm::to_string(max_velocity) << "\n";
+            }
+            if (glm::length(rb[j]->velocity) > glm::length(max_velocity)) {
+                max_velocity = rb[j]->velocity;
+                std::cout << glm::to_string(max_velocity) << "\n";
+            }
+
+            //glm::vec3 v1, v2;
+            //v1 = rb[i]->velocity;
+            //v2 = rb[j]->velocity;
+
             for (auto& c : constraints[i][j])
                 c.solve(collisionPoints[colIndex].second, dt);
+
+            //v1 -= rb[i]->velocity;
+            //v2 -= rb[j]->velocity;
+            //if (length(v1) > 0.01f || length(v2) > 0.01f)
+            //    satisfied = false;
             //exit(69); // TODO delete me
         }
+        //if (satisfied)
+        //    break;
     }
-//    for (auto* solver : solvers)
-//        solver->solve(dt, collisionPoints);
+    //std::cout << "///////////////////////////////////////////////////////////////////\n";
 
     // calculate final velocities
     for (auto* r : rb) {
@@ -109,6 +113,17 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
 
 }
 
+
+int getRbIndex(RigidBody* rb, const std::vector<RigidBody*>& rbs) {
+    int i = 0;
+    for (auto body : rbs) {
+        if (body == rb)
+            return i;
+        i++;
+    }
+    assert("RigidBody wasn't found in rbs vector " && rb);
+    return -1;
+}
 PhysicsWorld *PhysicsWorld::addConstraint(Constraint c, std::vector<RigidBody*> &rbs) {
     size_t i, j;
     i = getRbIndex(c.rb1, rbs);

@@ -13,7 +13,7 @@ add_subdirectory(Dependencies/Vendor/glad)
 
 if(MSVC)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MDd /std:c++17")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MDd /O2 /std:c++17")
 
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 	add_definitions(-DCMAKE_GENERATOR_PLATFORM=x64)
