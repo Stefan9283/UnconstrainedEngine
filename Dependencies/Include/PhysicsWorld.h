@@ -8,9 +8,6 @@
 #include "BoundingVolumes.h"
 #include "Constraint.h"
 
-#define IMMUTABLE_MASS 9999
-
-
 class RigidBody {
 public:
     Collider* collider;
@@ -29,43 +26,14 @@ public:
 
 class Constraint;
 
-/*
-class Solver {
-public:
-    virtual void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>>& col) = 0;
-};
-
-class ImpulseSolver : public Solver {
-public:
-    void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>>& col) override;
-};
-
-class RestingForceSolver : public Solver {
-public:
-    void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>>& col) override;
-};
-
-class PositionSolver : Solver {
-public:
-    void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>>& col) override;
-};
-class RotationSolver : Solver {
-public:
-    void solve(float dt, std::vector<std::pair<std::pair<RigidBody*, RigidBody*>, CollisionPoint>>& col) override;
-};
-*/
 
 class PhysicsWorld {
 public:
     glm::vec3 gravity{0, -9.81, 0};
-    std::vector<std::vector<std::vector<Constraint>>> constraints;
 
-//    std::vector<Solver*> solvers;
-//
-//    PhysicsWorld* addSolver(Solver* solver);
-//    PhysicsWorld* removeSolver(Solver* solver);
+    std::vector<std::vector<std::vector<Constraint*>>> constraints;
 
-    PhysicsWorld* addConstraint(Constraint c, std::vector<RigidBody*> &rbs);
+    PhysicsWorld* addConstraint(Constraint* c, std::vector<RigidBody*> &rbs);
 
     void step(float dt, const std::vector<RigidBody*>& rb);
     std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> getCollisionPoints(const std::vector<RigidBody *>& rb);

@@ -19,7 +19,7 @@ public:
     std::vector<uint32_t> indices;
     transform localTransform;
 
-    RigidBody* bv = nullptr;
+    RigidBody* rigidbody = nullptr;
 
     bool wireframeON = false, solidON = true, boundingBoxON = true;
     Mesh();
@@ -32,7 +32,8 @@ public:
     void prepare();
     void Draw(Shader* shader);
     void gui(int outIndex);
-    void addBody(RigidBody* body);
+    void addBody(RigidBody* body, float mass);
+    void setPosition(glm::vec3 pos);
 
     std::vector<Vertex> getTriangle(int index);
     int getTriangleCount();

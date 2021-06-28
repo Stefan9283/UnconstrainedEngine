@@ -27,7 +27,7 @@ float getEuclidianDistance(glm::vec3 p1, glm::vec3 p2) {
 }
 
 /*
-double getEuclidianDistance2(glm::vec3 p1, glm::vec3 p2) {
+float getEuclidianDistance2(glm::vec3 p1, glm::vec3 p2) {
     return glm::length(p1 - p2);
 }*/
 
@@ -35,7 +35,7 @@ float getTriangleArea(float edge1, float edge2, float edge3) {
     float p = (edge1 + edge2 + edge3) / 2;
     return sqrt(p * (p - edge1) * (p - edge2) * (p - edge3));
 }
-long double getTriangleArea2(glm::vec3 edge1, glm::vec3 edge2) {
+float getTriangleArea2(glm::vec3 edge1, glm::vec3 edge2) {
     glm::highp_vec3 N = glm::cross(edge1, edge2);
     return 0.5f * glm::sqrt(glm::dot(N, N));
 }
@@ -44,11 +44,11 @@ struct Solution {
     glm::vec3 point;
 };
 
-Solution xIsFixed(glm::vec3 A, glm::vec3 B, long double x) {
+Solution xIsFixed(glm::vec3 A, glm::vec3 B, float x) {
     Solution solution{};
 
-    long double x0 = A.x, y0 = A.y, z0 = A.z;
-    long double x1 = B.x, y1 = B.y, z1 = B.z;
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
 
     solution.point.x = x;
     solution.point.y = (x - x0) * (y1 - y0) / (x1 - x0) + y0;
@@ -56,11 +56,11 @@ Solution xIsFixed(glm::vec3 A, glm::vec3 B, long double x) {
 
     return solution;
 }
-Solution yIsFixed(glm::vec3 A, glm::vec3 B, long double y) {
+Solution yIsFixed(glm::vec3 A, glm::vec3 B, float y) {
     Solution solution{};
 
-    long double x0 = A.x, y0 = A.y, z0 = A.z;
-    long double x1 = B.x, y1 = B.y, z1 = B.z;
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
 
     solution.point.x = (y - y0) * (x1 - x0) / (y1 - y0) + x0;
     solution.point.y = y;
@@ -68,11 +68,11 @@ Solution yIsFixed(glm::vec3 A, glm::vec3 B, long double y) {
 
     return solution;
 }
-Solution zIsFixed(glm::vec3 A, glm::vec3 B, long double z) {
+Solution zIsFixed(glm::vec3 A, glm::vec3 B, float z) {
     Solution solution{};
 
-    long double x0 = A.x, y0 = A.y, z0 = A.z;
-    long double x1 = B.x, y1 = B.y, z1 = B.z;
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
 
     solution.point.x = (z - z0) * (x1 - x0) / (z1 - z0) + x0;
     solution.point.y = (z - z0) * (y1 - y0) / (z1 - z0) + y0;
@@ -84,15 +84,15 @@ Solution zIsFixed(glm::vec3 A, glm::vec3 B, long double z) {
 Solution getIntersectionPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 D) {
     Solution solution{};
 
-    long double c1, c2;
+    float c1, c2;
 
     // Pick an axis which both lines are not parallel to
     if (A.x != B.x && C.x != D.x) {
         c1 = (B.y - A.y) / (B.x - A.x);
         c2 = (A.y * B.x - A.x * B.y) / (B.x - A.x);
 
-        long double a = (C.x * D.y + c2 * D.x - c2 * C.x - C.y * D.x);
-        long double b = (D.y - C.y - c1 * D.x + c1 * C.x);
+        float a = (C.x * D.y + c2 * D.x - c2 * C.x - C.y * D.x);
+        float b = (D.y - C.y - c1 * D.x + c1 * C.x);
 
         if (!b) {
             if (a)
@@ -108,8 +108,8 @@ Solution getIntersectionPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 D
         c1 = (B.x - A.x) / (B.y - A.y);
         c2 = (A.x * B.y - A.y * B.x) / (B.y - A.y);
 
-        long double a = (C.y * D.x + c2 * D.y - c2 * C.y - C.x * D.y);
-        long double b = (D.x - C.x - c1 * D.y + c1 * C.y);
+        float a = (C.y * D.x + c2 * D.y - c2 * C.y - C.x * D.y);
+        float b = (D.x - C.x - c1 * D.y + c1 * C.y);
 
         if (!b) {
             if (a)
@@ -125,8 +125,8 @@ Solution getIntersectionPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 D
         c1 = (B.x - A.x) / (B.z - A.z);
         c2 = (A.x * B.z - A.z * B.x) / (B.z - A.z);
 
-        long double a = (C.z * D.x + c2 * D.z - c2 * C.z - C.x * D.z);
-        long double b = (D.x - C.x - c1 * D.z + c1 * C.z);
+        float a = (C.z * D.x + c2 * D.z - c2 * C.z - C.x * D.z);
+        float b = (D.x - C.x - c1 * D.z + c1 * C.z);
 
         if (!b) {
             if (a)
@@ -150,8 +150,8 @@ glm::vec3 getTransformedVertex(glm::mat4 tr, glm::vec3 v) {
 glm::vec3 ClosestPointOnLineSegment(glm::vec3 A, glm::vec3 B, glm::vec3 Point)
 {
     glm::vec3 AB = B - A;
-    double t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
-    return A + (float)glm::min(glm::max(t, 0.0), 1.0) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
+    float t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
+    return A + (float)glm::min(glm::max(t, 0.0f), 1.0f) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
 }
 glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
     glm::vec3 result = A, min, max;
@@ -225,7 +225,7 @@ void Collider::Draw(Shader *shader) {
         if (parent)
             body->Draw(parent->getTransform(), shader);
         else
-            body->Draw(glm::mat4(1), shader);
+            body->Draw(localTransform, shader);
     }
 }
 
@@ -394,7 +394,7 @@ CollisionPoint BoundingSphere::checkCollision(Capsule *col) {
     return reverseCollisionPoint(col->checkCollision(this));
 } // TODO return CollisionPoint
 void BoundingSphere::setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-    this->pos = pos;
+    this->pos += pos;
 }
 void BoundingSphere::toString() {
     std::cout << "Sphere center: " << glm::to_string(this->pos) << " " << this->radius << "\n";
@@ -631,11 +631,11 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && wasHeld) {
         int wi, he;
         glfwGetWindowSize(window, &wi, &he);
-        double x = cam->lastx_mouse - (float) wi / 2.0f;
-        double y = he - cam->lasty_mouse - (float) he / 2.0f;
+        float x = (float)cam->lastx_mouse - (float) wi / 2.0f;
+        float y = (float)he - cam->lasty_mouse - (float) he / 2.0f;
 
-        x /= (double) wi / 2.0f;
-        y /= (double) he / 2.0f;
+        x /= (float) wi / 2.0f;
+        y /= (float) he / 2.0f;
 
         float aspectRatio = (float) wi / (float) he;
 
@@ -715,8 +715,8 @@ CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
             solution = zIsFixed(A, B, -b / (2 * a));
 
         // Check the distance between the ray's origin and the unique point
-        double distance1 = glm::distance(A, solution.point);
-        double distance2 = glm::distance(A + this->direction * this->length, solution.point);
+        float distance1 = glm::distance(A, solution.point);
+        float distance2 = glm::distance(A + this->direction * this->length, solution.point);
 
         if (fabs(distance1 + distance2 - this->length) <= EPS) {
             std::cout << "brah0\n";
@@ -733,8 +733,8 @@ CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
             solution1 = zIsFixed(A, B, (-b - sqrt(delta)) / (2 * a));
 
         // Check the distance between the ray's origin and the first point
-        double distance11 = glm::distance(A, solution1.point);
-        double distance12 = glm::distance(A + this->direction * this->length, solution1.point);
+        float distance11 = glm::distance(A, solution1.point);
+        float distance12 = glm::distance(A + this->direction * this->length, solution1.point);
 
         /*
         if (fabs(distance11 + distance12 - this->length) <= EPS) {
@@ -751,7 +751,7 @@ CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
         else
             solution2 = zIsFixed(A, B, (-b + sqrt(delta)) / (2 * a));
 
-        long double distance21, distance22;
+        float distance21, distance22;
         // Check the distance between the ray's origin and the second point
         distance21 = glm::distance(A, solution2.point);
         distance22 = glm::distance(A + this->direction * this->length, solution2.point);
@@ -767,7 +767,7 @@ CollisionPoint Ray::checkCollision(BoundingSphere* bv) {
         if ((fabs(distance11 + distance12 - this->length) > WEAK_EPS) && (fabs(distance21 + distance22 - this->length) > WEAK_EPS))
         {
             //std::cout << distance11 << " " << distance12 << " " << distance21 << " " << distance22 << "\n";
-            //std::cout << distance11 + distance12 - (long double)this->length << " " << distance21 + distance22 - (long double)this->length << "\n";
+            //std::cout << distance11 + distance12 - (float)this->length << " " << distance21 + distance22 - (float)this->length << "\n";
             //std::cout << glm::to_string(solution1.point) << glm::to_string(solution2.point) << "2\n";
             //std::cout << glm::to_string(origin) << glm::to_string(direction) << "2\n";
             return {};
@@ -810,8 +810,8 @@ CollisionPoint Ray::checkCollision(AABB* bv) {
     y = (newMax.z * y1 - newMax.z * y0 - y1 * z0 + y0 * z1) / (z1 - z0);
 
     if (z0 != z1 && x >= newMin.x && x <= newMax.x && y >= newMin.y && y <= newMax.y) {
-        double distance1 = glm::distance(A, glm::vec3(x, y, newMax.z));
-        double distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, y, newMax.z));
+        float distance1 = glm::distance(A, glm::vec3(x, y, newMax.z));
+        float distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, y, newMax.z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return {}; // return true;
@@ -822,8 +822,8 @@ CollisionPoint Ray::checkCollision(AABB* bv) {
     y = (newMin.z * y1 - newMin.z * y0 - y1 * z0 + y0 * z1) / (z1 - z0);
 
     if (z0 != z1 && x >= newMin.x && x <= newMax.x && y >= newMin.y && y <= newMax.y) {
-        double distance1 = glm::distance(A, glm::vec3(x, y, newMin.z));
-        double distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, y, newMin.z));
+        float distance1 = glm::distance(A, glm::vec3(x, y, newMin.z));
+        float distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, y, newMin.z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return {}; // return true;
@@ -834,8 +834,8 @@ CollisionPoint Ray::checkCollision(AABB* bv) {
     z = (newMin.x * z1 - newMin.x * z0 - z1 * x0 + z0 * x1) / (x1 - x0);
 
     if (x0 != x1 && y >= newMin.y && y <= newMax.y && z >= newMin.z && z <= newMax.z) {
-        double distance1 = glm::distance(A, glm::vec3(newMin.x, y, z));
-        double distance2 = glm::distance(A + this->direction * this->length, glm::vec3(newMin.x, y, z));
+        float distance1 = glm::distance(A, glm::vec3(newMin.x, y, z));
+        float distance2 = glm::distance(A + this->direction * this->length, glm::vec3(newMin.x, y, z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return {}; // return true;
@@ -846,8 +846,8 @@ CollisionPoint Ray::checkCollision(AABB* bv) {
     z = (newMax.x * z1 - newMax.x * z0 - z1 * x0 + z0 * x1) / (x1 - x0);
 
     if (x0 != x1 && y >= newMin.y && y <= newMax.y && z >= newMin.z && z <= newMax.z) {
-        double distance1 = glm::distance(A, glm::vec3(newMax.x, y, z));
-        double distance2 = glm::distance(A + this->direction * this->length, glm::vec3(newMax.x, y, z));
+        float distance1 = glm::distance(A, glm::vec3(newMax.x, y, z));
+        float distance2 = glm::distance(A + this->direction * this->length, glm::vec3(newMax.x, y, z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return {}; // return true;
@@ -858,8 +858,8 @@ CollisionPoint Ray::checkCollision(AABB* bv) {
     z = (newMin.y * z1 - newMin.y * z0 - z1 * y0 + z0 * y1) / (y1 - y0);
 
     if (y0 != y1 && x >= newMin.x && x <= newMax.x && z >= newMin.z && z <= newMax.z) {
-        double distance1 = glm::distance(A, glm::vec3(x, newMin.y, z));
-        double distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, newMin.y, z));
+        float distance1 = glm::distance(A, glm::vec3(x, newMin.y, z));
+        float distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, newMin.y, z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return {}; // return true;
@@ -870,8 +870,8 @@ CollisionPoint Ray::checkCollision(AABB* bv) {
     z = (newMax.y * z1 - newMax.y * z0 - z1 * y0 + z0 * y1) / (y1 - y0);
 
     if (y0 != y1 && x >= newMin.x && x <= newMax.x && z >= newMin.z && z <= newMax.z) {
-        double distance1 = glm::distance(A, glm::vec3(x, newMax.y, z));
-        double distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, newMax.y, z));
+        float distance1 = glm::distance(A, glm::vec3(x, newMax.y, z));
+        float distance2 = glm::distance(A + this->direction * this->length, glm::vec3(x, newMax.y, z));
 
         if (fabs(distance1 + distance2 - this->length) <= EPS)
             return {}; //  true;
@@ -885,11 +885,11 @@ CollisionPoint Ray::checkCollision(Ray* r) {
 
     Solution solution = getIntersectionPoint(A, B, C, D);
 
-    long double distance1 = glm::distance(A, solution.point);
-    long double distance2 = glm::distance(B, solution.point);
+    float distance1 = glm::distance(A, solution.point);
+    float distance2 = glm::distance(B, solution.point);
 
-    long double distance3 = glm::distance(C, solution.point);
-    long double distance4 = glm::distance(D, solution.point);
+    float distance3 = glm::distance(C, solution.point);
+    float distance4 = glm::distance(D, solution.point);
 
     bool res = solution.point.x != -INF &&
                solution.point.x != INF && fabs(distance1 + distance2 - this->length) <= EPS && (
@@ -918,13 +918,13 @@ CollisionPoint Ray::checkCollision(Triangle *t) {
             return {}; // return true;
     }
 
-    double x0 = A.x, y0 = A.y, z0 = A.z;
-    double x1 = B.x, y1 = B.y, z1 = B.z;
+    float x0 = A.x, y0 = A.y, z0 = A.z;
+    float x1 = B.x, y1 = B.y, z1 = B.z;
 
-    double a = t->norm.x, b = t->norm.y, c = t->norm.z;
-    double d = glm::dot(t->norm, t->vertices[0]);
+    float a = t->norm.x, b = t->norm.y, c = t->norm.z;
+    float d = glm::dot(t->norm, t->vertices[0]);
 
-    double c1, c2, c3, c4;
+    float c1, c2, c3, c4;
     Solution solution{};
 
     Ray r0(t->vertices[0], glm::normalize(- t->vertices[0] + t->vertices[1]), glm::length(t->vertices[0] - t->vertices[1]));
@@ -982,8 +982,8 @@ CollisionPoint Ray::checkCollision(Triangle *t) {
         solution = zIsFixed(A, B, (d - c2 - c4) / (c + c1 + c3));
     }
 
-    long double distance1 = glm::distance(A, solution.point);
-    long double distance2 = glm::distance(B, solution.point);
+    float distance1 = glm::distance(A, solution.point);
+    float distance2 = glm::distance(B, solution.point);
 
     if (distance1 > this->length || distance2 > this->length)
         return {};
@@ -1159,11 +1159,11 @@ CollisionPoint Triangle::checkCollision(Triangle *t) {
     return {}; // return result;
 } // TODO return CollisionPoint
 bool Triangle::isInside(glm::vec3 point) {
-    long double area = getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1]);
+    float area = getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1]);
 
-    long double subarea1 = getTriangleArea2(vertices[0] - vertices[1], vertices[1] - point);
-    long double subarea2 = getTriangleArea2(vertices[1] - vertices[2], vertices[2] - point);
-    long double subarea3 = getTriangleArea2(vertices[0] - vertices[2], vertices[2] - point);
+    float subarea1 = getTriangleArea2(vertices[0] - vertices[1], vertices[1] - point);
+    float subarea2 = getTriangleArea2(vertices[1] - vertices[2], vertices[2] - point);
+    float subarea3 = getTriangleArea2(vertices[0] - vertices[2], vertices[2] - point);
 
     //if (area < 0.0001)
     //std::cout << area << " area ";

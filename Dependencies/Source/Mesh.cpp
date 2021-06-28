@@ -8,14 +8,14 @@
 #include <glm/gtx/quaternion.hpp>
 
 Mesh::Mesh() {
-    bv = nullptr;
+    rigidbody = nullptr;
     localTransform = transform{
         glm::vec3(0),
         glm::vec3(1),
         glm::quat()};
 }
 Mesh::~Mesh() {
-    if (bv) delete bv;
+    if (rigidbody) delete rigidbody;
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);}
@@ -56,18 +56,17 @@ void Mesh::Draw(Shader* shader) {
 
     shader->bind();
 
-    if (bv && boundingBoxON) {
-        //bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+    if (rigidbody && boundingBoxON) {
+        //rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        bv->collider->Draw(shader);
+        rigidbody->collider->Draw(shader);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    glm::mat4 model;
-    if (bv) 
-        model = bv->getTransform();
-    else model = getTransform();
+    glm::mat4 model = getTransform();
+    if (rigidbody) 
+        model = model * rigidbody->getTransform();
     
     shader->setMat4("model", &model);
 
@@ -99,8 +98,6 @@ void Mesh::gui(int outIndex = 0) {
         s = "boundingBoxON " + std::to_string(outIndex);
         ImGui::Checkbox(s.c_str(), &boundingBoxON);
 
-        transform localTransform_old = localTransform;
-
         float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
         s = "position " + std::to_string(outIndex);
         ImGui::SliderFloat3(s.c_str(), t, -10, 10);
@@ -111,9 +108,7 @@ void Mesh::gui(int outIndex = 0) {
         //ImGui::SliderFloat3(s.c_str(), r, -180, 180);
         //localTransform.rot = glm::vec3(r[0], r[1], r[2]);
 
-        if (localTransform.tr != localTransform_old.tr)
-            bv->setTransform(localTransform.tr, glm::vec3(0), glm::vec3(0));
-        //bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+        rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
 
         ImGui::TreePop();
     }
@@ -131,7 +126,14 @@ std::vector<Vertex> Mesh::getTriangle(int index) {
     return v;
 }
 
-void Mesh::addBody(RigidBody* rigidBody) {
-    bv = rigidBody;
-    bv->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+void Mesh::addBody(RigidBody* rigidBody, float mass) {
+    rigidbody = rigidBody;
+    //rigidbody->setTransform(glm::vec3(0), glm::vec3(0), glm::vec3(0));
+    rigidbody->mass = mass;
+    rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+}
+void Mesh::setPosition(glm::vec3 pos) {
+    localTransform.tr = pos;
+    if (rigidbody)
+        rigidbody->setTransform(pos, glm::vec3(0), glm::vec3(0));
 }
