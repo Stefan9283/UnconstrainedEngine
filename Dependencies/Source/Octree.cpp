@@ -33,10 +33,11 @@ OctreeNode::OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remaini
     box->body->wireframeON = true;
     box->parent = nullptr;
 
-    level--;
 
-    if (level > 1)
+    if (level > 1) {
+        level--;
         divide(remainingTriangles, level);
+    }
 }
 
 
@@ -58,6 +59,8 @@ OctreeNode::OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remaini
 void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level) {
     // divide box in 8 sectors if more than 0 triangles are in vec and add the new nodes
 
+//    std::cout << level << "\n";
+
     glm::vec3 min = box->min;
     glm::vec3 max = box->max;
 
@@ -65,7 +68,9 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
 
     std::vector<std::pair<AABB, std::vector<std::pair<int, std::vector<Vertex>>>>> boxes;
 
-    // bottom
+//    std::cout << glm::to_string(min) << glm::to_string(mid) << glm::to_string(max) << "\n";
+
+                                                            // bottom
     boxes.push_back(std::make_pair(AABB(min, mid), std::vector<std::pair<int, std::vector<Vertex>>>()));
     boxes.push_back(std::make_pair(AABB(glm::vec3(mid.x, min.y, min.z), glm::vec3(max.x, mid.y, mid.z)), std::vector<std::pair<int, std::vector<Vertex>>>()));
     boxes.push_back(std::make_pair(AABB(glm::vec3(min.x, min.y, mid.z), glm::vec3(mid.x, mid.y, max.z)), std::vector<std::pair<int, std::vector<Vertex>>>()));
@@ -77,10 +82,11 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
     boxes.push_back(std::make_pair(AABB(glm::vec3(mid.x, mid.y, min.z), glm::vec3(max.x, max.y, mid.z)), std::vector<std::pair<int, std::vector<Vertex>>>()));
     boxes.push_back(std::make_pair(AABB(glm::vec3(min.x, mid.y, mid.z), glm::vec3(mid.x, max.y, max.z)), std::vector<std::pair<int, std::vector<Vertex>>>()));
 
+    // TODO fix triangle AABB collision
     for (std::pair<int, std::vector<Vertex>> triangle : remainingTriangles) {
         this->triangleIndices.push_back(triangle.first);
         Triangle t(triangle.second[0].Position, triangle.second[1].Position, triangle.second[2].Position, glm::vec3(0));
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < boxes.size(); ++i) {
             if (boxes[i].first.checkCollision(&t).hasCollision)
                 boxes[i].second.push_back(triangle);
         }
@@ -88,16 +94,17 @@ void OctreeNode::divide(std::vector<std::pair<int, std::vector<Vertex>>>& remain
 
     if (level > 0) {
         for (int j = 0; j < boxes.size(); ++j) {
-            if (!boxes[j].second.empty())
+            if (!boxes[j].second.empty()) {
                 children.push_back(new OctreeNode(boxes[j].second, level));
+            }
         }
     }
 }
 
-void OctreeNode::Draw(Shader* s) {
-    if (!children.size())
+void OctreeNode::Draw(Shader* s, int level) {
+    if (!children.size()) {
         box->Draw(s);
-    else {
+    } else {
         for (auto &i : children)
             i->Draw(s);
     }

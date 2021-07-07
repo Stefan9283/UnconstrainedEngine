@@ -10,6 +10,7 @@
 
 class RigidBody {
 public:
+    Mesh* mesh;
     Collider* collider;
     glm::vec3
             force, velocity,
@@ -21,6 +22,7 @@ public:
     RigidBody(Collider* c,  float m = 1);
     void moveObject(glm::vec3 pos);
     void setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
+    void updateCollider();
     glm::mat4 getTransform();
 };
 

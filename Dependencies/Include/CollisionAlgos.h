@@ -20,27 +20,21 @@ namespace collisionAlgos {
     CollisionPoint checkCollision(BoundingSphere* col1, BoundingSphere* col);
     CollisionPoint checkCollision(AABB* col1, AABB* col);
     CollisionPoint checkCollision(Triangle* col1, Triangle* col);
-    CollisionPoint checkCollision(TriangleMesh* col1, TriangleMesh* col);
+    CollisionPoint checkCollision(TriangleMesh* col1, Collider* col);
     CollisionPoint checkCollision(Capsule* col1, Capsule* col);
     CollisionPoint checkCollision(Ray* col1, Ray* col);
 
     CollisionPoint checkCollision(AABB* col1, BoundingSphere* col);
     CollisionPoint checkCollision(AABB* col1, Triangle* col);
-    CollisionPoint checkCollision(AABB* col1, TriangleMesh* col);
     CollisionPoint checkCollision(AABB* col1, Capsule* col);
     CollisionPoint checkCollision(AABB* col1, Ray* col);
 
     CollisionPoint checkCollision(BoundingSphere* col1, Triangle* col);
-    CollisionPoint checkCollision(BoundingSphere* col1, TriangleMesh* col);
     CollisionPoint checkCollision(BoundingSphere* col1, Capsule* col);
     CollisionPoint checkCollision(BoundingSphere* col1, Ray* col);
 
-    CollisionPoint checkCollision(Triangle* col1, TriangleMesh* col);
     CollisionPoint checkCollision(Triangle* col1, Capsule* col);
     CollisionPoint checkCollision(Triangle* col1, Ray* col);
-
-    CollisionPoint checkCollision(TriangleMesh* col1, Capsule* col);
-    CollisionPoint checkCollision(TriangleMesh* col1, Ray* col);
 
     CollisionPoint checkCollision(Capsule* col1, Ray* col);
 }

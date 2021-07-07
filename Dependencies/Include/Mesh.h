@@ -8,9 +8,6 @@
 #include "PhysicsWorld.h"
 
 
-
-
-
 class Mesh
 {
 public:
@@ -32,7 +29,7 @@ public:
     void prepare();
     void Draw(Shader* shader);
     void gui(int outIndex);
-    void addBody(RigidBody* body, float mass);
+    void addBody(RigidBody* body);
     void setPosition(glm::vec3 pos);
 
     std::vector<Vertex> getTriangle(int index);

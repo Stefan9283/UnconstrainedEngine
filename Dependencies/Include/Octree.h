@@ -31,7 +31,7 @@ public:
     std::vector<OctreeNode*> children;
     std::vector<uint32_t> triangleIndices;
 
-    void Draw(Shader* s);
+    void Draw(Shader* s, int level = 0);
 
     OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level);
     void divide(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level);

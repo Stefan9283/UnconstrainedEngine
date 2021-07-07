@@ -20,13 +20,6 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);}
 
-glm::mat4 Mesh::getTransform() {
-    glm::mat4 T, R = glm::mat4(1), S;
-    T = glm::translate(glm::mat4(1), localTransform.tr);
-    R = glm::toMat4(localTransform.rot);
-    S = glm::scale(glm::mat4(1), localTransform.sc);
-    return T * R * S;
-}
 
 void Mesh::prepare() {
     //assert(vertices.size() != 0);
@@ -87,7 +80,6 @@ void Mesh::Draw(Shader* shader) {
     shader->unbind();
 }
 void Mesh::gui(int outIndex = 0) {
-
     std::string s;
     s = name + " " + std::to_string(outIndex);
     if (ImGui::TreeNode(s.c_str())) {
@@ -99,7 +91,7 @@ void Mesh::gui(int outIndex = 0) {
         ImGui::Checkbox(s.c_str(), &boundingBoxON);
 
         float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
-        s = "position " + std::to_string(outIndex);
+        s = "offset " + std::to_string(outIndex);
         ImGui::SliderFloat3(s.c_str(), t, -10, 10);
         localTransform.tr = glm::vec3(t[0], t[1], t[2]);
 
@@ -108,11 +100,18 @@ void Mesh::gui(int outIndex = 0) {
         //ImGui::SliderFloat3(s.c_str(), r, -180, 180);
         //localTransform.rot = glm::vec3(r[0], r[1], r[2]);
 
-        rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+        if (rigidbody) {
+            float t_rb[4] = {rigidbody->position.x, rigidbody->position.y, rigidbody->position.z, 1.0f};
+            s = "rb position " + std::to_string(outIndex);
+            ImGui::SliderFloat3(s.c_str(), t_rb, -10, 10);
+            rigidbody->position = glm::vec3(t_rb[0], t_rb[1], t_rb[2]);
+//            rigidbody->updateCollider();
+        }
+
+//        rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
 
         ImGui::TreePop();
     }
-
 }
 
 int Mesh::getTriangleCount() {
@@ -126,14 +125,21 @@ std::vector<Vertex> Mesh::getTriangle(int index) {
     return v;
 }
 
-void Mesh::addBody(RigidBody* rigidBody, float mass) {
+void Mesh::addBody(RigidBody* rigidBody) {
     rigidbody = rigidBody;
     //rigidbody->setTransform(glm::vec3(0), glm::vec3(0), glm::vec3(0));
-    rigidbody->mass = mass;
-    rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+    rigidBody->mesh = this;
+//    rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+}
+glm::mat4 Mesh::getTransform() {
+    glm::mat4 T, R = glm::mat4(1), S;
+    T = glm::translate(glm::mat4(1), localTransform.tr);
+    R = glm::toMat4(localTransform.rot);
+    S = glm::scale(glm::mat4(1), localTransform.sc);
+    return T * R * S;
 }
 void Mesh::setPosition(glm::vec3 pos) {
     localTransform.tr = pos;
-    if (rigidbody)
-        rigidbody->setTransform(pos, glm::vec3(0), glm::vec3(0));
+//    if (rigidbody)
+//        rigidbody->setTransform(pos, glm::vec3(0), glm::vec3(0));
 }

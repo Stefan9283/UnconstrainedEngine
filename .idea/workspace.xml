@@ -35,16 +35,17 @@
   <component name="ChangeListManager">
     <list default="true" id="259312f1-4481-46ad-b2f6-bf8afc467866" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/BVH.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/BoundingVolumes.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/CollisionAlgos.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/CollisionAlgos.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Include/Common.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Common.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Constraint.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Constraint.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Include/Mesh.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Mesh.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Include/Octree.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/Octree.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Include/PhysicsWorld.h" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Include/PhysicsWorld.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Source/BVH.cpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/BoundingVolumes.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dependencies/Source/Constraint.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Constraint.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/CollisionAlgos.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/CollisionAlgos.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/Mesh.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Mesh.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/Octree.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Source/PhysicsWorld.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Source/PhysicsWorld.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" beforeDir="false" afterPath="$PROJECT_DIR$/Dependencies/Vendor/ImGuizmo" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imgui.ini" beforeDir="false" afterPath="$PROJECT_DIR$/imgui.ini" afterDir="false" />
@@ -171,7 +172,11 @@
       <workItem from="1624413218303" duration="4884000" />
       <workItem from="1624553752291" duration="15908000" />
       <workItem from="1624821742691" duration="67000" />
-      <workItem from="1624827869048" duration="9471000" />
+      <workItem from="1624827869048" duration="9863000" />
+      <workItem from="1625183229788" duration="3914000" />
+      <workItem from="1625584302807" duration="14000" />
+      <workItem from="1625670325378" duration="5282000" />
+      <workItem from="1625676230409" duration="7854000" />
     </task>
     <servers />
   </component>
@@ -199,63 +204,51 @@
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="1173" y="1001" key="FileChooserDialogImpl/62.0.4034.2160@62.0.4034.2160" timestamp="1623713927469" />
-    <state width="813" height="899" key="GridCell.Tab.0.bottom" timestamp="1624841768528">
+    <state width="992" height="1375" key="GridCell.Tab.0.bottom" timestamp="1625683994366">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state width="387" height="1119" key="GridCell.Tab.0.bottom/0.0.4096.2130@0.0.4096.2130" timestamp="1620382302233" />
-    <state width="813" height="899" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1624841768528" />
-    <state width="813" height="899" key="GridCell.Tab.0.center" timestamp="1624841768528">
+    <state width="992" height="1375" key="GridCell.Tab.0.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1625683994366" />
+    <state width="992" height="1375" key="GridCell.Tab.0.center" timestamp="1625683994366">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state width="387" height="1119" key="GridCell.Tab.0.center/0.0.4096.2130@0.0.4096.2130" timestamp="1620382302233" />
-    <state width="813" height="899" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1624841768528" />
-    <state width="813" height="899" key="GridCell.Tab.0.left" timestamp="1624841768528">
+    <state width="992" height="1375" key="GridCell.Tab.0.center/62.0.4034.2160@62.0.4034.2160" timestamp="1625683994366" />
+    <state width="992" height="1375" key="GridCell.Tab.0.left" timestamp="1625683994365">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state width="387" height="1119" key="GridCell.Tab.0.left/0.0.4096.2130@0.0.4096.2130" timestamp="1620382302232" />
-    <state width="813" height="899" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1624841768528" />
-    <state width="813" height="899" key="GridCell.Tab.0.right" timestamp="1624841768528">
+    <state width="992" height="1375" key="GridCell.Tab.0.left/62.0.4034.2160@62.0.4034.2160" timestamp="1625683994365" />
+    <state width="992" height="1375" key="GridCell.Tab.0.right" timestamp="1625683994366">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state width="387" height="1119" key="GridCell.Tab.0.right/0.0.4096.2130@0.0.4096.2130" timestamp="1620382302233" />
-    <state width="813" height="899" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1624841768528" />
-    <state width="2547" height="480" key="GridCell.Tab.1.bottom" timestamp="1624840958086">
+    <state width="992" height="1375" key="GridCell.Tab.0.right/62.0.4034.2160@62.0.4034.2160" timestamp="1625683994366" />
+    <state width="3036" height="507" key="GridCell.Tab.1.bottom" timestamp="1625676010865">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="2547" height="480" key="GridCell.Tab.1.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1624840958086" />
-    <state width="2547" height="480" key="GridCell.Tab.1.center" timestamp="1624840958086">
+    <state width="3036" height="507" key="GridCell.Tab.1.bottom/62.0.4034.2160@62.0.4034.2160" timestamp="1625676010865" />
+    <state width="3036" height="507" key="GridCell.Tab.1.center" timestamp="1625676010865">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="2547" height="480" key="GridCell.Tab.1.center/62.0.4034.2160@62.0.4034.2160" timestamp="1624840958086" />
-    <state width="2547" height="480" key="GridCell.Tab.1.left" timestamp="1624840958086">
+    <state width="3036" height="507" key="GridCell.Tab.1.center/62.0.4034.2160@62.0.4034.2160" timestamp="1625676010865" />
+    <state width="3036" height="507" key="GridCell.Tab.1.left" timestamp="1625676010865">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="2547" height="480" key="GridCell.Tab.1.left/62.0.4034.2160@62.0.4034.2160" timestamp="1624840958086" />
-    <state width="2547" height="480" key="GridCell.Tab.1.right" timestamp="1624840958086">
+    <state width="3036" height="507" key="GridCell.Tab.1.left/62.0.4034.2160@62.0.4034.2160" timestamp="1625676010865" />
+    <state width="3036" height="507" key="GridCell.Tab.1.right" timestamp="1625676010865">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state width="2547" height="480" key="GridCell.Tab.1.right/62.0.4034.2160@62.0.4034.2160" timestamp="1624840958086" />
+    <state width="3036" height="507" key="GridCell.Tab.1.right/62.0.4034.2160@62.0.4034.2160" timestamp="1625676010865" />
     <state x="1004" y="1178" key="SettingsEditor" timestamp="1622646179945">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
     <state x="843" y="586" key="SettingsEditor/0.0.4096.2130@0.0.4096.2130" timestamp="1620327988516" />
     <state x="1004" y="1178" key="SettingsEditor/62.0.4034.2160@62.0.4034.2160" timestamp="1622646179945" />
-    <state x="1381" y="839" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1616964353801">
+    <state x="1466" y="965" width="622" height="530" key="find.popup" timestamp="1625681909374">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>
-    <state x="1381" y="839" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/62.0.4034.2160@62.0.4034.2160" timestamp="1616964353801" />
-    <state x="1466" y="965" width="622" height="530" key="find.popup" timestamp="1624841465470">
-      <screen x="62" y="0" width="4034" height="2160" />
-    </state>
-    <state x="1466" y="965" width="622" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1624841465470" />
-    <state x="1274" y="957" key="refactoring.ChangeSignatureDialog" timestamp="1616810198326">
-      <screen x="62" y="0" width="4034" height="2160" />
-    </state>
-    <state x="1274" y="957" key="refactoring.ChangeSignatureDialog/62.0.4034.2160@62.0.4034.2160" timestamp="1616810198326" />
-    <state x="1735" y="520" key="run.anything.popup" timestamp="1616449360646">
-      <screen x="62" y="0" width="4034" height="2160" />
-    </state>
-    <state x="1735" y="520" key="run.anything.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1616449360646" />
+    <state x="1466" y="965" width="622" height="530" key="find.popup/62.0.4034.2160@62.0.4034.2160" timestamp="1625681909374" />
     <state x="1742" y="505" width="672" height="678" key="search.everywhere.popup" timestamp="1624559277835">
       <screen x="62" y="0" width="4034" height="2160" />
     </state>

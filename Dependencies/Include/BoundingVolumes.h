@@ -60,9 +60,9 @@ class Collider {
 public:
     ColliderMesh* body = nullptr;
     glm::mat4 localTransform = glm::mat4(1);
-    RigidBody* parent;
+    RigidBody* parent = nullptr;
 
-    virtual void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
+    virtual void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
         glm::mat4 T, R = glm::mat4(1), S;
         T = glm::translate(glm::mat4(1), pos);
         R = glm::toMat4(rot);
@@ -88,7 +88,7 @@ public:
     float radius;
     glm::vec3 pos{};
 
-    void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
+    void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
 
     CollisionPoint checkCollision(BoundingSphere* bv) override;
     CollisionPoint checkCollision(AABB* bv) override;
@@ -101,7 +101,6 @@ public:
     BoundingSphere(glm::vec3 pos, float radius);
     void toString() override;
     bool isInside(glm::vec3 point);
-
 };
 
 class AABB : public Collider{
@@ -109,9 +108,9 @@ public:
     glm::vec3 max{}, min{}, max0, min0, offset{};
 
     void updateMinMax(glm::mat4 transform);
-    void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
+    void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
     std::vector<Vertex> generateVerices(glm::vec3 min, glm::vec3 max);
-    ColliderMesh * generateNewMesh();
+    ColliderMesh *generateNewMesh();
     glm::vec3 closestPoint(glm::vec3 p);
 
     CollisionPoint checkCollision(AABB* bv) override;
@@ -120,6 +119,8 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
+
+    void AABB::Draw(Shader* shader) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
@@ -135,8 +136,6 @@ public:
     CollisionPoint checkCollision(Ray* r) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
-
-    CollisionPoint checkCollisionByTriangle(Collider* col);
 
     TriangleMesh(Mesh* mesh);
     ~TriangleMesh() { body = nullptr; }
@@ -177,7 +176,7 @@ public:
     CollisionPoint checkCollision(Capsule* col) override;
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
-    Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh);
+    Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh = false);
     void toString() override;
 };
 
@@ -190,7 +189,7 @@ public:
 
 
     static Capsule* generateCapsule(Mesh* mesh);
-    void setTransform(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
+    void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
     Capsule(glm::vec3 start, glm::vec3 end, float radius);
     CollisionPoint checkCollision(BoundingSphere* col) override;
     CollisionPoint checkCollision(AABB* col) override;
