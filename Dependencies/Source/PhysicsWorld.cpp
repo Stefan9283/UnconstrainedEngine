@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 22-Mar-21.
-//
-
 #include "PhysicsWorld.h"
 #include "Mesh.h"
 
@@ -47,7 +43,6 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
 
     std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
 
-
     size_t max = 0;
     for (auto col : collisionPoints)
         max = std::max(max, std::max(col.first.first, col.first.second));
@@ -58,7 +53,6 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
         for (auto& constr : constraints)
             constr.resize(max);
     }
-
 
     for (int l = 0; l < NUM_OF_ITERATIONS; l++) {
         for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
@@ -77,9 +71,10 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
             r->setTransform(r->velocity * dt, glm::quat(), glm::vec3(1));
             r->angularVel += r->torque / dt;
             r->force = glm::vec3(0);
+        } else {
+            r->velocity = {};
         }
     }
-
 }
 
 int getRbIndex(RigidBody* rb, const std::vector<RigidBody*>& rbs) {
@@ -110,43 +105,4 @@ PhysicsWorld *PhysicsWorld::addConstraint(Constraint* c, std::vector<RigidBody*>
     return this;
 }
 
-RigidBody::RigidBody(Collider* c, float m) {
-    collider = c;
-    mesh = nullptr;
-    c->parent = this;
-
-    force = glm::vec3(0);
-    torque = glm::vec3(0);
-    velocity = glm::vec3(0);
-    angularVel = glm::vec3(0);
-
-    mass = m;
-    position = glm::vec3(0);
-}
-void RigidBody::setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale) {
-    collider->update(translation, rotation, scale);
-    position += translation;
-}
-
-
-glm::mat4 RigidBody::getTransform() {
-    glm::mat4 T = glm::mat4(1), R = glm::mat4(1), S = glm::mat4(1); //TODO
-    T = glm::translate(glm::mat4(1), position);
-//    std::cout << mesh << "\n";
-    if (mesh) {
-        return T;
-        return mesh->getTransform() * T;
-    }
-    return T;
-}
-
-void RigidBody::moveObject(glm::vec3 pos) {
-    if (movable)
-        position += pos;
-}
-
-void RigidBody::updateCollider() {
-    if (collider)
-        collider->update(this->position, glm::quat(), glm::vec3(1)); // TODO add rotation and scale
-}
 

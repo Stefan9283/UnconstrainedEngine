@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_MIN_REQ_VERSION "3.10")
 # set the project name
-project("Triangle")
+project("PhysicsEngine")
 
 
 option(GLFW_BUILD_DOCS OFF)
@@ -13,7 +13,7 @@ add_subdirectory(Dependencies/Vendor/glad)
 
 if(MSVC)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MDd /O2 /std:c++17")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MDd /std:c++17")
 
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 	add_definitions(-DCMAKE_GENERATOR_PLATFORM=x64)
@@ -30,6 +30,9 @@ else()
 	endif()
 endif()
 
+
+
+set(VS_DEBUGGER_WORKING_DIRECTORY ".")
 
 include_directories(
 					Dependencies/Include
@@ -55,6 +58,7 @@ file(GLOB PROJECT_HEADERS Dependencies/Include/*.hpp Dependencies/Include/*.h)
 
 add_definitions(-DGLFW_INCLUDE_NONE -DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
 
+
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
 source_group("vendorSrc" FILES ${VENDORS_SOURCES})
@@ -71,5 +75,8 @@ target_link_libraries(${PROJECT_NAME}
 								${GLAD_LIBRARIES} 
 								glfw
 								)
+
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+# set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})

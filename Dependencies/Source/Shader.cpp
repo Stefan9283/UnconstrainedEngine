@@ -37,7 +37,6 @@ ShaderProgramSource Shader::ParseShader(const char* filepath_v, const char* file
     }
     source.vertexShader[strlen(source.vertexShader)] = '\0';
     source.fragmentShader[strlen(source.fragmentShader)] = '\0';
-
     return source;
 }
 

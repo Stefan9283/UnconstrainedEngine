@@ -12,7 +12,7 @@
 #ifndef TRIANGLE_OCTREE_H
 #define TRIANGLE_OCTREE_H
 
-#include "BoundingVolumes.h"
+#include "Colliders.h"
 #include "Vertex.h"
 
 class Shader;
@@ -23,6 +23,7 @@ class Octree {
 public:
     OctreeNode* root = nullptr;
     Octree(Mesh* mesh, int level = 1);
+    void Draw(int maxdepth, Shader* s);
 };
 
 class OctreeNode {
@@ -33,8 +34,8 @@ public:
 
     void Draw(Shader* s, int level = 0);
 
-    OctreeNode(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level);
-    void divide(std::vector<std::pair<int, std::vector<Vertex>>>& remainingTriangles, int level);
+    OctreeNode(std::vector<Triangle>& remainingTriangles, int level);
+    void divide(std::vector<Triangle>& remainingTriangles, int level);
     ~OctreeNode();
 };
 

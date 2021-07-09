@@ -3,6 +3,7 @@
 //
 
 #include "Mesh.h"
+#include "RigidBody.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -128,7 +129,7 @@ std::vector<Vertex> Mesh::getTriangle(int index) {
 void Mesh::addBody(RigidBody* rigidBody) {
     rigidbody = rigidBody;
     //rigidbody->setTransform(glm::vec3(0), glm::vec3(0), glm::vec3(0));
-    rigidBody->mesh = this;
+    // rigidBody->mesh = this;
 //    rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
 }
 glm::mat4 Mesh::getTransform() {

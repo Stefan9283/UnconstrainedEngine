@@ -113,3 +113,9 @@ void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjecti
     //mesh->localTransform.rot = glm::vec3(mesh->rotation[0], mesh->rotation[1], mesh->rotation[2]);
     //mesh->localTransform.sc = glm::vec3(mesh->scale[0], mesh->scale[1], mesh->scale[2]);
 }
+
+std::string getTabs(int n) {
+    std::string s = "";
+    s.append(n, '\t');    
+    return s;
+}

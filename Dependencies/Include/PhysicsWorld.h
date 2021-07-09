@@ -5,26 +5,9 @@
 #ifndef TRIANGLE_PHYSICSWORLD_H
 #define TRIANGLE_PHYSICSWORLD_H
 
-#include "BoundingVolumes.h"
+#include "Colliders.h"
 #include "Constraint.h"
-
-class RigidBody {
-public:
-    Mesh* mesh;
-    Collider* collider;
-    glm::vec3
-            force, velocity,
-            torque, angularVel,
-            position;
-    float mass;
-    bool movable = true;
-    float drag = 0.01f;
-    RigidBody(Collider* c,  float m = 1);
-    void moveObject(glm::vec3 pos);
-    void setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
-    void updateCollider();
-    glm::mat4 getTransform();
-};
+#include "RigidBody.h"
 
 class Constraint;
 

@@ -4,9 +4,10 @@
 
 #include "Vertex.h"
 #include "Shader.h"
-#include "BoundingVolumes.h"
+#include "Colliders.h"
 #include "PhysicsWorld.h"
 
+class RigidBody;
 
 class Mesh
 {

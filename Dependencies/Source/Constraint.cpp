@@ -1,6 +1,7 @@
 #include "Constraint.h"
 #include "PhysicsWorld.h"
 
+#pragma region Basic Constraint
 Constraint::Constraint(RigidBody* rb1, RigidBody* rb2) {
     this->rb1 = rb1;
     this->rb2 = rb2;
@@ -24,7 +25,9 @@ Constraint::Constraint(RigidBody* rb1, RigidBody* rb2) {
     cached_lambda.setZero();
 }
 Constraint::~Constraint() {}
+#pragma endregion
 
+#pragma region Distance Constraint
 void DistanceConstraint::buildJacobian(CollisionPoint &p) {
     Jacobian.resize(12, 12);
     Jacobian.setZero();
@@ -160,10 +163,9 @@ void DistanceConstraint::solve(CollisionPoint& p, float dt) {
 //              << velocity.transpose() << " = v\n\n"
 //              << dv.transpose() << " delta\n\n\n\n";
 
-    float beta_restitution = 0.8f;
+    float beta_restitution = 0.9f;
 
-
-    float lost_energy = 0.5f;
+    float lost_energy = 0.3f;
     glm::vec3 bounce1, bounce2;
     bounce1 = //glm::dot(p.normal, rb1->velocity) * 
         glm::length(rb1->velocity) * (1 - lost_energy) *
@@ -173,9 +175,9 @@ void DistanceConstraint::solve(CollisionPoint& p, float dt) {
         (+ p.normal);
 
     for (int j = 0; j < 3; ++j) {
-        rb1->velocity[j] = velocity[j] * dt;
+        rb1->velocity[j] = velocity[j] * (1 - beta_restitution);
         rb1->angularVel[j] = velocity[j + 3];
-        rb2->velocity[j] = velocity[j + 6] * dt;
+        rb2->velocity[j] = velocity[j + 6] * (1 - beta_restitution);
         rb2->angularVel[j] = velocity[j + 9];
     }
 
@@ -243,6 +245,13 @@ DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
     minD = minDistance;
     maxD = maxDistance;
 }
-DistanceConstraint::~DistanceConstraint() {}
+DistanceConstraint::~DistanceConstraint() {
 
-RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : DistanceConstraint(rb1, rb2, 0, 0) {}
+}
+#pragma endregion
+
+#pragma region Resting COnstraint
+RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : DistanceConstraint(rb1, rb2, 0, 0) {
+
+}
+#pragma endregion 

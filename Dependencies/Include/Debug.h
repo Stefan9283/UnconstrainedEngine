@@ -12,4 +12,6 @@ class Mesh;
 
 void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjection, Mesh* mesh);
 
+std::string getTabs(int n);
+
 #endif //TRIANGLE_DEBUG_H
