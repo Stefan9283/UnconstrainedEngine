@@ -100,6 +100,35 @@ Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
     return body;
 }
 
+// TODO delete me later
+glm::vec3 checkCollision(AABB* bv1, AABB* bv2) {
+    glm::vec3 newMin1 = bv1->getMin(), newMax1 = bv1->getMax();
+    glm::vec3 newMin2 = bv2->getMin(), newMax2 = bv2->getMax();
+
+    if (newMin1.x > newMax2.x || newMax1.x < newMin2.x) {
+        return {};
+    }
+
+    if (newMin1.y > newMax2.y || newMax1.y < newMin2.y) {
+        return {};
+    }
+
+    if (newMin1.z > newMax2.z || newMax1.z < newMin2.z) {
+        return {};
+    }
+
+
+    glm::vec3 v0 = glm::vec3(std::max(newMin1.x, std::min(newMin2.x, newMax1.x)),
+        std::max(newMin1.y, std::min(newMin2.y, newMax1.y)),
+        std::max(newMin1.z, std::min(newMin2.z, newMax1.z)));
+
+    glm::vec3 v1 = glm::vec3(std::max(newMin1.x, std::min(newMax2.x, newMax1.x)),
+        std::max(newMin1.y, std::min(newMax2.y, newMax1.y)),
+        std::max(newMin1.z, std::min(newMax2.z, newMax1.z)));
+
+    return (v0 + v1) / 2.0f;
+}
+
 void testBasicCollision() {
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)
@@ -513,6 +542,8 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
     m1->solidON = false;
     m2->solidON = false;
 
+    Mesh* midPoint = nullptr;
+
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -550,13 +581,12 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             m1->Draw(s);
         }
         if (pointB) {
-            s->setVec3("color", glm::vec3(252, 223, 3)/255.0f);
+            s->setVec3("color", glm::vec3(252, 223, 3) / 255.0f);
             m2->Draw(s);
             pointB->Draw(s);
         } else {
             m2->Draw(s);
         }
-
 
         if(dynamic_cast<Ray*>(m1->rigidbody->collider)) {
             Ray* tmp_r = Ray::generateRay(window, c);
@@ -586,11 +616,30 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
 
         ImGui::SliderFloat("cam speed", &c->speed, 0.001f, 0.5f);
 
-        s->setFloat("flatColorsON", 1);
-        crosshair->Draw(s);
+        //s->setFloat("flatColorsON", 1);
+        //crosshair->Draw(s);
 
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
+
+
+        if (midPoint) {
+            s->setVec3("color", glm::vec3(255, 0, 0) / 255.0f);
+            midPoint->Draw(s);
+
+            std::string s = "middle ";
+            s.append(glm::to_string(midPoint->localTransform.tr));
+            ImGui::Text(s.c_str());
+            
+            s = "yellow ";
+            s.append(glm::to_string(pointA->localTransform.tr));
+            ImGui::Text(s.c_str());
+
+            s = "purple ";
+            s.append(glm::to_string(pointB->localTransform.tr));
+            ImGui::Text(s.c_str());
+        }
+
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -598,18 +647,28 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
         if(ImGui::Button("Check collisions" ) || continuouslyChecking) {
             p = m1->rigidbody->collider->checkCollision(m2->rigidbody->collider);
             delete pointA;
-            delete pointB;
             pointA = nullptr;
+            
+            delete pointB;
             pointB = nullptr;
+            
+            delete midPoint;
+            midPoint = nullptr;
 
             if (p.hasCollision) {
+                glm::vec3 mid = checkCollision((AABB*)m1->rigidbody->collider, ((AABB*)m2->rigidbody->collider));
+                midPoint = readObj("3D/Sphere.obj");
+                midPoint->localTransform.sc = glm::vec3(0.01f);
+                midPoint->localTransform.rot = glm::quat();
+                midPoint->localTransform.tr = mid;
+
                 pointA = readObj("3D/Sphere.obj");
-                pointA->localTransform.sc = glm::vec3(0.1f);
+                pointA->localTransform.sc = glm::vec3(0.01f);
                 pointA->localTransform.rot = glm::quat();
                 pointA->localTransform.tr = p.A;
 
                 pointB = readObj("3D/Sphere.obj");
-                pointB->localTransform.sc = glm::vec3(0.1f);
+                pointB->localTransform.sc = glm::vec3(0.01f);
                 pointB->localTransform.rot = glm::quat();
                 pointB->localTransform.tr = p.B;
             }

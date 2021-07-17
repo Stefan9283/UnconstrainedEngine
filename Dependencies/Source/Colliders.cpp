@@ -365,7 +365,6 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
         result.z = point.z;
     
     // varianta 2
-
     if (glm::abs(point.x - newMax.x) < glm::abs(point.x - newMin.x))
         result.x = newMax.x;
     else result.x = newMin.x;
