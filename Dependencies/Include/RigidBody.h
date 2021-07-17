@@ -18,6 +18,7 @@ public:
     void moveObject(glm::vec3 pos);
     void setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
     glm::mat4 getTransform();
+    void gui(int index);
 };
 
 #endif //TRIANGLE_RIGIDBODY_H

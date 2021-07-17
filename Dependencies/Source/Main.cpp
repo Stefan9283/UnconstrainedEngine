@@ -445,12 +445,17 @@ void testPhysics(std::vector<Mesh*> meshes) {
     for (auto* m : meshes)
         rbs.push_back(m->rigidbody);
 
+    
     for (auto r1 : rbs)
         for (auto r2 : rbs)
             if (r1 != r2) {
-                auto* contact = new DistanceConstraint(r1, r2, 0, 0);
+                auto* contact = new RestingConstraint(r1, r2);
                 physicsWorld.addConstraint(contact, rbs);
             } else break;
+    //{
+    //    Constraint* c = new DistanceConstraint(rbs[2], rbs[1], 1, std::numeric_limits<float>().max());
+    //    physicsWorld.addConstraint(c, rbs);
+    //}
 
     bool runWithPhysics = false;
 
@@ -484,7 +489,8 @@ void testPhysics(std::vector<Mesh*> meshes) {
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
             rb->collider->Draw(s);
-            rb->collider->body->gui(++index);
+            // rb->collider->body->gui(++index);
+            rb->gui(++index);
         }
 
 
@@ -503,6 +509,9 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
     CollisionPoint p{};
 
     Mesh *pointA = nullptr, *pointB = nullptr;
+    
+    m1->solidON = false;
+    m2->solidON = false;
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -532,16 +541,20 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
 
         m1->gui(1);
         m2->gui(2);
-        m1->Draw(s);
-        m2->Draw(s);
 
         if (pointA) {
             s->setVec3("color", glm::vec3(152, 3, 252)/255.0f);
+            m1->Draw(s);
             pointA->Draw(s);
+        } else {
+            m1->Draw(s);
         }
         if (pointB) {
             s->setVec3("color", glm::vec3(252, 223, 3)/255.0f);
+            m2->Draw(s);
             pointB->Draw(s);
+        } else {
+            m2->Draw(s);
         }
 
 
@@ -632,7 +645,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 
-    window = glfwCreateWindow(1040, 1040, "Window name", nullptr, nullptr);
+    window = glfwCreateWindow(1040, 1040, "Physics Engine", nullptr, nullptr);
 
     if (!window) {
         glfwTerminate();
@@ -688,6 +701,7 @@ int main() {
 
     Mesh* cube2 = readObj("3D/Box.obj");
     cube2->addBody(new RigidBody(new AABB(cube2)));
+    cube2->rigidbody->position = glm::vec3(0.7, 0, 0);
     meshes.push_back(cube2);
 
     Mesh* sphere2 = readObj("3D/Sphere.obj");
@@ -746,7 +760,7 @@ int main() {
 #pragma endregion
 
 
-    // testOctree(Mercy);
+//    testOctree(Mercy);
     //testBasicCollision();
     //testRayMeshIntersection(meshes[5]);
 
@@ -782,7 +796,7 @@ int main() {
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
     // testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
-    // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
+    testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
     // testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
   
@@ -795,9 +809,19 @@ int main() {
 
     m.push_back(cube);
 
-    for (int i = 1; i < 200; ++i) {
+    for (int i = 5; i < 6; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
-        tmp->addBody(new RigidBody(new Sphere(sphere), 0.1f));
+        switch (i % 3) {
+            case 0:
+                tmp->addBody(new RigidBody(new Sphere(sphere), 1));
+                break;
+            case 1:
+                tmp->addBody(new RigidBody(new Capsule(glm::vec3(0, -1, 0), glm::vec3(0, 1, 0), 0.5f), 1));
+                break;
+            case 2:
+                tmp->addBody(new RigidBody(new AABB(sphere), 1));
+                break;
+        }
         tmp->solidON = false;
         tmp->rigidbody->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
         m.push_back(tmp);

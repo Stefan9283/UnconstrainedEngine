@@ -5,6 +5,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 
+
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
 // TODO modifica sa ia ca parametru glm::vec3 si sa nu mai faca decompose

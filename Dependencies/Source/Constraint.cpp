@@ -3,6 +3,85 @@
 
 #pragma region Basic Constraint
 Constraint::Constraint(RigidBody* rb1, RigidBody* rb2) {
+    
+}
+Constraint::~Constraint() {}
+#pragma endregion
+
+#pragma region RestingConstraint
+void RestingConstraint::buildJacobian(CollisionPoint &p) {
+    Jacobian.resize(1, 12);
+
+    // va
+    Jacobian(0, 0) = - p.normal.x;
+    Jacobian(0, 1) = - p.normal.y;
+    Jacobian(0, 2) = - p.normal.z;
+    // wa
+    Jacobian(0, 3) = -1;
+    Jacobian(0, 4) = -1;
+    Jacobian(0, 5) = -1;
+    // vb
+    Jacobian(0, 6) = p.normal.x;
+    Jacobian(0, 7) = p.normal.y;
+    Jacobian(0, 8) = p.normal.z;
+    // wb
+    Jacobian(0, 9) = 1;
+    Jacobian(0, 10) = 1;
+    Jacobian(0, 11) = 1;
+
+}
+// solve the collision between 2 bodies based on the constraint
+void RestingConstraint::solve(CollisionPoint& p, float dt) {
+    Eigen::VectorXf velocity(12);
+
+    for (auto i = 0; i < 3; i++) {
+        velocity(i) = rb1->velocity[i];
+        velocity(i + 3) = rb1->angularVel[i];
+        velocity(i + 6) = rb2->velocity[i];
+        velocity(i + 9) = rb2->angularVel[i];
+    }
+
+    float beta = 0.6f;
+    
+    Eigen::VectorXf biasTerm(1);
+    glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity;
+    float closingVelocity = glm::dot(relativeVelocity, p.normal);
+
+    std::cout << glm::to_string(p.A) << glm::to_string(p.B) << p.depth << "\n";
+
+    biasTerm(0) = - p.depth * beta / dt; // + closingVelocity * glm::pow(beta, 2);
+
+    buildJacobian(p);
+
+    Eigen::MatrixXf effectiveMass = (Jacobian * invM * Jacobian.transpose()); // .inverse();
+    effectiveMass = effectiveMass.llt().solve(Eigen::MatrixXf::Identity(effectiveMass.rows(), effectiveMass.cols()));
+
+    Eigen::VectorXf corrective_lambda = effectiveMass * ( - (Jacobian * velocity + biasTerm));
+
+    Eigen::VectorXf old_lambda = getCachedLambda(p);
+    Eigen::VectorXf accumulated_lambda =  corrective_lambda + old_lambda;
+    accumulated_lambda(0) = std::max(0.0f, accumulated_lambda(0));
+
+    setCachedLambda(p, accumulated_lambda);
+
+    Eigen::VectorXf dv = invM * Jacobian.transpose() * (accumulated_lambda - old_lambda);
+    std::cout << dv.transpose() << "\n";
+
+    for (int j = 0; j < 3; ++j) {
+        rb1->velocity[j] += dv[j];
+        rb1->angularVel[j] += dv[j + 3];
+        rb2->velocity[j] += dv[j + 6];
+        rb2->angularVel[j] += dv[j + 9];
+    }
+}
+void RestingConstraint::setCachedLambda(CollisionPoint& p, Eigen::VectorXf& l) {
+    cached_lambda = l;
+}
+Eigen::VectorXf RestingConstraint::getCachedLambda(CollisionPoint& p) {
+    return cached_lambda;
+}
+
+RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint(rb1, rb2) {
     this->rb1 = rb1;
     this->rb2 = rb2;
 
@@ -15,243 +94,79 @@ Constraint::Constraint(RigidBody* rb1, RigidBody* rb2) {
 
     for (auto i = 0; i < 3; i++) {
         invM(i, i) = invM1;
-        invM(6 + i, 6 + i) = invM2;
+        invM(i + 6, i + 6) = invM2;
+        
+        //invM(i + 3, i + 3) = 0;
+        //invM(i + 9, i + 9) = 0;
     }
 
-    Jacobian.resize(12, 12);
-    Jacobian.setZero();
-
-    cached_lambda.resize(12);
+    cached_lambda.resize(1);
     cached_lambda.setZero();
 }
-Constraint::~Constraint() {}
+RestingConstraint::~RestingConstraint() {
+
+}
 #pragma endregion
 
-#pragma region Distance Constraint
-void DistanceConstraint::buildJacobian(CollisionPoint &p) {
-    Jacobian.resize(12, 12);
-    Jacobian.setZero();
-    
-    int i = 0;
-    if (p.normal.x) {
-        Jacobian(i, 0) = - p.normal.x;
-        Jacobian(i, 6) = p.normal.x;
-        i++;
-    }
-    /*
-    else {
-        if (!rb1->movable) {
-            Jacobian(i, 6) = 1;
-            Jacobian(i + 1, 6) = 1;
-            i+=2;
-        } else if (!rb2->movable) {
-            Jacobian(i, 0) = -1;
-            Jacobian(i + 1, 0) = -1;
-            i+=2;
-        } else {
-            Jacobian(i, 0) = -1;
-            Jacobian(i + 1, 6) = 1;
-            i+=2;
-        }
-        Jacobian(i, 0) = -1;
-        Jacobian(i + 1, 6) = 1;
-        i += 2;
-    }*/
-
-    if (p.normal.y) {
-        Jacobian(i, 1) = - p.normal.y;
-        Jacobian(i, 7) = p.normal.y;
-        i++;
-    }
-    /*
-    else {
-        if (!rb1->movable) {
-            Jacobian(i, 7) = 1;
-            Jacobian(i + 1, 7) = 1;
-            i+=2;
-        } else if (!rb2->movable) {
-            Jacobian(i, 1) = -1;
-            Jacobian(i + 1, 1) = -1;
-            i+=2;
-        } else {
-            Jacobian(i, 1) = -1;
-            Jacobian(i + 1, 7) = 1;
-            i+=2;
-        }
-        Jacobian(i, 1) = -1;
-        Jacobian(i + 1, 7) = 1;
-        i += 2;
-    }*/
-
-    if (p.normal.z) {
-        Jacobian(i, 2) = - p.normal.z;
-        Jacobian(i, 8) = p.normal.z;
-        i++;
-    }
-    /*
-    else {
-        if (!rb1->movable) {
-            Jacobian(i, 8) = 1;
-            Jacobian(i + 1, 8) = 1;
-            i+=2;
-        } else if (!rb2->movable) {
-            Jacobian(i, 2) = -1;
-            Jacobian(i + 1, 2) = -1;
-            i+=2;
-        } else {
-            Jacobian(i, 2) = -1;
-            Jacobian(i + 1, 8) = 1;
-            i+=2;
-        }
-        Jacobian(i, 2) = -1;
-        Jacobian(i + 1, 8) = 1;
-        i += 2;
-    }*/
-    // TODO do the same thing but for angular velocity
-    //
-    Jacobian.conservativeResize(i, 12);
-}
-// solve the collision between 2 bodies based on the constraint
-void DistanceConstraint::solve(CollisionPoint& p, float dt) {
-    Eigen::VectorXf velocity(12);
-    velocity.setZero();
-
-    for (auto i = 0; i < 3; i++) {
-        velocity(i) = rb1->velocity[i];
-        velocity(i + 3) = rb1->angularVel[i];
-        velocity(i + 6) = rb2->velocity[i];
-        velocity(i + 9) = rb2->angularVel[i];
-    }
-    buildJacobian(p);
-
-    //Eigen::MatrixXf JacobianTranspose = Jacobian.transpose();
-    Eigen::MatrixXf effectiveMass = (Jacobian * invM * Jacobian.transpose()); // .inverse();
-    Eigen::MatrixXf Identity;
-    Identity.resize(effectiveMass.rows(), effectiveMass.cols());
-    Identity.setIdentity();
-    effectiveMass = - effectiveMass.llt().solve(Identity);
-
-    //std::cout << Identity << "\n\n";
-    //std::cout << effectiveMass << "\n\n\n";
-
-    Eigen::VectorXf corrective_lambda = effectiveMass * Jacobian * velocity;
-
-    /*
-    std::cout << Jacobian << " = J\n\n";
-    std::cout << invM << " = invM\n\n";
-    std::cout << Jacobian * invM << " effectiveMass\n\n";
-    std::cout << Jacobian * invM * Jacobian.transpose() << " effectiveMass\n\n";
-    std::cout << effectiveMass << " effectiveMass\n\n";
-    //std::cout << cached_lambda.transpose() << " cache\n";
-    std::cout << corrective_lambda.transpose() << " corr\n\n";
-    */
-
-    Eigen::VectorXf old_lambda = getCachedLambda(p);
-    Eigen::VectorXf accumulated_lambda = corrective_lambda + old_lambda;
-
-    Eigen::MatrixXf P = invM * Jacobian.transpose();
-    Eigen::VectorXf dv = P * (accumulated_lambda - old_lambda);
-
-    setCachedLambda(p, accumulated_lambda);
-
-    velocity = velocity + dv;
-
-//    std::cout << glm::to_string(p.normal) <<
-//        glm::to_string(p.A) << " " << glm::to_string(p.B) << "\n";
-//
-//    std::cout << Jacobian << " = J\n\n"
-//              << velocity.transpose() << " = v\n\n"
-//              << dv.transpose() << " delta\n\n\n\n";
-
-    float beta_restitution = 0.9f;
-
-    float lost_energy = 0.3f;
-    glm::vec3 bounce1, bounce2;
-    bounce1 = //glm::dot(p.normal, rb1->velocity) * 
-        glm::length(rb1->velocity) * (1 - lost_energy) *
-        (- p.normal);
-    bounce2 = //glm::dot(p.normal, rb2->velocity) * 
-        glm::length(rb2->velocity) * (1 - lost_energy) *
-        (+ p.normal);
-
-    for (int j = 0; j < 3; ++j) {
-        rb1->velocity[j] = velocity[j] * (1 - beta_restitution);
-        rb1->angularVel[j] = velocity[j + 3];
-        rb2->velocity[j] = velocity[j + 6] * (1 - beta_restitution);
-        rb2->angularVel[j] = velocity[j + 9];
-    }
-
-    rb1->velocity += bounce1;
-    rb2->velocity += bounce2;
-}
-void DistanceConstraint::setCachedLambda(CollisionPoint& p, Eigen::VectorXf& l) {
-    int i = 0;
-
-    std::vector<int> values;
-
-    if (p.normal.x) {
-        values.push_back(0);
-        i++;
-    }
-
-    if (p.normal.y) {
-        values.push_back(1);
-        i++;
-    }
-
-    if (p.normal.z) {
-            values.push_back(2);
-            i++;
-        }
-    // TODO do the same thing but for angular velocity
-    //
-    std::sort(values.begin(), values.end());
-    for (size_t i = 0; i < values.size(); i++)
-        cached_lambda(values[i]) = l(i);
-}
-Eigen::VectorXf DistanceConstraint::getCachedLambda(CollisionPoint& p) {
-    int i = 0;
-
-    std::vector<int> values;
-
-    if (p.normal.x) {
-        values.push_back(0);
-        i++;
-    }
-
-    if (p.normal.y) {
-        values.push_back(1);
-        i++;
-    }
-
-    if (p.normal.z) {
-        values.push_back(2);
-        i++;
-    }
-    // TODO do the same thing but for angular velocity
-    //
-
-    Eigen::VectorXf V(i);
-
-    std::sort(values.begin(), values.end());
-    for (size_t i = 0; i < values.size(); i++)
-        V(i) = cached_lambda(values[i]);
-
-    return V;
-}
-
-DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
-                                       float minDistance, float maxDistance) : Constraint(rb1, rb2) {
+#pragma region DistanceConstraint
+DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2, 
+                                    float minDistance, float maxDistance) : Constraint(rb1, rb2) {
     minD = minDistance;
     maxD = maxDistance;
+    this->rb1 = rb1;
+    this->rb2 = rb2;
 }
-DistanceConstraint::~DistanceConstraint() {
+void DistanceConstraint::solve(CollisionPoint& p, float dt) {
 
+   /* std::cout << glm::to_string(p.A);
+    std::cout << glm::to_string(p.B) << "\n";
+    std::cout << glm::to_string(rb1->position);
+    std::cout << glm::to_string(rb2->position) << "\n";
+    rb1->collider->toString();
+    rb2->collider->toString();
+    std::cout << "//////////////////////////////////////\n";
+
+
+    glm::vec3 pos1, pos2;
+    pos1 = rb1->position + p.normal * p.depth / 2.0f;
+    pos2 = rb2->position - p.normal * p.depth / 2.0f;
+    
+    rb1->velocity = (pos1 - rb1->position) / dt;
+    rb2->velocity = (pos2 - rb2->position) / dt;
+    
+    rb1->position = pos1;
+    rb2->position = pos2;*/
 }
-#pragma endregion
+void DistanceConstraint::check(float dt) {
+    float d = glm::distance(rb1->position, rb2->position);
 
-#pragma region Resting COnstraint
-RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : DistanceConstraint(rb1, rb2, 0, 0) {
 
+    if (d < minD) {
+      /*  glm::vec3 direction = glm::normalize(rb2->position - rb1->position);
+        
+        glm::vec3 pos1, pos2;
+        pos1 = rb1->position - direction * d / 2.0f;
+        pos2 = rb2->position + direction * d / 2.0f;
+
+        rb1->velocity = (pos1 - rb1->position) / dt;
+        rb2->velocity = (pos2 - rb2->position) / dt;
+
+        rb1->position = pos1;
+        rb2->position = pos2;*/
+    } else if (d > maxD) {
+       /* glm::vec3 direction = glm::normalize(rb2->position - rb1->position);
+
+        glm::vec3 pos1, pos2;
+        pos1 = rb1->position + direction * d / 2.0f;
+        pos2 = rb2->position - direction * d / 2.0f;
+
+        rb1->velocity = (pos1 - rb1->position) / dt;
+        rb2->velocity = (pos2 - rb2->position) / dt;
+
+        rb1->position = pos1;
+        rb2->position = pos2;*/
+    }
 }
+
+
 #pragma endregion 

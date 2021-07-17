@@ -26,10 +26,9 @@ std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> PhysicsWorld::
     return collisionPoints;
 }
 
-
-glm::vec3 max_velocity = glm::vec3(0); // TODO delete me after fixing aabb sphere collision
-
-#define NUM_OF_ITERATIONS 1
+#define NUM_OF_ITERATIONS_IMPULSE 4
+#define NUM_OF_ITERATION_INTERPENETRATION_FIX 3
+#define NUM_OF_ITERATIONS_POSITION 4
 
 void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     for (auto* r : rb) {
@@ -41,10 +40,14 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
         }
     }
 
+
     std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
 
+    if (collisionPoints.size())
+        std::cout << "////////////// STEP /////////////\n";
+
     size_t max = 0;
-    for (auto col : collisionPoints)
+    for (auto& col : collisionPoints)
         max = std::max(max, std::max(col.first.first, col.first.second));
     max++;
 
@@ -54,16 +57,39 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
             constr.resize(max);
     }
 
-    for (int l = 0; l < NUM_OF_ITERATIONS; l++) {
+    // sequential impulse solver
+    for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++)
         for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
             size_t i, j;
             i = collisionPoints[colIndex].first.first;
             j = collisionPoints[colIndex].first.second;
 
             for (auto c : constraints[i][j])
-                c->solve(collisionPoints[colIndex].second, dt/NUM_OF_ITERATIONS);
+                if (dynamic_cast<RestingConstraint*>(c))
+                    c->solve(collisionPoints[colIndex].second, dt);
         }
-    }
+
+    // TODO position solver
+//    for (int l = 0; l < NUM_OF_ITERATION_INTERPENETRATION_FIX; l++) {
+//        for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
+//            size_t i, j;
+//            i = collisionPoints[colIndex].first.first;
+//            j = collisionPoints[colIndex].first.second;
+//
+//            for (auto c : constraints[i][j]) {
+//                if (dynamic_cast<DistanceConstraint*>(c))
+//                    c->solve(collisionPoints[colIndex].second, dt);
+//            }
+//        }
+//    }
+//
+//    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
+//        for (auto line : constraints)
+//            for (auto row : line)
+//                for (auto c : row)
+//                    if (dynamic_cast<DistanceConstraint*>(c))
+//                        ((DistanceConstraint*)c)->check(dt);
+//
     // calculate final velocities
     for (auto* r : rb) {
         if (r->movable) {

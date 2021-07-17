@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="PhysicsEngine"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="msvc8"/>
+		<Option virtualFolders="CMake Files\;CMake Files\Dependencies\;CMake Files\Dependencies\Vendor\;CMake Files\Dependencies\Vendor\glad\;CMake Files\Dependencies\Vendor\glfw\;CMake Files\Dependencies\Vendor\glfw\CMake\;CMake Files\Dependencies\Vendor\glfw\src\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 all"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 install/local"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 install"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 edit_cache"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="PhysicsEngine">
+				<Option output="D:/GIT/PhysicsEngine/PhysicsEngine/PhysicsEngine.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-D_CRT_SECURE_NO_DEPRECATE"/>
+					<Add option="-DCMAKE_GENERATOR_PLATFORM=x64"/>
+					<Add option="-DGLFW_INCLUDE_NONE"/>
+					<Add option="-DPROJECT_SOURCE_DIR=&quot;D:/GIT/PhysicsEngine&quot;"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glm"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/stb"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/backends"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 PhysicsEngine"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="PhysicsEngine/fast">
+				<Option output="D:/GIT/PhysicsEngine/PhysicsEngine/PhysicsEngine.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-D_CRT_SECURE_NO_DEPRECATE"/>
+					<Add option="-DCMAKE_GENERATOR_PLATFORM=x64"/>
+					<Add option="-DGLFW_INCLUDE_NONE"/>
+					<Add option="-DPROJECT_SOURCE_DIR=&quot;D:/GIT/PhysicsEngine&quot;"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glm"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/stb"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/backends"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 PhysicsEngine/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="D:/GIT/PhysicsEngine"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 list_install_components"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="uninstall">
+				<Option working_dir="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\Makefile VERBOSE=1 uninstall"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glfw">
+				<Option output="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/glfw3.lib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-D_GLFW_USE_CONFIG_H"/>
+					<Add option="-D_UNICODE"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 glfw"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glfw/fast">
+				<Option output="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/glfw3.lib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-D_GLFW_USE_CONFIG_H"/>
+					<Add option="-D_UNICODE"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/include"/>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 glfw/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glfw\src\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glad-generate-files">
+				<Option working_dir="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 glad-generate-files"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glad">
+				<Option output="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/glad.lib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 glad"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glad/fast">
+				<Option output="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/glad.lib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 glad/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\GIT\PhysicsEngine\Dependencies\Vendor\glad\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Camera.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Colliders.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/CollisionAlgos.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Common.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Constraint.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Debug.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Mesh.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/ObjLoad.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Octree.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/PhysicsWorld.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/RigidBody.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Shader.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Include/Vertex.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Camera.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Colliders.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/CollisionAlgos.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Constraint.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Debug.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Main.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Mesh.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/ObjLoad.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Octree.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/PhysicsWorld.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/RigidBody.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Source/Shader.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImCurveEdit.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImCurveEdit.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImGradient.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImGradient.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImGuizmo.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImGuizmo.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImSequencer.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/ImGuizmo/ImSequencer.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/include/glad/glad.h">
+			<Option target="glad"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/src/glad.c">
+			<Option target="PhysicsEngine"/>
+			<Option target="glad"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/src/glad.c.rule">
+			<Option target="glad"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/include/GLFW/glfw3.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/include/GLFW/glfw3native.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/egl_context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/egl_context.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/glfw_config.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/init.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/input.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/internal.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/mappings.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/monitor.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/osmesa_context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/osmesa_context.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/vulkan.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/wgl_context.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/wgl_context.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_init.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_joystick.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_joystick.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_monitor.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_platform.h">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_thread.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_time.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/win32_window.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/window.c">
+			<Option target="glfw"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/backends/imgui_impl_glfw.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/backends/imgui_impl_glfw.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/backends/imgui_impl_opengl3.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/backends/imgui_impl_opengl3.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/imgui.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/imgui.h">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/imgui_demo.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/imgui_draw.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/imgui_tables.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/imgui/imgui_widgets.cpp">
+			<Option target="PhysicsEngine"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glad/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glad\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glfw\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/CMake/cmake_uninstall.cmake.in">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/CMake/glfw3.pc.in">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/CMake/glfw3Config.cmake.in">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glfw\CMake\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glfw\src\"/>
+		</Unit>
+		<Unit filename="D:/GIT/PhysicsEngine/Dependencies/Vendor/glfw/src/glfw_config.h.in">
+			<Option virtualFolder="CMake Files\Dependencies\Vendor\glfw\src\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

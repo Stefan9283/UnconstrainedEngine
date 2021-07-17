@@ -126,10 +126,10 @@ void ColliderMesh::gui(int outIndex = 0) {
 #pragma region CollisionPoint
 CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
     if (A == B) {
-        this->hasCollision = false;
+        this->hasCollision = true; // TODO make this false
         this->normal = glm::vec3 (0);
-        this->B = glm::vec3 (0);
-        this->A = glm::vec3 (0);
+        this->B = B;
+        this->A = A;
         this->depth = 0;
     } else {
         this->B = B;
@@ -147,6 +147,18 @@ CollisionPoint::CollisionPoint() {
     this->A = glm::vec3 (0);
     this->depth = 0;
 }
+std::string CollisionPoint::toString() {
+    std::string s = "";
+    s.append("A: ").append(glm::to_string(A)).append("\n");
+    s.append("B: ").append(glm::to_string(B)).append("\n");
+    s.append("depth: ").append(std::to_string(depth)).append("\n");
+    s.append("normal: ").append(glm::to_string(normal)).append("\n");
+    if (hasCollision)
+        s.append("collision OK");
+    else s.append("collision NO");
+    return s;
+}
+
 #pragma endregion
 
 #pragma region Sphere
@@ -189,20 +201,18 @@ bool Sphere::isInside(glm::vec3 point) {
 #pragma endregion
 #pragma region AABB
 AABB::AABB(Mesh* mesh) {
-    min0 = mesh->vertices[0].Position;
-    max0 = mesh->vertices[0].Position;
+    min = mesh->vertices[0].Position;
+    max = mesh->vertices[0].Position;
 
     for (auto v : mesh->vertices) {
-        if (min0.x > v.Position.x) min0.x = v.Position.x;
-        if (min0.y > v.Position.y) min0.y = v.Position.y;
-        if (min0.z > v.Position.z) min0.z = v.Position.z;
-        if (max0.x < v.Position.x) max0.x = v.Position.x;
-        if (max0.y < v.Position.y) max0.y = v.Position.y;
-        if (max0.z < v.Position.z) max0.z = v.Position.z;
+        if (min.x > v.Position.x) min.x = v.Position.x;
+        if (min.y > v.Position.y) min.y = v.Position.y;
+        if (min.z > v.Position.z) min.z = v.Position.z;
+        if (max.x < v.Position.x) max.x = v.Position.x;
+        if (max.y < v.Position.y) max.y = v.Position.y;
+        if (max.z < v.Position.z) max.z = v.Position.z;
     }
-
-    min = min0;
-    max = max0;
+    
     body = generateNewMesh();
 }
 std::vector<Vertex> AABB::generateVerices(glm::vec3 min_, glm::vec3 max_) {
@@ -277,26 +287,15 @@ ColliderMesh *AABB::generateNewMesh() {
 
     return body;
 }
-void AABB::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-    // Collider::update((min + max)/2.0f + pos, rot, scale);
-    // delete body;
-    // updateMinMax(localTransform);
-    // body = generateNewMesh();
-}
-void AABB::updateMinMax(glm::mat4 transform) {
-    std::vector<Vertex> verticesPos = generateVerices(min0, max0);
-    for (auto & verticesPo : verticesPos)
-        verticesPo.Position =
-                glm::vec3(transform * glm::vec4(verticesPo.Position, 1));
 
-    min = verticesPos[0].Position;
-    max = verticesPos[0].Position;
 
-    for (int i = 1; i < verticesPos.size(); ++i) {
-        min = glm::min(min, verticesPos[i].Position);
-        max = glm::max(max, verticesPos[i].Position);
-    }
+glm::vec3 AABB::getMin() {
+    return this->min + getOffset();
 }
+glm::vec3 AABB::getMax() {
+    return this->max + getOffset();
+}
+
 void AABB::Draw(Shader *shader) {
     if (body)
         body->Draw(getLocalTransform(), shader);
@@ -304,31 +303,21 @@ void AABB::Draw(Shader *shader) {
 glm::vec3 AABB::getOffset() {
     glm::vec3 offs = this->offset;
     if (parent)
-        offs += parent->position;
+        return parent->position;
     return offs;
 }
 
 glm::mat4 AABB::getLocalTransform() {
-    glm::mat4 model = localTransform;
-    if (parent)
-        model = parent->getTransform() * model;
-
-    updateMinMax(model);
-
-    glm::vec3 center = (min + max) / 2.0f;
-
-    glm::mat4 T = glm::translate(glm::mat4(1), center);
-    glm::mat4 S = glm::scale(glm::mat4(1), max - center);
-
-    return T * S;
+    if (!parent)
+        return localTransform;
+    else 
+        return parent->getTransform() * localTransform;
 }
 
 
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
-    min0 = min;
-    max0 = max;
-    this->min = min0;
-    this->max = max0;
+    this->min = min;
+    this->max = max;
     offset = glm::vec3(0);
     localTransform = glm::mat4(1);
 }
@@ -348,10 +337,12 @@ bool AABB::isInside(glm::vec3 point) {
     return glm::clamp(point, minValues, maxValues) == point;
 }
 glm::vec3 AABB::closestPoint(glm::vec3 point) {
-    glm::vec3 result;
+    glm::vec3 result{};
 
-    glm::vec3 newMin = min + offset, newMax = max + offset;
+    glm::vec3 newMin = getMin(), newMax = getMax();
 
+    /*
+    // varianta 1
     if(point.x > newMax.x)
         result.x = newMax.x;
     else if(point.x < newMin.x)
@@ -372,6 +363,26 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
         result.z = newMin.z;
     else
         result.z = point.z;
+    
+    // varianta 2
+
+    if (glm::abs(point.x - newMax.x) < glm::abs(point.x - newMin.x))
+        result.x = newMax.x;
+    else result.x = newMin.x;
+
+    if (glm::abs(point.y - newMax.y) < glm::abs(point.y - newMin.y))
+        result.y = newMax.y;
+    else result.y = newMin.y;
+
+    if (glm::abs(point.z - newMax.z) < glm::abs(point.z - newMin.z))
+        result.z = newMax.z;
+    else result.z = newMin.z;
+    */
+    // TODO Ovidiu AABB point projection
+    // Your code here
+    
+    
+    // Your code here
 
     return result;
 }
@@ -543,10 +554,32 @@ void Triangle::toString() {
 }
 #pragma endregion
 #pragma region Capsule
+glm::vec3 Capsule::getEnd() {
+    glm::vec4 res;
+    if (this->parent) {
+        res = parent->getTransform() * localTransform * glm::vec4(end, 1);
+    }
+    else {
+        res = localTransform * glm::vec4(end, 1);
+    }
+    return glm::vec3(res);
+}
+glm::vec3 Capsule::getStart() {
+    glm::vec4 res;
+    if (this->parent) {
+        res = parent->getTransform() * localTransform * glm::vec4(start, 1);
+    }
+    else {
+        res = localTransform * glm::vec4(start, 1);
+    }
+    return glm::vec3(res);
+
+}
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
-    this->start0 = start;
-    this->end0 = end;
+    this->start = start;
+    this->end = end;
     this->radius = radius;
+
 
     Mesh* Tube = readObj("3D/Tube.obj");
     Mesh* halfSphere = readObj("3D/halfSphere.obj");
@@ -570,9 +603,6 @@ Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
 
     modelStart = modelStart * scaleMatrixHalfSphere;
     modelEnd = modelEnd * scaleMatrixHalfSphere;
-
-
-
 
     size_t indicesCount = Tube->indices.size();
 

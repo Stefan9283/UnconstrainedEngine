@@ -48,6 +48,7 @@ public:
     bool hasCollision;
     CollisionPoint(glm::vec3 A, glm::vec3 B);
     CollisionPoint();
+    std::string toString();
 };
 
 class Collider {
@@ -106,10 +107,8 @@ public:
 
 class AABB : public Collider{
 public:
-    glm::vec3 max{}, min{}, max0, min0, offset{};
+    glm::vec3 max{}, min{}, offset{};
 
-    void updateMinMax(glm::mat4 transform);
-    void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
     std::vector<Vertex> generateVerices(glm::vec3 min, glm::vec3 max);
     ColliderMesh *generateNewMesh();
     glm::vec3 closestPoint(glm::vec3 p);
@@ -123,6 +122,8 @@ public:
 
     glm::mat4 getLocalTransform() override;
     glm::vec3 getOffset();
+    glm::vec3 getMin();
+    glm::vec3 getMax();
 
     void Draw(Shader* shader) override;
 
@@ -191,6 +192,8 @@ public:
 
     glm::vec3 start{}, end{};
 
+    glm::vec3 getEnd();
+    glm::vec3 getStart();
 
     static Capsule* generateCapsule(Mesh* mesh);
     void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;

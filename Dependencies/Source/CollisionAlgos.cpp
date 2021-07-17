@@ -127,16 +127,21 @@ Solution getIntersectionPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 D
 }
 #pragma endregion
 #pragma region Functii Stefan
-
-#pragma endregion
-
-
 glm::vec3 getTransformedVert(glm::mat4 tr, glm::vec3 v) { // copy of getTransformedVertex from Colliders.cpp
     return glm::vec3(tr * glm::vec4(v, 1.0f));
 }
 glm::vec3 ClosestPointOnLineSegment(glm::vec3 A, glm::vec3 B, glm::vec3 Point) {
+   
     glm::vec3 AB = B - A;
     float t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
+    //std::cout << "\nClosest point\n";
+    //std::cout << glm::to_string(Point);
+    //std::cout << glm::to_string(A);
+    //std::cout << glm::to_string(B);
+    //std::cout <<  glm::to_string(AB);
+    //std::cout << t << " ";
+    //std::cout << (float)glm::min(glm::max(t, 0.0f), 1.0f) << "\n";
+    // std::cout << "Closest point end\n";
     return A + (float)glm::min(glm::max(t, 0.0f), 1.0f) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
 }
 glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
@@ -162,6 +167,7 @@ glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
     }
     return result;
 }
+#pragma endregion
 
 
 namespace collisionAlgos {
@@ -174,17 +180,30 @@ namespace collisionAlgos {
         return {};
     }
     CollisionPoint checkCollision(AABB* bv1, AABB* bv2) {
-        glm::vec3 newMin1 = bv1->min + bv1->offset, newMax1 = bv1->max + bv1->offset;
-        glm::vec3 newMin2 = bv2->min + bv2->offset, newMax2 = bv2->max + bv2->offset;
+        glm::vec3 newMin1 = bv1->getMin(), newMax1 = bv1->getMax();
+        glm::vec3 newMin2 = bv2->getMin(), newMax2 = bv2->getMax();
 
-        if (newMin1.x > newMax2.x || newMax1.x < newMin2.x)
-            return {};
+        //std::cout << glm::to_string(bv1->getMin()) << glm::to_string(bv1->getMax()) << glm::to_string(bv1->getOffset()) << "\n";
+        //std::cout << glm::to_string(bv2->getMin()) << glm::to_string(bv2->getMax()) << glm::to_string(bv2->getOffset()) << "\n";
 
-        if (newMin1.y > newMax2.y || newMax1.y < newMin2.y)
-            return {};
+        if (newMin1.x > newMax2.x || newMax1.x < newMin2.x) {
+            //std::cout << newMin1.x << " " << newMax2.x << " " << newMax1.x << " " << newMin2.x << " ";
+            //std::cout << "x\n";
+                return {};
+        }
 
-        if (newMin1.z > newMax2.z || newMax1.z < newMin2.z)
-            return {};
+        if (newMin1.y > newMax2.y || newMax1.y < newMin2.y) {
+            //std::cout << newMin1.y << " " << newMax2.y << " " << newMax1.y << " " << newMin2.y << " ";
+            //std::cout << "y\n";
+                return {};
+        }
+
+        if (newMin1.z > newMax2.z || newMax1.z < newMin2.z) {
+            //std::cout << newMin1.z << " " << newMax2.z << " " << newMax1.z << " " << newMin2.z << " ";
+            //std::cout << "z\n";
+                return {};
+        }
+
 
         glm::vec3 v0 = glm::vec3(   std::max(newMin1.x, std::min(newMin2.x, newMax1.x)),
                                     std::max(newMin1.y, std::min(newMin2.y, newMax1.y)),
@@ -194,9 +213,12 @@ namespace collisionAlgos {
                                     std::max(newMin1.y, std::min(newMax2.y, newMax1.y)),
                                     std::max(newMin1.z, std::min(newMax2.z, newMax1.z)));
 
-        glm::vec3 mean = (v0 + v1);///2.0f;
+        glm::vec3 mean = (v0 + v1); // / 2.0f;
 
-        return {bv1->closestPoint(- mean), bv2->closestPoint(mean)};
+        //std::cout << "Coliziune\n";
+        CollisionPoint p(bv1->closestPoint(mean), bv2->closestPoint(mean));
+        //std::cout << p.toString() << "\n";
+        return p;
     }
     CollisionPoint checkCollision(Triangle* bv1, Triangle* bv2) {
         bool twoway0 = bv1->twoway;
@@ -237,16 +259,16 @@ namespace collisionAlgos {
     } // TODO return CollisionPoint
     CollisionPoint checkCollision(Capsule* bv1, Capsule* col) {
         // capsule A:
-        glm::vec3 a_Normal = normalize(bv1->start - bv1->end);
+        glm::vec3 a_Normal = normalize(bv1->getStart() - bv1->getEnd());
         glm::vec3 a_LineEndOffset = a_Normal * bv1->radius;
-        glm::vec3 a_A = bv1->start + a_LineEndOffset;
-        glm::vec3 a_B = bv1->end - a_LineEndOffset;
+        glm::vec3 a_A = bv1->getStart() + a_LineEndOffset;
+        glm::vec3 a_B = bv1->getEnd() - a_LineEndOffset;
 
         // capsule B:
-        glm::vec3 b_Normal = normalize(col->start - col->end);
+        glm::vec3 b_Normal = normalize(col->getStart() - col->getEnd());
         glm::vec3 b_LineEndOffset = b_Normal * col->radius;
-        glm::vec3 b_A = col->start + b_LineEndOffset;
-        glm::vec3 b_B = col->end - b_LineEndOffset;
+        glm::vec3 b_A = col->getStart() + b_LineEndOffset;
+        glm::vec3 b_B = col->getEnd() - b_LineEndOffset;
 
         // vectors between line endpoints
         glm::vec3 v0 = b_A - a_A;
@@ -272,10 +294,10 @@ namespace collisionAlgos {
         }
 
         // select point on capsule B line segment nearest to best potential endpoint on A capsule:
-        glm::vec3 bestB = ClosestPointOnLineSegment(col->start, col->end, bestA);
+        glm::vec3 bestB = ClosestPointOnLineSegment(col->getStart(), col->getEnd(), bestA);
 
         // now do the same for capsule A segment:
-        bestA = ClosestPointOnLineSegment(bv1->start, bv1->end, bestB);
+        bestA = ClosestPointOnLineSegment(bv1->getStart(), bv1->getEnd(), bestB);
 
         Sphere s1(bestA, bv1->radius);
         Sphere s2(bestB, col->radius);
@@ -350,7 +372,8 @@ namespace collisionAlgos {
         return {};
     }
     CollisionPoint checkCollision(AABB* bv1, Capsule* bv2) {
-        glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->start, bv2->end, (bv1->max + bv1->min)/2.0f);
+        glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->getStart(), bv2->getEnd(), (bv1->max + bv1->min)/2.0f);
+        //std::cout << glm::to_string(bestPoint) << bv2->radius << "\n";
         Sphere s(bestPoint, bv2->radius);
         return s.checkCollision(bv1);
     }
@@ -450,7 +473,7 @@ namespace collisionAlgos {
         return {}; // return r0.checkCollision(bv) || r1.checkCollision(bv) || r2.checkCollision(bv);
     }// TODO return CollisionPoint
     CollisionPoint checkCollision(Sphere* bv1, Capsule* bv2) {
-        glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->start, bv2->end, bv1->getCurrentPosition());
+        glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->getStart(), bv2->getEnd(), bv1->getCurrentPosition());
         Sphere s(bestPoint, bv2->radius);
         return s.checkCollision(bv1);
     }
@@ -598,7 +621,7 @@ namespace collisionAlgos {
     CollisionPoint checkCollision(Triangle* bv1, Capsule* bv2) {
         // for triangle inside a capsule
         for (auto & vertex : bv1->vertices) {
-            glm::vec3 mid = getMidPoint(bv2->start, bv2->end, vertex);
+            glm::vec3 mid = getMidPoint(bv2->getStart(), bv2->getEnd(), vertex);
             if(glm::length(mid - vertex) < bv2->radius)
                 return {}; // return true;
         }
@@ -699,10 +722,10 @@ namespace collisionAlgos {
 
     CollisionPoint checkCollision(Capsule* bv1, Ray* bv2) {
         // capsule:
-        glm::vec3 a_Normal = normalize(bv1->start - bv1->end);
+        glm::vec3 a_Normal = normalize(bv1->getStart() - bv1->getEnd());
         glm::vec3 a_LineEndOffset = a_Normal * bv1->radius;
-        glm::vec3 a_A = bv1->start + a_LineEndOffset;
-        glm::vec3 a_B = bv1->end - a_LineEndOffset;
+        glm::vec3 a_A = bv1->getStart() + a_LineEndOffset;
+        glm::vec3 a_B = bv1->getEnd() - a_LineEndOffset;
 
         // ray:
         glm::vec3 b_A = bv2->origin;
@@ -735,9 +758,9 @@ namespace collisionAlgos {
         glm::vec3 bestB = ClosestPointOnLineSegment(b_A, b_B, bestA);
 
         // now do the same for capsule A segment:
-        bestA = ClosestPointOnLineSegment(bv1->start, bv1->end, bestB);
+        bestA = ClosestPointOnLineSegment(bv1->getStart(), bv1->getEnd(), bestB);
 
         Sphere s(bestA, bv1->radius);
-        return {}; //return s.checkCollision(bv2);
+        return s.checkCollision(bv2);
     }
 }
