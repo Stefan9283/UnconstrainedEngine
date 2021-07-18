@@ -26,11 +26,11 @@ extern ImGuizmo::OPERATION mCurrentGizmoOperation;
 
 
 bool continuouslyChecking = false;
-GLFWwindow* window;
-Shader* s;
-Camera* c;
-Ray* r;
-Mesh* crosshair;
+GLFWwindow* window = nullptr;
+Shader* s = nullptr;
+Camera* c = nullptr;
+Ray* r = nullptr;
+Mesh* crosshair = nullptr;
 std::vector<Mesh*> meshes;
 
 Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
@@ -98,6 +98,23 @@ Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
     body->indices.push_back(2);
     body->prepare();
     return body;
+}
+
+void createCrosshair() {
+    crosshair = new Mesh();
+    crosshair->vertices.push_back(Vertex{ glm::vec3(0,  1,  -25.0f) });
+    crosshair->vertices.push_back(Vertex{ glm::vec3(0, -1,  -25.0f) });
+    crosshair->vertices.push_back(Vertex{ glm::vec3(1,  0,  -25.0f) });
+    crosshair->vertices.push_back(Vertex{ glm::vec3(-1, 0,  -25.0f) });
+    crosshair->indices.push_back(0);
+    crosshair->indices.push_back(1);
+    crosshair->indices.push_back(0);
+    crosshair->indices.push_back(2);
+    crosshair->indices.push_back(3);
+    crosshair->indices.push_back(2);
+    crosshair->wireframeON = true;
+    crosshair->solidON = true;
+    crosshair->prepare();
 }
 
 // TODO delete me later
@@ -738,8 +755,7 @@ int main() {
     s->bind();
 
     c = new Camera(window);
-    glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
-//    glClearColor(0, 0, 0, 1);
+    glClearColor(0, 102 / 255.f, 102 / 255.f, 1);
 
 
 #pragma region meshes
@@ -802,49 +818,14 @@ int main() {
 
     r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
 
-    crosshair = new Mesh();
-    crosshair->vertices.push_back(Vertex{glm::vec3(0,  1,  -25.0f)});
-    crosshair->vertices.push_back(Vertex{glm::vec3(0, -1,  -25.0f)});
-    crosshair->vertices.push_back(Vertex{glm::vec3(1,  0,  -25.0f)});
-    crosshair->vertices.push_back(Vertex{glm::vec3(-1, 0,  -25.0f)});
-    crosshair->indices.push_back(0);
-    crosshair->indices.push_back(1);
-    crosshair->indices.push_back(0);
-    crosshair->indices.push_back(2);
-    crosshair->indices.push_back(3);
-    crosshair->indices.push_back(2);
-    crosshair->wireframeON = true;
-    crosshair->solidON = true;
-    crosshair->prepare();
+    createCrosshair();
+
 #pragma endregion
 
 
 //    testOctree(Mercy);
     //testBasicCollision();
     //testRayMeshIntersection(meshes[5]);
-
-    /* README
-     * Pastreaza un singur apel dintre cele de mai jos activ la un moment de timp.
-     * Fiecare porneste un loop in care se va face desenarea.
-     * Din GUI poti verifica coliziunea dintre cele doua obiecte. Daca aceasta exista
-     * se vor genera doua puncte sub forma unor sfere de raza 0.1 la coordonatele A si B.
-     * Sfera B este cea galbena iar cealalalta este A.
-     * Ordinea lor este importanta iar coliziunea se verifica dinspre prima mesha spre a doua.
-     * Practic punctul A este cel mai departat fata de primul argument al functiei/prima mesha
-     * care apartine de mesha a doua.
-     * Ordinea lor este mentionata si in GUI printr-un numar care sa-ti sugereze ordinea (1 sau 2)
-     *
-     * Pentru simplitate atunci cand vrei sa generezi un CollisionPoint poti folosi
-     * unul dintre cei doi constructori definiti in clasa.
-     *
-     * Testele de mai sus nu vor functiona pana nu se va implementa coliziunea cu
-     * CollisionPoint ca rezultat de return.
-     *
-     * Nu trebuie sa te ocupi (teoretic) de cazurile in care coliziunea nu exista pentru ca deja
-     * m-am ocupat eu ca ramurile alea sa dea "return {};"
-     *
-     * Deocamdata ocupa-te de coliziunile dintre AABB, Sfera si Capsula
-     */
 
     // Mesh ray;
     // ray.addBody(new RigidBody(r));
@@ -858,7 +839,7 @@ int main() {
     testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
     // testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
-  
+    /*
     std::vector<Mesh*> m;
 
     sphere->solidON = true;
@@ -870,7 +851,6 @@ int main() {
 
     for (int i = 5; i < 16; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
-        /*
         switch (i % 3) {
             case 0:
                 tmp->addBody(new RigidBody(new Sphere(sphere), 1));
@@ -882,8 +862,6 @@ int main() {
                 tmp->addBody(new RigidBody(new AABB(sphere), 1));
                 break;
         }
-        */
-        tmp->addBody(new RigidBody(new Sphere(sphere), 1));
         tmp->solidON = false;
         tmp->rigidbody->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
         m.push_back(tmp);
@@ -903,11 +881,12 @@ int main() {
     // m.push_back(sphere5);
     testPhysics(m);
 
-#pragma region cleanUp
     s->unbind();
 
     for(Mesh* m : meshes)
         delete m;
+    */
+#pragma region cleanUp
 
     delete crosshair;
     delete s;
