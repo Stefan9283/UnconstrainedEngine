@@ -855,7 +855,7 @@ int main() {
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
     // testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
-   // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
+    testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
     // testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
   
