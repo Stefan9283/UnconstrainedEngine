@@ -189,19 +189,19 @@ namespace collisionAlgos {
         if (newMin1.x > newMax2.x || newMax1.x < newMin2.x) {
             //std::cout << newMin1.x << " " << newMax2.x << " " << newMax1.x << " " << newMin2.x << " ";
             //std::cout << "x\n";
-                return {};
+            return {};
         }
 
         if (newMin1.y > newMax2.y || newMax1.y < newMin2.y) {
             //std::cout << newMin1.y << " " << newMax2.y << " " << newMax1.y << " " << newMin2.y << " ";
             //std::cout << "y\n";
-                return {};
+            return {};
         }
 
         if (newMin1.z > newMax2.z || newMax1.z < newMin2.z) {
             //std::cout << newMin1.z << " " << newMax2.z << " " << newMax1.z << " " << newMin2.z << " ";
             //std::cout << "z\n";
-                return {};
+            return {};
         }
 
 
@@ -332,7 +332,7 @@ namespace collisionAlgos {
     }  // TODO return CollisionPoint
 
     CollisionPoint checkCollision(AABB* bv1, Sphere* bv2) {
-        glm::vec3 newMin = bv1->min + bv1->offset, newMax = bv1->max + bv1->offset;
+        glm::vec3 newMin = bv1->getMin(), newMax = bv1->getMax();
 
         glm::vec3 v;
 
@@ -372,13 +372,13 @@ namespace collisionAlgos {
         return {};
     }
     CollisionPoint checkCollision(AABB* bv1, Capsule* bv2) {
-        glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->getStart(), bv2->getEnd(), (bv1->max + bv1->min)/2.0f);
+        glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->getStart(), bv2->getEnd(), (bv1->getMin() + bv1->getMax())/2.0f);
         //std::cout << glm::to_string(bestPoint) << bv2->radius << "\n";
         Sphere s(bestPoint, bv2->radius);
         return s.checkCollision(bv1);
     }
     CollisionPoint checkCollision(AABB* bv1, Ray* bv2) {
-        glm::vec3 newMin = bv1->min + bv1->offset, newMax = bv1->max + bv1->offset;
+        glm::vec3 newMin = bv1->getMin(), newMax = bv1->getMax();
         glm::vec3 A = bv2->origin, B = bv2->origin - bv2->direction;
 
         float x0 = A.x, y0 = A.y, z0 = A.z;

@@ -855,7 +855,7 @@ int main() {
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
     // testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
-    testBasicCollisionWithPoints(cube, cube2); // AABB AABB
+   // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
     // testBasicCollisionWithPoints(meshes[0], meshes[4]); // AABB Capsule
   
@@ -868,8 +868,9 @@ int main() {
 
     m.push_back(cube);
 
-    for (int i = 5; i < 6; ++i) {
+    for (int i = 5; i < 16; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
+        /*
         switch (i % 3) {
             case 0:
                 tmp->addBody(new RigidBody(new Sphere(sphere), 1));
@@ -881,6 +882,8 @@ int main() {
                 tmp->addBody(new RigidBody(new AABB(sphere), 1));
                 break;
         }
+        */
+        tmp->addBody(new RigidBody(new Sphere(sphere), 1));
         tmp->solidON = false;
         tmp->rigidbody->setTransform(glm::vec3(0, 5 * i, 0), glm::quat(), glm::vec3(1));
         m.push_back(tmp);

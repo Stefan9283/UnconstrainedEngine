@@ -41,13 +41,13 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         velocity(i + 9) = rb2->angularVel[i];
     }
 
-    float beta = 0.6f;
+    float beta = 0.2f;
     
     Eigen::VectorXf biasTerm(1);
     glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity;
     float closingVelocity = glm::dot(relativeVelocity, p.normal);
 
-    std::cout << glm::to_string(p.A) << glm::to_string(p.B) << p.depth << "\n";
+    //std::cout << glm::to_string(p.A) << glm::to_string(p.B) << p.depth << "\n";
 
     biasTerm(0) = - p.depth * beta / dt; // + closingVelocity * glm::pow(beta, 2);
 
@@ -65,7 +65,7 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
     setCachedLambda(p, accumulated_lambda);
 
     Eigen::VectorXf dv = invM * Jacobian.transpose() * (accumulated_lambda - old_lambda);
-    std::cout << dv.transpose() << "\n";
+    //std::cout << dv.transpose() << "\n";
 
     for (int j = 0; j < 3; ++j) {
         rb1->velocity[j] += dv[j];
@@ -74,10 +74,10 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         rb2->angularVel[j] += dv[j + 9];
     }
 }
-void RestingConstraint::setCachedLambda(CollisionPoint& p, Eigen::VectorXf& l) {
+void Constraint::setCachedLambda(CollisionPoint& p, Eigen::VectorXf& l) {
     cached_lambda = l;
 }
-Eigen::VectorXf RestingConstraint::getCachedLambda(CollisionPoint& p) {
+Eigen::VectorXf Constraint::getCachedLambda(CollisionPoint& p) {
     return cached_lambda;
 }
 

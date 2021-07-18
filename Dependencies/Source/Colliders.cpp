@@ -322,17 +322,17 @@ AABB::AABB(glm::vec3 min, glm::vec3 max) {
     localTransform = glm::mat4(1);
 }
 void AABB::toString() {
-    std::cout << "AABB:\n\tmin: " << glm::to_string(min) << "\n\tmax: "<< glm::to_string(max) << "\n";
+    std::cout << "AABB:\n\tmin: " << glm::to_string(getMin()) << "\n\tmax: "<< glm::to_string(getMax()) << "\n";
 }
 bool AABB::isInside(glm::vec3 point) {
-    glm::vec3 minValues = min, maxValues = max;
+    glm::vec3 minValues = getMin(), maxValues = getMax();
 
-    if (max.x < minValues.x) minValues.x = max.x;
-    if (max.y < minValues.y) minValues.y = max.y;
-    if (max.z < minValues.z) minValues.z = max.z;
-    if (min.x > maxValues.x) maxValues.x = min.x;
-    if (min.y > maxValues.y) maxValues.y = min.y;
-    if (min.z > maxValues.z) maxValues.z = min.z;
+    if (getMax().x < minValues.x) minValues.x = getMax().x;
+    if (getMax().y < minValues.y) minValues.y = getMax().y;
+    if (getMax().z < minValues.z) minValues.z = getMax().z;
+    if (getMin().x > maxValues.x) maxValues.x = getMin().x;
+    if (getMin().y > maxValues.y) maxValues.y = getMin().y;
+    if (getMin().z > maxValues.z) maxValues.z = getMin().z;
 
     return glm::clamp(point, minValues, maxValues) == point;
 }
