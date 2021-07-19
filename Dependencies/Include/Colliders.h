@@ -46,6 +46,7 @@ public:
     glm::vec3 normal{}; // normalized B - A
     float depth; // length B - A
     bool hasCollision;
+    bool wasReversed{};
     CollisionPoint(glm::vec3 A, glm::vec3 B);
     CollisionPoint();
     std::string toString();

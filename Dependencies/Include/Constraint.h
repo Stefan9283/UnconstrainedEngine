@@ -15,15 +15,12 @@ public:
 
     Eigen::MatrixXf Jacobian, invM;
 
-    Eigen::VectorXf cached_lambda;
+    Eigen::VectorXf total_lambda;
 
     Constraint(RigidBody* rb1, RigidBody* rb2);
     virtual void solve(CollisionPoint& p, float dt) = 0;
     virtual void buildJacobian(CollisionPoint& p) = 0;
 
-    Eigen::VectorXf getCachedLambda(CollisionPoint& p);
-    void setCachedLambda(CollisionPoint& p, Eigen::VectorXf& l);
-    
     virtual ~Constraint();
 };
 

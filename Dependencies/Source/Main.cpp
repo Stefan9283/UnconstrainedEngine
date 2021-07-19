@@ -757,9 +757,9 @@ int main() {
 
     // testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
-//     testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
+    // testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
-//    testBasicCollisionWithPoints(cube, cube2); // AABB AABB
+    // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
     // testBasicCollisionWithPoints(cube, Yen); // AABB Capsule
     
@@ -767,12 +767,14 @@ int main() {
     std::vector<Mesh*> m;
 
     sphere->solidON = true;
+    sphere->rigidbody->movable = false;
+    m.push_back(sphere);
 
     cube->solidON = true;
     cube->rigidbody->movable = false;
-    m.push_back(cube);
+//    m.push_back(cube);
 
-    for (int i = 6; i < 8; ++i) {
+    for (int i = 1; i < 200; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
                 switch (i % 2) {
             case 0:

@@ -158,6 +158,7 @@ std::string CollisionPoint::toString() {
     s.append("B: ").append(glm::to_string(B)).append("\n");
     s.append("depth: ").append(std::to_string(depth)).append("\n");
     s.append("normal: ").append(glm::to_string(normal)).append("\n");
+    s.append("reversed: ").append(std::to_string(wasReversed)).append("\n");
     if (hasCollision)
         s.append("collision OK");
     else s.append("collision NO");
@@ -197,7 +198,7 @@ void Sphere::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
     this->pos += pos;
 }
 std::string Sphere::toString() {
-    return "Sphere center: " + glm::to_string(this->pos) + " " + std::to_string(this->radius) + "\n";
+    return "Sphere:\n\tcenter: " + glm::to_string(getCurrentPosition()) + "\n\tradius: " + std::to_string(this->radius) + "\n";
 }
 bool Sphere::isInside(glm::vec3 point) {
     return glm::length(point - pos) < radius;
@@ -777,9 +778,10 @@ CollisionPoint reverseCollisionPoint(CollisionPoint p) {
     glm::vec3 B = p.B;
     p.B = p.A;
     p.A = B;
+    p.normal = - p.normal;
+    p.wasReversed = true;
     return p;
 }
-
 
 CollisionPoint Collider::checkCollision(Collider* col) {
     if (dynamic_cast<Sphere*>(col)) {
@@ -800,7 +802,9 @@ CollisionPoint Collider::checkCollision(Collider* col) {
     if (dynamic_cast<Capsule*>(col)) {
         return checkCollision(dynamic_cast<Capsule*>(col));
     }
-
+    if (dynamic_cast<OBB*>(col)) {
+        return checkCollision(dynamic_cast<OBB*>(col));
+    }
     assert("Collider type was not identified");
     return {};
 }
@@ -822,7 +826,7 @@ CollisionPoint Sphere::checkCollision(Triangle *t) {
 }
 CollisionPoint Sphere::checkCollision(Capsule *bv) {
     return collisionAlgos::checkCollision(this, bv);
-} // TODO return CollisionPoint
+}
 
 CollisionPoint AABB::checkCollision(TriangleMesh *bv) {
     return collisionAlgos::checkCollision(bv, this);
