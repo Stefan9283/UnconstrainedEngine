@@ -43,6 +43,7 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
 
     std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
 
+
     if (collisionPoints.size())
         std::cout << "////////////// STEP /////////////\n";
 
@@ -57,7 +58,19 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
             constr.resize(max);
     }
 
-    // sequential impulse solver
+    for (auto & collisionPoint : collisionPoints) {
+        std::cout << collisionPoint.second.toString() << "\n";
+        size_t i, j;
+        i = collisionPoint.first.first;
+        j = collisionPoint.first.second;
+        for (auto c : constraints[i][j]) {
+            std::cout << c->rb1->collider->toString();
+            std::cout << c->rb2->collider->toString();
+        }
+    }
+
+
+        // sequential impulse solver
     for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++)
         for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
             size_t i, j;

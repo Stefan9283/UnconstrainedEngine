@@ -131,7 +131,7 @@ void ColliderMesh::gui(int outIndex = 0) {
 #pragma region CollisionPoint
 CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
     if (A == B) {
-        this->hasCollision = true; // TODO make this false
+        this->hasCollision = false;
         this->normal = glm::vec3 (0);
         this->B = B;
         this->A = A;
@@ -196,8 +196,8 @@ glm::vec3 Sphere::getCurrentPosition() {
 void Sphere::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
     this->pos += pos;
 }
-void Sphere::toString() {
-    std::cout << "Sphere center: " << glm::to_string(this->pos) << " " << this->radius << "\n";
+std::string Sphere::toString() {
+    return "Sphere center: " + glm::to_string(this->pos) + " " + std::to_string(this->radius) + "\n";
 }
 bool Sphere::isInside(glm::vec3 point) {
     return glm::length(point - pos) < radius;
@@ -334,18 +334,14 @@ AABB::AABB(glm::vec3 min, glm::vec3 max) {
     this->min = min;
     this->max = max;
 }
-void AABB::toString() {
-    std::cout << "AABB:\n\tmin: " << glm::to_string(getMin()) << "\n\tmax: "<< glm::to_string(getMax()) << "\n";
+std::string AABB::toString() {
+    return "AABB:\n\tmin: " + glm::to_string(getMin()) + "\n\tmax: "+ glm::to_string(getMax()) + "\n";
 }
 bool AABB::isInside(glm::vec3 point) {
-    glm::vec3 minValues = getMin(), maxValues = getMax();
+    glm::vec3 minValues, maxValues;
 
-    if (getMax().x < minValues.x) minValues.x = getMax().x;
-    if (getMax().y < minValues.y) minValues.y = getMax().y;
-    if (getMax().z < minValues.z) minValues.z = getMax().z;
-    if (getMin().x > maxValues.x) maxValues.x = getMin().x;
-    if (getMin().y > maxValues.y) maxValues.y = getMin().y;
-    if (getMin().z > maxValues.z) maxValues.z = getMin().z;
+    minValues = glm::min(getMin(), getMax());
+    maxValues = glm::max(getMin(), getMax());
 
     return glm::clamp(point, minValues, maxValues) == point;
 }
@@ -378,11 +374,8 @@ glm::vec2 getPointOnRectangle(glm::vec2 leftDownCorner, glm::vec2 rightUpCorner,
 }
 
 glm::vec3 AABB::closestPoint(glm::vec3 point) {
-    glm::vec2 result{};
-
-    glm::vec3 newMin = getMin(), newMax = getMax();
-
-    
+     glm::vec2 result{};
+    // glm::vec3 newMin = getMin(), newMax = getMax();
     // varianta 1
     /*if(point.x > newMax.x)
         result.x = newMax.x;
@@ -404,7 +397,6 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
         result.z = newMin.z;
     else
         result.z = point.z;*/
-    
     // varianta 2
     /*if (glm::abs(point.x - newMax.x) < glm::abs(point.x - newMin.x))
         result.x = newMax.x;
@@ -418,10 +410,13 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
         result.z = newMax.z;
     else result.z = newMin.z;
     */
+
     // TODO Ovidiu AABB point projection
     glm::vec3 min = getMin(), max = getMax();
 
     // Point is inside
+
+
     if (isInside(point)) {
         double dist1 = abs(point.x - min.x);
         double dist2 = abs(point.x - max.x);
@@ -551,12 +546,12 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
 
     return nullptr;
 }
-void Ray::toString() {
-    std::cout << "Ray:\n\torigin: "
-              << glm::to_string(this->origin) << "\n\tdirection: "
-              << glm::to_string(this->direction) << "\n\tlength: "
-              << this->length << "\n\tend point: "
-              << glm::to_string(origin + direction * length) << "\n";
+std::string Ray::toString() {
+    return "Ray:\n\torigin: "
+              + glm::to_string(this->origin) + "\n\tdirection: "
+              + glm::to_string(this->direction) + "\n\tlength: "
+              + std::to_string(this->length) + "\n\tend point: "
+              + glm::to_string(origin + direction * length) + "\n";
 }
 
 #pragma endregion
@@ -633,8 +628,9 @@ TriangleMesh::TriangleMesh(Mesh *mesh) {
     body = convertMesh2ColliderMesh(m);
 }
 
-void TriangleMesh::toString() {
-    std::cout << "TriangleMesh:\n\tvertices count:" << body->vertices.size() << "\n\ttriangle count" << body->indices.size() << "\n";
+std::string TriangleMesh::toString() {
+    return "TriangleMesh:\n\tvertices count:" + std::to_string(body->vertices.size()) + "\n\ttriangle count"
+                    + std::to_string(body->indices.size()) + "\n";
 }
 #pragma endregion
 #pragma region Triangle
@@ -652,22 +648,15 @@ bool Triangle::isInside(glm::vec3 point) {
     float subarea2 = getTriangleArea2(vertices[1] - vertices[2], vertices[2] - point);
     float subarea3 = getTriangleArea2(vertices[0] - vertices[2], vertices[2] - point);
 
-    //if (area < 0.0001)
-    //std::cout << area << " area ";
-    //std::cout << subarea1 + subarea2 + subarea3 << " sub ";
-    //std::cout << subarea1 + subarea2 + subarea3 - area << " diff\n";
-    //std::cout << fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1])) << "\n";
-    //std::cout << (fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1])) <= EPS) << "\n";
-
-
     return fabs(subarea1 + subarea2 + subarea3 - getTriangleArea2(vertices[0] - vertices[2], vertices[0] - vertices[1])) <= EPS;
 }
-void Triangle::toString() {
-    std::cout << "Triangle:\n";
+std::string Triangle::toString() {
+    std::string s = "Triangle:\n";
     for (int i = 0; i < 3; ++i) {
-        std::cout << "\tv" << i  << " " << glm::to_string(vertices[i]) << "\n";
+        s += "\tv" + std::to_string(i) + " " + glm::to_string(vertices[i]) + "\n";
     }
-    std::cout << "\tn " << glm::to_string(norm) << "\n";
+    s += "\tn " + glm::to_string(norm) + "\n";
+    return s;
 }
 #pragma endregion
 #pragma region Capsule
@@ -774,8 +763,10 @@ void Capsule::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
     body->localTransform.rot = rot;
 }
 
-void Capsule::toString() {
-    std::cout << "Capsule:\nStart Point: " << glm::to_string(start) << "\n\tEnd Point: "<< glm::to_string(end) << "\n\tRadius: " << radius << "\n";
+std::string Capsule::toString() {
+    return "Capsule:\nStart Point: " + glm::to_string(getStart())
+            + "\n\tEnd Point: "+ glm::to_string(getEnd())
+            + "\n\tRadius: " + std::to_string(radius) + "\n";
 }
 #pragma endregion
 
@@ -818,7 +809,7 @@ CollisionPoint Sphere::checkCollision(TriangleMesh *bv) {
     return collisionAlgos::checkCollision(bv, this);
 }
 CollisionPoint Sphere::checkCollision(AABB* bv) {
-    return collisionAlgos::checkCollision(bv, this);
+    return reverseCollisionPoint(collisionAlgos::checkCollision(bv, this));
 }
 CollisionPoint Sphere::checkCollision(Sphere* bv) {
     return collisionAlgos::checkCollision(this, bv);

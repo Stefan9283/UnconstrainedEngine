@@ -117,35 +117,6 @@ void createCrosshair() {
     crosshair->prepare();
 }
 
-// TODO delete me later
-glm::vec3 checkCollision(AABB* bv1, AABB* bv2) {
-    glm::vec3 newMin1 = bv1->getMin(), newMax1 = bv1->getMax();
-    glm::vec3 newMin2 = bv2->getMin(), newMax2 = bv2->getMax();
-
-    if (newMin1.x > newMax2.x || newMax1.x < newMin2.x) {
-        return {};
-    }
-
-    if (newMin1.y > newMax2.y || newMax1.y < newMin2.y) {
-        return {};
-    }
-
-    if (newMin1.z > newMax2.z || newMax1.z < newMin2.z) {
-        return {};
-    }
-
-
-    glm::vec3 v0 = glm::vec3(std::max(newMin1.x, std::min(newMin2.x, newMax1.x)),
-        std::max(newMin1.y, std::min(newMin2.y, newMax1.y)),
-        std::max(newMin1.z, std::min(newMin2.z, newMax1.z)));
-
-    glm::vec3 v1 = glm::vec3(std::max(newMin1.x, std::min(newMax2.x, newMax1.x)),
-        std::max(newMin1.y, std::min(newMax2.y, newMax1.y)),
-        std::max(newMin1.z, std::min(newMax2.z, newMax1.z)));
-
-    return (v0 + v1) / 2.0f;
-}
-
 void testBasicCollision() {
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)
@@ -559,8 +530,6 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
     m1->solidON = false;
     m2->solidON = false;
 
-    Mesh* midPoint = nullptr;
-
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -640,15 +609,10 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
         s->setMat4("view", c->getviewmatrix());
 
 
-        if (midPoint) {
+        if (pointA) {
             s->setVec3("color", glm::vec3(255, 0, 0) / 255.0f);
-            midPoint->Draw(s);
 
-            std::string s = "middle ";
-            s.append(glm::to_string(midPoint->localTransform.tr));
-            ImGui::Text(s.c_str());
-            
-            s = "yellow ";
+            std::string s = "yellow ";
             s.append(glm::to_string(pointA->localTransform.tr));
             ImGui::Text(s.c_str());
 
@@ -669,16 +633,7 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             delete pointB;
             pointB = nullptr;
             
-            delete midPoint;
-            midPoint = nullptr;
-
             if (p.hasCollision) {
-                glm::vec3 mid = checkCollision((AABB*)m1->rigidbody->collider, ((AABB*)m2->rigidbody->collider));
-                midPoint = readObj("3D/Sphere.obj");
-                midPoint->localTransform.sc = glm::vec3(0.1f);
-                midPoint->localTransform.rot = glm::quat();
-                midPoint->localTransform.tr = mid;
-
                 pointA = readObj("3D/Sphere.obj");
                 pointA->localTransform.sc = glm::vec3(0.1f);
                 pointA->localTransform.rot = glm::quat();
@@ -756,8 +711,6 @@ int main() {
 
     c = new Camera(window);
     glClearColor(0, 102 / 255.f, 102 / 255.f, 1);
-
-
 #pragma region meshes
 
     Mesh* cube = readObj("3D/Box.obj");
@@ -771,7 +724,7 @@ int main() {
 
     Mesh* cube2 = readObj("3D/Box.obj");
     cube2->addBody(new RigidBody(new AABB(cube2)));
-    cube2->rigidbody->position = glm::vec3(0.7, 0, 0);
+    cube2->rigidbody->position = glm::vec3(0.7, 1.2, 0);
     meshes.push_back(cube2);
     Mesh* sphere2 = readObj("3D/Sphere.obj");
     sphere2->addBody(new RigidBody(new Sphere(sphere2)));
@@ -793,8 +746,6 @@ int main() {
     //Triangle->rotation = glm::vec3(0, 180, 0);
     //meshes.push_back(Triangle);
     r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
-    /*
-*/
 
     createCrosshair();
 #pragma endregion
@@ -806,42 +757,49 @@ int main() {
 
     // testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
-    // testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
+//     testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
-    testBasicCollisionWithPoints(cube, cube2); // AABB AABB
+//    testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
-//    testBasicCollisionWithPoints(cube, Yen); // AABB Capsule
+    // testBasicCollisionWithPoints(cube, Yen); // AABB Capsule
     
-//
-//    std::vector<Mesh*> m;
-//
-//    sphere->solidON = true;
-//
-//    cube->solidON = true;
-//    cube->rigidbody->movable = false;
-//    m.push_back(cube);
-//
-//    for (int i = 5; i < 16; ++i) {
-//        Mesh* tmp = readObj("3D/Sphere.obj");
-////        switch (i % 3) {
-////            case 0:
-////                tmp->addBody(new RigidBody(new Sphere(sphere), 1));
-////                break;
-////            case 1:
-////                tmp->addBody(new RigidBody(new Capsule(glm::vec3(0, -1, 0), glm::vec3(0, 1, 0), 0.5f), 1));
-////                break;
-////            case 2:
-////                tmp->addBody(new RigidBody(new AABB(sphere), 1));
-////                break;
-////        }
-//        tmp->addBody(new RigidBody(new Sphere(sphere), 1));
-//
-//        tmp->solidON = false;
-//        tmp->rigidbody->position = glm::vec3(0, 5 * i, 0);
-//        m.push_back(tmp);
-//    }
-//
-//    testPhysics(m);
+
+    std::vector<Mesh*> m;
+
+    sphere->solidON = true;
+
+    cube->solidON = true;
+    cube->rigidbody->movable = false;
+    m.push_back(cube);
+
+    for (int i = 6; i < 8; ++i) {
+        Mesh* tmp = readObj("3D/Sphere.obj");
+                switch (i % 2) {
+            case 0:
+                tmp->addBody(new RigidBody(new Sphere(sphere), 1));
+                break;
+            case 1:
+                tmp->addBody(new RigidBody(new AABB(sphere), 1));
+                break;
+        }
+//        switch (i % 3) {
+//            case 0:
+//                tmp->addBody(new RigidBody(new Sphere(sphere), 1));
+//                break;
+//            case 1:
+//                tmp->addBody(new RigidBody(new Capsule(glm::vec3(0, -1, 0), glm::vec3(0, 1, 0), 0.5f), 1));
+//                break;
+//            case 2:
+//                tmp->addBody(new RigidBody(new AABB(sphere), 1));
+//                break;
+//        }
+
+        tmp->solidON = false;
+        tmp->rigidbody->position = glm::vec3(0, 5 * i, 0);
+        m.push_back(tmp);
+    }
+
+    testPhysics(m);
 
     s->unbind();
 

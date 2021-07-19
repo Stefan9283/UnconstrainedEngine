@@ -205,15 +205,18 @@ namespace collisionAlgos {
         }
 
 
-        glm::vec3 v0 = glm::vec3(   std::max(newMin1.x, std::min(newMin2.x, newMax1.x)),
-                                    std::max(newMin1.y, std::min(newMin2.y, newMax1.y)),
-                                    std::max(newMin1.z, std::min(newMin2.z, newMax1.z)));
+        glm::vec3 v0 = glm::max(newMin1, glm::min(newMin2, newMax1));
+        glm::vec3 v1 = glm::max(newMin1, glm::min(newMax2, newMax1));
 
-        glm::vec3 v1 = glm::vec3(   std::max(newMin1.x, std::min(newMax2.x, newMax1.x)),
-                                    std::max(newMin1.y, std::min(newMax2.y, newMax1.y)),
-                                    std::max(newMin1.z, std::min(newMax2.z, newMax1.z)));
+//        glm::vec3 v0 = glm::vec3(   std::max(newMin1.x, std::min(newMin2.x, newMax1.x)),
+//                                    std::max(newMin1.y, std::min(newMin2.y, newMax1.y)),
+//                                    std::max(newMin1.z, std::min(newMin2.z, newMax1.z)));
+//
+//        glm::vec3 v1 = glm::vec3(   std::max(newMin1.x, std::min(newMax2.x, newMax1.x)),
+//                                    std::max(newMin1.y, std::min(newMax2.y, newMax1.y)),
+//                                    std::max(newMin1.z, std::min(newMax2.z, newMax1.z)));
 
-        glm::vec3 mean = (v0 + v1); // / 2.0f;
+        glm::vec3 mean = (v0 + v1) / 2.0f;
 
         //std::cout << "Coliziune\n";
         CollisionPoint p(bv1->closestPoint(mean), bv2->closestPoint(mean));
@@ -333,19 +336,17 @@ namespace collisionAlgos {
 
     CollisionPoint checkCollision(AABB* bv1, Sphere* bv2) {
         glm::vec3 newMin = bv1->getMin(), newMax = bv1->getMax();
-        glm::vec3 v;
 
-        glm::vec3 O2;
-        O2 = bv2->getCurrentPosition();
+        glm::vec3 O2 = bv2->getCurrentPosition();
 
-        v.x = std::max(newMin.x, std::min(O2.x, newMax.x));
-        v.y = std::max(newMin.y, std::min(O2.y, newMax.y));
-        v.z = std::max(newMin.z, std::min(O2.z, newMax.z));
+        glm::vec3 v = glm::max(newMin, glm::min(O2, newMax));
 
         if (glm::distance(v, O2) <= glm::pow(bv2->radius, 2)) {
-            if (glm::normalize(O2 - v) == glm::vec3(0))
-                return { v, O2 - glm::vec3(0.0f, bv2->radius, 0.0f)};
-            return { v, O2 - glm::normalize(O2 - v) * bv2->radius };
+            if (O2 - v == glm::vec3(0)) {
+                return {bv1->closestPoint(v), O2 - bv2->radius * glm::normalize(O2 - (newMin + newMax) / 2.0f)};
+            } else {
+                return {bv1->closestPoint(v), O2 - glm::normalize(O2 - v) * bv2->radius};
+            }
         } else return {};
     }
     CollisionPoint checkCollision(AABB* bv1, Triangle* bv2) {

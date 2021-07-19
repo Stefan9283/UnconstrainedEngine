@@ -70,7 +70,9 @@ public:
     glm::mat4 getTransform();
 
     virtual void Draw(Shader* shader);
-    
+
+    virtual std::string toString() = 0;
+
     CollisionPoint checkCollision(Collider* col);
     virtual CollisionPoint checkCollision(Sphere* col) = 0;
     virtual CollisionPoint checkCollision(AABB* col) = 0;
@@ -79,8 +81,6 @@ public:
     virtual CollisionPoint checkCollision(Ray* col) = 0;
     virtual CollisionPoint checkCollision(Capsule* col) = 0;
     virtual void gui(int index) {}
-
-    virtual void toString() = 0;
 
     virtual ~Collider();
 };
@@ -106,7 +106,7 @@ public:
 
     Sphere(Mesh* mesh);
     Sphere(glm::vec3 pos, float radius);
-    void toString() override;
+    std::string toString() override;
     bool isInside(glm::vec3 point);
 };
 
@@ -130,12 +130,11 @@ public:
     glm::vec3 getMin();
     glm::vec3 getMax();
 
-
     void gui(int index) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
-    void toString() override;
+    std::string toString() override;
     bool isInside(glm::vec3 point);
 };
 
@@ -159,7 +158,7 @@ public:
 
     TriangleMesh(Mesh* mesh);
     ~TriangleMesh() { body = nullptr; }
-    void toString() override;
+    std::string toString() override;
 };
 
 std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col);
@@ -180,7 +179,7 @@ public:
     bool isInside(glm::vec3 point);
 
     Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm);
-    void toString() override;
+    std::string toString() override;
 };
 
 class Ray : public Collider {
@@ -197,7 +196,7 @@ public:
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
     Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh = false);
-    void toString() override;
+    std::string toString() override;
 };
 
 class Capsule : public Collider { // aka swept sphere
@@ -219,7 +218,7 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Ray* col) override;
     CollisionPoint checkCollision(Capsule* col) override;
-    void toString() override;
+    std::string toString() override;
 
 
 };
