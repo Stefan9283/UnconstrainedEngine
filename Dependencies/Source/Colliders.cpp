@@ -336,14 +336,42 @@ bool AABB::isInside(glm::vec3 point) {
 
     return glm::clamp(point, minValues, maxValues) == point;
 }
+
+glm::vec2 getPointOnRectangle(glm::vec2 leftDownCorner, glm::vec2 rightUpCorner, glm::vec2 point) {
+    // Corners
+    if (point.x < leftDownCorner.x && point.y < leftDownCorner.y)
+        return leftDownCorner;
+
+    if (point.x < leftDownCorner.x && point.y > rightUpCorner.y)
+        return {leftDownCorner.x, rightUpCorner.y};
+
+    if (point.y < leftDownCorner.y && point.x > rightUpCorner.x)
+        return {rightUpCorner.x, leftDownCorner.y};
+
+    if (point.x > rightUpCorner.x && point.y > rightUpCorner.y)
+        return rightUpCorner;
+
+    // Points on edges
+    if (point.x < leftDownCorner.x && point.y >= leftDownCorner.y && point.y <= rightUpCorner.y)
+        return {leftDownCorner.x, point.y};
+
+    if (point.x > rightUpCorner.x && point.y >= leftDownCorner.y && point.y <= rightUpCorner.y)
+        return {rightUpCorner.x, point.y};
+
+    if (point.y < leftDownCorner.y && point.x >= leftDownCorner.x && point.x <= rightUpCorner.x)
+        return {point.x, leftDownCorner.y};
+
+    return {point.x, rightUpCorner.y};
+}
+
 glm::vec3 AABB::closestPoint(glm::vec3 point) {
-    glm::vec3 result{};
+    glm::vec2 result{};
 
     glm::vec3 newMin = getMin(), newMax = getMax();
 
-    /*
+    
     // varianta 1
-    if(point.x > newMax.x)
+    /*if(point.x > newMax.x)
         result.x = newMax.x;
     else if(point.x < newMin.x)
         result.x = newMin.x;
@@ -362,10 +390,10 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
     else if(point.z < newMin.z)
         result.z = newMin.z;
     else
-        result.z = point.z;
+        result.z = point.z;*/
     
     // varianta 2
-    if (glm::abs(point.x - newMax.x) < glm::abs(point.x - newMin.x))
+    /*if (glm::abs(point.x - newMax.x) < glm::abs(point.x - newMin.x))
         result.x = newMax.x;
     else result.x = newMin.x;
 
@@ -378,12 +406,79 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
     else result.z = newMin.z;
     */
     // TODO Ovidiu AABB point projection
-    // Your code here
-    
-    
-    // Your code here
+    glm::vec3 min = getMin(), max = getMax();
 
-    return result;
+    // Point is inside
+    if (isInside(point)) {
+        double dist1 = abs(point.x - min.x);
+        double dist2 = abs(point.x - max.x);
+
+        double dist3 = abs(point.y - min.y);
+        double dist4 = abs(point.y - max.y);
+
+        double dist5 = abs(point.z - min.z);
+        double dist6 = abs(point.z - max.z);
+
+        double minDist = glm::min(glm::min(glm::min(dist1, dist2), glm::min(dist3, dist4)), glm::min(dist5, dist6));
+
+        if (minDist == dist1)
+            return {min.x, point.y, point.z};
+        
+        if (minDist == dist2)
+            return {max.x, point.y, point.z};
+
+        if (minDist == dist3)
+            return {point.x, min.y, point.z};
+
+        if (minDist == dist4)
+            return {point.x, max.y, point.z};
+
+        if (minDist == dist5)
+            return {point.x, point.y, min.z};
+
+        return {point.x, point.y, max.z};
+    }
+
+    // Point is outside, minimum distance is a perpendicular
+    if (point.x < min.x && point.y >= min.y && point.y <= max.y && point.z >= min.z && point.z <= max.z)
+        return {min.x, point.y, point.z};
+    
+    if (point.x > max.x && point.y >= min.y && point.y <= max.y && point.z >= min.z && point.z <= max.z)
+        return {max.x, point.y, point.z};
+
+    if (point.y < min.y && point.x >= min.x && point.x <= max.x && point.z >= min.z && point.z <= max.z)
+        return {point.x, min.y, point.z};
+
+    if (point.y > max.y && point.x >= min.x && point.x <= max.x && point.z >= min.z && point.z <= max.z)
+        return {point.x, max.y, point.z};
+
+    if (point.z < min.z && point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y)
+        return {point.x, point.y, min.z};
+
+    if (point.z > max.z && point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y)
+        return {point.x, point.y, max.z};
+
+    // Point is outside, minimum distance is an oblique line
+    if (point.x < min.x)
+        return {min.x, getPointOnRectangle({min.y, min.z}, {max.y, max.z}, {point.y, point.z})};
+
+    if (point.x > max.x)
+        return {max.x, getPointOnRectangle({min.y, min.z}, {max.y, max.z}, {point.y, point.z})};
+    
+    if (point.y < min.y) {
+        result = getPointOnRectangle({min.x, min.z}, {max.x, max.z}, {point.x, point.z});
+        return {result.x, min.y, result.y};
+    }
+
+    if (point.y > max.y) {
+        result = getPointOnRectangle({min.x, min.z}, {max.x, max.z}, {point.x, point.z});
+        return {result.x, max.y, result.y};
+    }
+
+    if (point.z < min.z)
+        return {getPointOnRectangle({min.x, min.y}, {max.x, max.y}, {point.x, point.y}), min.z};
+
+    return {getPointOnRectangle({min.x, min.y}, {max.x, max.y}, {point.x, point.y}), max.z};
 }
 
 #pragma endregion
