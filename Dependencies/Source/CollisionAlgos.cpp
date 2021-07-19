@@ -243,10 +243,10 @@ namespace collisionAlgos {
             if (glm::dot(faceNormal, meanNormal) < 0)
                 faceNormal = -1.0f * faceNormal;
             Triangle t(
-                    getTransformedVert(bv1->localTransform, bv1->body->vertices[i].Position),
-                    getTransformedVert(bv1->localTransform, bv1->body->vertices[i + 1].Position),
-                    getTransformedVert(bv1->localTransform, bv1->body->vertices[i + 2].Position),
-                    glm::mat3(transpose(inverse(bv1->localTransform))) * faceNormal
+                    getTransformedVert(bv1->getLocalTransform(), bv1->body->vertices[i].Position),
+                    getTransformedVert(bv1->getLocalTransform(), bv1->body->vertices[i + 1].Position),
+                    getTransformedVert(bv1->getLocalTransform(), bv1->body->vertices[i + 2].Position),
+                    glm::mat3(transpose(inverse(bv1->getLocalTransform()))) * faceNormal
             );
 
             // [Stefan] Ma ocup eu aici
@@ -333,7 +333,6 @@ namespace collisionAlgos {
 
     CollisionPoint checkCollision(AABB* bv1, Sphere* bv2) {
         glm::vec3 newMin = bv1->getMin(), newMax = bv1->getMax();
-
         glm::vec3 v;
 
         glm::vec3 O2;

@@ -8,15 +8,16 @@ public:
     // Mesh* mesh;
     Collider* collider;
     glm::vec3
-            force, velocity,
-            torque, angularVel,
-            position;
-    float mass;
+            force{}, velocity{},
+            torque{}, angularVel{},
+            position{};
+    glm::quat rotation = glm::quat();
+
+    float restitution = 0.5;
+    float mass = 1;
     bool movable = true;
     float drag = 0.01f;
     RigidBody(Collider* c,  float m = 1);
-    void moveObject(glm::vec3 pos);
-    void setTransform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
     glm::mat4 getTransform();
     void gui(int index);
 };

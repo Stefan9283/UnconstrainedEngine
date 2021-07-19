@@ -49,7 +49,7 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
 
     //std::cout << glm::to_string(p.A) << glm::to_string(p.B) << p.depth << "\n";
 
-    biasTerm(0) = - p.depth * beta / dt; // + closingVelocity * glm::pow(beta, 2);
+    biasTerm(0) = - p.depth * beta / dt + closingVelocity * rb1->restitution * rb2->restitution;
 
     buildJacobian(p);
 

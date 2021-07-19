@@ -28,17 +28,22 @@ Collider::~Collider() {
         delete body;
 }
 void Collider::Draw(Shader *shader) {
-    if (body) {
-        if (parent) {
-            body->Draw(parent->getTransform() * getLocalTransform(), shader);
-        }
-        else {
-            body->Draw(getLocalTransform(), shader);
-        }
-    }
+    if (body) 
+        body->Draw(getTransform(), shader);
 }
+
+
 glm::mat4 Collider::getLocalTransform() {
-    return localTransform; 
+    glm::mat4 T, R, S;
+    T = glm::translate(glm::mat4(1), localTransform.tr);
+    R = glm::toMat4(localTransform.rot);
+    S = glm::scale(glm::mat4(1), localTransform.sc);
+    return T * R * S;
+}
+glm::mat4 Collider::getTransform() {
+    if (parent)
+        return parent->getTransform() * getLocalTransform();
+    else return getLocalTransform();
 }
 
 
@@ -197,6 +202,11 @@ void Sphere::toString() {
 bool Sphere::isInside(glm::vec3 point) {
     return glm::length(point - pos) < radius;
 }
+void Sphere::gui(int index) {
+    ImGui::Text("Sphere Collider Settings");
+    std::string s = "radius" + std::to_string(index);
+    ImGui::SliderFloat(s.c_str(), &this->radius, 0, 100);
+}
 
 #pragma endregion
 #pragma region AABB
@@ -288,6 +298,23 @@ ColliderMesh *AABB::generateNewMesh() {
     return body;
 }
 
+void AABB::gui(int index) {
+    ImGui::Text("AABB Collider Settings");
+
+    std::string s = "min" + std::to_string(index);
+
+    float min_[] = { min.x, min.y, min.z };
+    ImGui::SliderFloat3(s.c_str(), min_, -100, 100);
+
+    s = "max" + std::to_string(index);
+    float max_[] = { max.x, max.y, max.z };
+    ImGui::SliderFloat3(s.c_str(), max_, -100, 100);
+
+    for (int i = 0; i < 3; i++) {
+        min[i] = min_[i];
+        max[i] = max_[i];
+    }
+}
 
 glm::vec3 AABB::getMin() {
     return this->min + getOffset();
@@ -296,30 +323,16 @@ glm::vec3 AABB::getMax() {
     return this->max + getOffset();
 }
 
-void AABB::Draw(Shader *shader) {
-    if (body)
-        body->Draw(getLocalTransform(), shader);
-}
 glm::vec3 AABB::getOffset() {
     glm::vec3 offs = this->offset;
     if (parent)
-        return parent->position;
+        return offs + parent->position;
     return offs;
 }
-
-glm::mat4 AABB::getLocalTransform() {
-    if (!parent)
-        return localTransform;
-    else 
-        return parent->getTransform() * localTransform;
-}
-
 
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
     this->min = min;
     this->max = max;
-    offset = glm::vec3(0);
-    localTransform = glm::mat4(1);
 }
 void AABB::toString() {
     std::cout << "AABB:\n\tmin: " << glm::to_string(getMin()) << "\n\tmax: "<< glm::to_string(getMax()) << "\n";
@@ -385,8 +398,18 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
 
     return result;
 }
+#pragma endregion
+
+#pragma region OBB
+glm::vec3 OBB::getMin() {
+    return glm::vec3(getTransform() * glm::vec4(min + offset, 1.0f));
+}
+glm::vec3 OBB::getMax() {
+    return glm::vec3(getTransform() * glm::vec4(max + offset, 1.0f));
+}
 
 #pragma endregion
+
 #pragma region Ray
 Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh) {
     this->origin = origin;
@@ -433,7 +456,6 @@ Ray* Ray::generateRay(GLFWwindow* window, Camera* cam) {
 
     return nullptr;
 }
-
 void Ray::toString() {
     std::cout << "Ray:\n\torigin: "
               << glm::to_string(this->origin) << "\n\tdirection: "
@@ -441,6 +463,7 @@ void Ray::toString() {
               << this->length << "\n\tend point: "
               << glm::to_string(origin + direction * length) << "\n";
 }
+
 #pragma endregion
 #pragma region TriangleMesh
 
@@ -470,10 +493,10 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
             faceNormal = -1.0f * faceNormal;
 
         Triangle t(
-                getTransformedVertex(mesh->localTransform, mesh->body->vertices[mesh->body->indices[i]].Position),
-                getTransformedVertex(mesh->localTransform, mesh->body->vertices[mesh->body->indices[i + 1]].Position),
-                getTransformedVertex(mesh->localTransform, mesh->body->vertices[mesh->body->indices[i + 2]].Position),
-                glm::mat3(transpose(inverse(mesh->localTransform))) * faceNormal
+                getTransformedVertex(mesh->getLocalTransform(), mesh->body->vertices[mesh->body->indices[i]].Position),
+                getTransformedVertex(mesh->getLocalTransform(), mesh->body->vertices[mesh->body->indices[i + 1]].Position),
+                getTransformedVertex(mesh->getLocalTransform(), mesh->body->vertices[mesh->body->indices[i + 2]].Position),
+                glm::mat3(transpose(inverse(mesh->getLocalTransform()))) * faceNormal
         );
 
         result = col->checkCollision(&t).hasCollision;
@@ -556,23 +579,20 @@ void Triangle::toString() {
 glm::vec3 Capsule::getEnd() {
     glm::vec4 res;
     if (this->parent) {
-        res = parent->getTransform() * localTransform * glm::vec4(end, 1);
-    }
-    else {
-        res = localTransform * glm::vec4(end, 1);
+        res = parent->getTransform() * getLocalTransform() * glm::vec4(end, 1);
+    } else {
+        res = getLocalTransform() * glm::vec4(end, 1);
     }
     return glm::vec3(res);
 }
 glm::vec3 Capsule::getStart() {
     glm::vec4 res;
     if (this->parent) {
-        res = parent->getTransform() * localTransform * glm::vec4(start, 1);
-    }
-    else {
-        res = localTransform * glm::vec4(start, 1);
+        res = parent->getTransform() * getLocalTransform() * glm::vec4(start, 1);
+    } else {
+        res = getLocalTransform() * glm::vec4(start, 1);
     }
     return glm::vec3(res);
-
 }
 Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
     this->start = start;
@@ -651,8 +671,8 @@ Capsule *Capsule::generateCapsule(Mesh *mesh) {
 }
 void Capsule::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
     Collider::update(pos, rot, scale);
-    start = getTransformedVertex(localTransform, start0);
-    end = getTransformedVertex(localTransform, end0);
+    start = getTransformedVertex(getTransform(), start0);
+    end = getTransformedVertex(getTransform(), end0);
 
     body->localTransform.tr = pos;
     body->localTransform.sc = scale;

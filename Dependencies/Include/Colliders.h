@@ -54,18 +54,20 @@ public:
 class Collider {
 public:
     ColliderMesh* body = nullptr;
-    glm::mat4 localTransform = glm::mat4(1);
+    transform localTransform = {
+        glm::vec3(0), glm::vec3(1), glm::quat()
+    };
+    //glm::mat4 localTransform = glm::mat4(1);
     RigidBody* parent = nullptr;
 
     virtual void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-        glm::mat4 T, R, S;
-        T = glm::translate(glm::mat4(1), pos);
-        R = glm::toMat4(rot);
-        S = glm::scale(glm::mat4(1), scale);
-        localTransform = T * R * S;
+        localTransform.tr = pos;
+        localTransform.rot = rot;
+        localTransform.sc = scale;
     };
 
-    virtual glm::mat4 getLocalTransform();
+    glm::mat4 getLocalTransform();
+    glm::mat4 getTransform();
 
     virtual void Draw(Shader* shader);
     
@@ -76,6 +78,7 @@ public:
     virtual CollisionPoint checkCollision(TriangleMesh* col) = 0;
     virtual CollisionPoint checkCollision(Ray* col) = 0;
     virtual CollisionPoint checkCollision(Capsule* col) = 0;
+    virtual void gui(int index) {}
 
     virtual void toString() = 0;
 
@@ -99,11 +102,14 @@ public:
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
 
+    void gui(int index) override;
+
     Sphere(Mesh* mesh);
     Sphere(glm::vec3 pos, float radius);
     void toString() override;
     bool isInside(glm::vec3 point);
 };
+
 
 class AABB : public Collider{
 public:
@@ -120,18 +126,27 @@ public:
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
 
-    glm::mat4 getLocalTransform() override;
     glm::vec3 getOffset();
     glm::vec3 getMin();
     glm::vec3 getMax();
 
-    void Draw(Shader* shader) override;
+
+    void gui(int index) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
     explicit AABB(Mesh* mesh);
     void toString() override;
     bool isInside(glm::vec3 point);
 };
+
+class OBB : public AABB {
+public:
+    glm::vec3 max{}, min{}, offset{};
+    
+    glm::vec3 getMin();
+    glm::vec3 getMax();
+};
+
 
 class TriangleMesh : public Collider {
 public:

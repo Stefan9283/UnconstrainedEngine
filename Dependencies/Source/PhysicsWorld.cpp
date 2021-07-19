@@ -94,7 +94,7 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     for (auto* r : rb) {
         if (r->movable) {
             r->velocity += r->force / r->mass * dt;
-            r->setTransform(r->velocity * dt, glm::quat(), glm::vec3(1));
+            r->position += r->velocity * dt;
             r->angularVel += r->torque / dt;
             r->force = glm::vec3(0);
         } else {

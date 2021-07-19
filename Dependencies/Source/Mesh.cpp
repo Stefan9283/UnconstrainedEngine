@@ -92,24 +92,18 @@ void Mesh::gui(int outIndex = 0) {
         ImGui::Checkbox(s.c_str(), &boundingBoxON);
 
         float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
-        s = "offset " + std::to_string(outIndex);
+        s = "mesh offset (don't use)" + std::to_string(outIndex);
         ImGui::SliderFloat3(s.c_str(), t, -10, 10);
         localTransform.tr = glm::vec3(t[0], t[1], t[2]);
 
-        float r[4] = {localTransform.rot.x, localTransform.rot.y, localTransform.rot.z, 1.0f};
-        s = "rotation " + std::to_string(outIndex);
-        //ImGui::SliderFloat3(s.c_str(), r, -180, 180);
-        //localTransform.rot = glm::vec3(r[0], r[1], r[2]);
-
-        if (rigidbody) {
-            float t_rb[4] = {rigidbody->position.x, rigidbody->position.y, rigidbody->position.z, 1.0f};
-            s = "rb position " + std::to_string(outIndex);
-            ImGui::SliderFloat3(s.c_str(), t_rb, -10, 10);
-            rigidbody->position = glm::vec3(t_rb[0], t_rb[1], t_rb[2]);
-//            rigidbody->updateCollider();
-        }
-
-//        rigidbody->setTransform(localTransform.tr, localTransform.rot, localTransform.sc);
+        glm::vec3 rot = glm::eulerAngles(localTransform.rot);
+        float r[4] = {rot.x, rot.y, rot.z, 1.0f};
+        s = "rotation (don't use)" + std::to_string(outIndex);
+        ImGui::SliderFloat3(s.c_str(), r, - glm::pi<float>() * 4, glm::pi<float>() * 4);
+        localTransform.rot = glm::quat(glm::vec3(r[0], r[1], r[2]));
+        
+        if (rigidbody) 
+            rigidbody->gui(outIndex);
 
         ImGui::TreePop();
     }
