@@ -207,10 +207,24 @@ void Sphere::gui(int index) {
     ImGui::Text("Sphere Collider Settings");
     std::string s = "radius" + std::to_string(index);
     ImGui::SliderFloat(s.c_str(), &this->radius, 0, 100);
+    radius = glm::max(0.1f, radius);
+}
+glm::mat4 Sphere::getLocalTransform() {
+    glm::mat4 T, S;
+    T = glm::translate(glm::mat4(1), this->pos);
+    S = glm::scale(glm::mat4(1), glm::vec3(radius));
+    return T * S;
 }
 
 #pragma endregion
 #pragma region AABB
+glm::mat4 AABB::getLocalTransform() {
+    glm::mat4 T, S;
+    T = glm::translate(glm::mat4(1), localTransform.tr);
+    S = glm::scale(glm::mat4(1), max - glm::vec3(0));
+    return T * S;
+}
+
 AABB::AABB(Mesh* mesh) {
     min = mesh->vertices[0].Position;
     max = mesh->vertices[0].Position;
@@ -302,19 +316,34 @@ ColliderMesh *AABB::generateNewMesh() {
 void AABB::gui(int index) {
     ImGui::Text("AABB Collider Settings");
 
-    std::string s = "min" + std::to_string(index);
+    glm::vec3 size = max - min;
 
-    float min_[] = { min.x, min.y, min.z };
-    ImGui::SliderFloat3(s.c_str(), min_, -100, 100);
+    ImGui::Text(glm::to_string(size).c_str());
+    ImGui::Text(glm::to_string(min).c_str());
+    ImGui::Text(glm::to_string(max).c_str());
 
-    s = "max" + std::to_string(index);
-    float max_[] = { max.x, max.y, max.z };
-    ImGui::SliderFloat3(s.c_str(), max_, -100, 100);
+    ImGui::InputFloat("H ", &size.y);
+    //ImGui::SameLine();
+    ImGui::InputFloat("L ", &size.x);
+    //ImGui::SameLine();
+    ImGui::InputFloat("W ", &size.z);
 
-    for (int i = 0; i < 3; i++) {
-        min[i] = min_[i];
-        max[i] = max_[i];
-    }
+    size = glm::max(glm::vec3(0.1f), size / 2.0f);
+    max = size;
+    min = - size;
+
+    //std::string s = "min" + std::to_string(index);
+    //float min_[] = { min.x, min.y, min.z };
+    //ImGui::SliderFloat3(s.c_str(), min_, -100, 100);
+    //
+    //s = "max" + std::to_string(index);
+    //float max_[] = { max.x, max.y, max.z };
+    //ImGui::SliderFloat3(s.c_str(), max_, -100, 100);
+    //
+    //for (int i = 0; i < 3; i++) {
+    //    min[i] = min_[i];
+    //    max[i] = max_[i];
+    //}
 }
 
 glm::vec3 AABB::getMin() {
@@ -662,29 +691,13 @@ std::string Triangle::toString() {
 #pragma endregion
 #pragma region Capsule
 glm::vec3 Capsule::getEnd() {
-    glm::vec4 res;
-    if (this->parent) {
-        res = parent->getTransform() * getLocalTransform() * glm::vec4(end, 1);
-    } else {
-        res = getLocalTransform() * glm::vec4(end, 1);
-    }
-    return glm::vec3(res);
+    return getTransformedVertex(getTransform(), end);
 }
 glm::vec3 Capsule::getStart() {
-    glm::vec4 res;
-    if (this->parent) {
-        res = parent->getTransform() * getLocalTransform() * glm::vec4(start, 1);
-    } else {
-        res = getLocalTransform() * glm::vec4(start, 1);
-    }
-    return glm::vec3(res);
+    return getTransformedVertex(getTransform(), start);
 }
-Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
-    this->start = start;
-    this->end = end;
-    this->radius = radius;
 
-
+void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
     Mesh* Tube = readObj("3D/Tube.obj");
     Mesh* halfSphere = readObj("3D/halfSphere.obj");
 
@@ -733,35 +746,54 @@ Capsule::Capsule(glm::vec3 start, glm::vec3 end, float radius) {
 
     body->prepare();
 }
-Capsule *Capsule::generateCapsule(Mesh *mesh) {
+Capsule::Capsule(float length, float radius) {
+    this->start = glm::vec3(0, length / 2, 0);
+    this->end = glm::vec3(0, - length / 2, 0);
+    this->radius = radius;
+    createBody(start, end, radius);
+}
+Capsule::Capsule(Mesh *mesh) {
     glm::vec3 min, max;
     min = mesh->vertices[0].Position;
     max = mesh->vertices[0].Position;
 
-    glm::vec3 center = glm::vec3(0);
+    auto center = glm::vec3(0);
     for (auto v : mesh->vertices) {
         center = center + v.Position;
-        if (min.x > v.Position.x) min.x = v.Position.x;
-        if (min.y > v.Position.y) min.y = v.Position.y;
-        if (min.z > v.Position.z) min.z = v.Position.z;
-        if (max.x < v.Position.x) max.x = v.Position.x;
-        if (max.y < v.Position.y) max.y = v.Position.y;
-        if (max.z < v.Position.z) max.z = v.Position.z;
+        min = glm::min(v.Position, min);
+        max = glm::max(v.Position, max);
     }
-    center = center/(float)mesh->vertices.size();
-    glm::vec3 r = glm::max(glm::abs(min - center), glm::abs(max - center));
-    float radius = glm::sqrt(2 * glm::max(r.x, glm::max(r.y, r.z)));
-    float max_y = glm::max(glm::abs(min.y) - radius, glm::abs(max.y) - radius);
-    return new Capsule(glm::vec3(0, max_y, 0), - glm::vec3(0, max_y, 0), radius);
-}
-void Capsule::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-    Collider::update(pos, rot, scale);
-    start = getTransformedVertex(getTransform(), start0);
-    end = getTransformedVertex(getTransform(), end0);
 
-    body->localTransform.tr = pos;
-    body->localTransform.sc = scale;
-    body->localTransform.rot = rot;
+    center = center / (float)mesh->vertices.size();
+    glm::vec3 r = glm::max(glm::abs(min - center), glm::abs(max - center));
+    this->radius = glm::sqrt(2 * glm::max(r.x, glm::max(r.y, r.z)));
+    float max_y = glm::max(glm::abs(min.y) - radius, glm::abs(max.y) - radius);
+    this->start = glm::vec3(0, max_y, 0);
+    this->end = - glm::vec3(0, max_y, 0);
+
+    createBody(start, end, radius);
+}
+
+void Capsule::gui(int index) {
+    ImGui::Text("Capsule Collider Settings");
+
+    float length = glm::distance(start, end);
+    float length2 = length;
+    float radius2 = radius;
+
+    ImGui::SliderFloat(("Radius" + std::to_string(index)).c_str(), &radius2, 0.1f, 100);
+    ImGui::SliderFloat(("Length" + std::to_string(index)).c_str(), &length2, 0.1f, 100);
+
+    if (length != length2 || radius != radius2) {
+        length2 /= 2.0f;
+
+        start = glm::vec3(0, length2, 0);
+        end = glm::vec3(0, -length2, 0);
+        radius = radius2;
+
+        this->createBody(start, end, radius);
+    }
+
 }
 
 std::string Capsule::toString() {
@@ -825,7 +857,7 @@ CollisionPoint Sphere::checkCollision(Triangle *t) {
     return collisionAlgos::checkCollision(this, t);
 }
 CollisionPoint Sphere::checkCollision(Capsule *bv) {
-    return collisionAlgos::checkCollision(this, bv);
+    return reverseCollisionPoint(collisionAlgos::checkCollision(this, bv));
 }
 
 CollisionPoint AABB::checkCollision(TriangleMesh *bv) {
@@ -844,7 +876,7 @@ CollisionPoint AABB::checkCollision(Triangle *t) {
     return collisionAlgos::checkCollision(this, t);
 }
 CollisionPoint AABB::checkCollision(Capsule *bv) {
-    return collisionAlgos::checkCollision(this, bv);
+    return reverseCollisionPoint(collisionAlgos::checkCollision(this, bv));
 }
 
 CollisionPoint Ray::checkCollision(TriangleMesh *col) {

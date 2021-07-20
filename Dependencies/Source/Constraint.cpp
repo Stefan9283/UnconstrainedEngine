@@ -46,8 +46,7 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
     float closingVelocity = glm::dot(relativeVelocity, p.normal);
 
     biasTerm(0) =
-            - p.depth * beta / dt;
-                 + closingVelocity * rb1->restitution * rb2->restitution;
+            - p.depth * beta / dt + closingVelocity * rb1->restitution * rb2->restitution;
 
     buildJacobian(p);
 

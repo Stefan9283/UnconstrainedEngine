@@ -341,7 +341,8 @@ namespace collisionAlgos {
 
         glm::vec3 v = glm::max(newMin, glm::min(O2, newMax));
 
-        if (glm::distance(v, O2) <= glm::pow(bv2->radius, 2)) {
+
+        if (glm::distance(v, O2) <= bv2->radius) {
             if (O2 - v == glm::vec3(0)) {
                 return {bv1->closestPoint(v), O2 - bv2->radius * glm::normalize(O2 - (newMin + newMax) / 2.0f)};
             } else {
@@ -373,7 +374,6 @@ namespace collisionAlgos {
     }
     CollisionPoint checkCollision(AABB* bv1, Capsule* bv2) {
         glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->getStart(), bv2->getEnd(), (bv1->getMin() + bv1->getMax())/2.0f);
-        //std::cout << glm::to_string(bestPoint) << bv2->radius << "\n";
         Sphere s(bestPoint, bv2->radius);
         return s.checkCollision(bv1);
     }

@@ -31,7 +31,6 @@ Shader* s = nullptr;
 Camera* c = nullptr;
 Ray* r = nullptr;
 Mesh* crosshair = nullptr;
-std::vector<Mesh*> meshes;
 
 Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
     std::vector<glm::vec3> verticesPos;
@@ -117,7 +116,7 @@ void createCrosshair() {
     crosshair->prepare();
 }
 
-void testBasicCollision() {
+void testBasicCollision(std::vector<Mesh*> meshes) {
     std::vector<bool> collision;
     for (int i = 0; i < meshes.size() ; i++)
         collision.push_back(false);
@@ -320,6 +319,8 @@ void testRayMeshIntersection(Mesh* mesh) {
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
 
+        mesh->gui(0);
+
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
         ImGui::Checkbox("Continuously checking for collisions", &continuouslyChecking);
@@ -373,21 +374,6 @@ void testRayMeshIntersection(Mesh* mesh) {
             delete r;
             r = new Ray(glm::vec3(start[0], start[1], start[2]), glm::normalize(glm::vec3(end[0], end[1], end[2])), length, true);
         }
-
-
-        if(ImGui::Button("Toggle bounding volumes all" )) {
-            for (int i = 0; i < meshes.size(); ++i) {
-                Mesh* m = meshes[i];
-                m->boundingBoxON = !m->boundingBoxON;
-            }
-        }
-        if(ImGui::Button("Toggle solid all" )) {
-            for (int i = 0; i < meshes.size(); ++i) {
-                Mesh* m = meshes[i];
-                m->solidON = !m->solidON;
-            }
-        }
-
 
         ImGui::Render();
 
@@ -646,19 +632,6 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
             }
         }
 
-        if(ImGui::Button("Toggle bounding volumes all" )) {
-            for (int i = 0; i < meshes.size(); ++i) {
-                Mesh* m = meshes[i];
-                m->boundingBoxON = !m->boundingBoxON;
-            }
-        }
-        if(ImGui::Button("Toggle solid all" )) {
-            for (int i = 0; i < meshes.size(); ++i) {
-                Mesh* m = meshes[i];
-                m->solidON = !m->solidON;
-            }
-        }
-
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
@@ -676,7 +649,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 
-    window = glfwCreateWindow(1040, 1040, "Physics Engine", nullptr, nullptr);
+    window = glfwCreateWindow(2040, 1040, "Physics Engine", nullptr, nullptr);
 
     if (!window) {
         glfwTerminate();
@@ -689,7 +662,6 @@ int main() {
     glfwSwapInterval(1);
 
     glDepthMask(GL_TRUE);
-
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -712,110 +684,115 @@ int main() {
     c = new Camera(window);
     glClearColor(0, 102 / 255.f, 102 / 255.f, 1);
 #pragma region meshes
+    std::vector<Mesh*> meshes;
 
     Mesh* cube = readObj("3D/Box.obj");
     cube->addBody(new RigidBody(new AABB(cube)));
     meshes.push_back(cube);
 
-    Mesh* sphere = readObj("3D/Sphere.obj");
-    sphere->addBody(new RigidBody(new Sphere(sphere)));
-    sphere->solidON = false;
-    meshes.push_back(sphere);
-
-    Mesh* cube2 = readObj("3D/Box.obj");
-    cube2->addBody(new RigidBody(new AABB(cube2)));
-    cube2->rigidbody->position = glm::vec3(0.7, 1.2, 0);
-    meshes.push_back(cube2);
-    Mesh* sphere2 = readObj("3D/Sphere.obj");
-    sphere2->addBody(new RigidBody(new Sphere(sphere2)));
-    sphere2->solidON = false;
-    sphere2->rigidbody->position = glm::vec3(0, 1.5f, 0);
-    meshes.push_back(sphere2);
-
-    Mesh* Yen = readObj("3D/Yen.obj");
-    Yen->addBody(new RigidBody(new Capsule(glm::vec3(0, -3, 0), glm::vec3(0, 3, 0), 2))); //Capsule::generateCapsule(Yen);
-    meshes.push_back(Yen);
-
-    Mesh* Mercy = readObj("3D/Mercy2.obj");
-    Mercy->addBody(new RigidBody(new AABB(Mercy)));
-    meshes.push_back(Mercy);
+   Mesh* sphere = readObj("3D/Sphere.obj");
+   sphere->addBody(new RigidBody(new Sphere(sphere)));
+   sphere->solidON = false;
+   meshes.push_back(sphere);
+  
+   Mesh* cube2 = readObj("3D/Box.obj");
+   cube2->addBody(new RigidBody(new AABB(cube2)));
+   cube2->rigidbody->position = glm::vec3(0.7, 1.2, 0);
+   meshes.push_back(cube2);
+  
+   Mesh* sphere2 = readObj("3D/Sphere.obj");
+   sphere2->addBody(new RigidBody(new Sphere(sphere2)));
+   sphere2->solidON = false;
+   sphere2->rigidbody->position = glm::vec3(0, 1.5f, 0);
+   meshes.push_back(sphere2);
+  
+   Mesh* Yen = readObj("3D/Yen.obj");
+   Yen->addBody(new RigidBody(new Capsule(4.07f, 1.27f))); //Capsule::generateCapsule(Yen);
+   Yen->rigidbody->position = glm::vec3(0, 4.6f, 0);
+   //Yen->addBody(new RigidBody(new Capsule(sphere))); //Capsule::generateCapsule(Yen);
+   meshes.push_back(Yen);
+  
+   Mesh* Mercy = readObj("3D/Mercy2.obj");
+   Mercy->addBody(new RigidBody(new TriangleMesh(Mercy)));
+   meshes.push_back(Mercy);
 
     //Mesh* Triangle = readObj("3D/Triangle.obj");
     //Triangle->rigidbody = new TriangleMesh(Triangle);
     //Triangle->solidON = false;
-    //Triangle->rotation = glm::vec3(0, 180, 0);
     //meshes.push_back(Triangle);
+
     r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
 
     createCrosshair();
 #pragma endregion
     //testOctree(Mercy);
     
-    // testBasicCollision();
-    
-    //testRayMeshIntersection(meshes[5]);
+    // testBasicCollision(meshes);
 
-    // testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
+    // TODO FIX IT
+    // testRayMeshIntersection(Mercy); 
+
+    //testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
+
     // testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
     // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
-    // testBasicCollisionWithPoints(Yen, sphere); // Capsule Sphere
-    // testBasicCollisionWithPoints(cube, Yen); // AABB Capsule
+    // testBasicCollisionWithPoints(sphere, Yen); // Capsule Sphere
+    // testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
     
+    std::vector<Mesh*> physicsMeshes;
 
-    std::vector<Mesh*> m;
+    Mesh* cubePhy = readObj("3D/Box.obj");
+    cubePhy->addBody(new RigidBody(new AABB(cubePhy)));
+    cubePhy->solidON = true;
 
-    sphere->solidON = true;
-    sphere->rigidbody->movable = false;
-    m.push_back(sphere);
+    Mesh* spherePhy = readObj("3D/Sphere.obj");
+    spherePhy->addBody(new RigidBody(new Sphere(spherePhy)));
+    spherePhy->solidON = true;
 
-    cube->solidON = true;
-    cube->rigidbody->movable = false;
-//    m.push_back(cube);
-
-    for (int i = 1; i < 200; ++i) {
-        Mesh* tmp = readObj("3D/Sphere.obj");
-                switch (i % 2) {
-            case 0:
-                tmp->addBody(new RigidBody(new Sphere(sphere), 1));
-                break;
-            case 1:
-                tmp->addBody(new RigidBody(new AABB(sphere), 1));
-                break;
-        }
-//        switch (i % 3) {
-//            case 0:
-//                tmp->addBody(new RigidBody(new Sphere(sphere), 1));
-//                break;
-//            case 1:
-//                tmp->addBody(new RigidBody(new Capsule(glm::vec3(0, -1, 0), glm::vec3(0, 1, 0), 0.5f), 1));
-//                break;
-//            case 2:
-//                tmp->addBody(new RigidBody(new AABB(sphere), 1));
-//                break;
-//        }
-
-        tmp->solidON = false;
-        tmp->rigidbody->position = glm::vec3(0, 5 * i, 0);
-        m.push_back(tmp);
+    if (true) {
+        spherePhy->rigidbody->movable = false;
+        physicsMeshes.push_back(spherePhy);
+    } else {
+        cubePhy->rigidbody->movable = false;
+        physicsMeshes.push_back(cubePhy);
     }
 
-    testPhysics(m);
+    for (int i = 5; i < 10; ++i) {
+        Mesh* tmp = readObj("3D/Sphere.obj");
+        switch (i % 3) {
+        case 0:
+            tmp->addBody(new RigidBody(new Sphere(sphere), 1));
+            break;
+        case 1:
+            tmp->addBody(new RigidBody(new AABB(sphere), 1));
+            break;
+        case 2:
+            tmp->addBody(new RigidBody(new Capsule(sphere), 1));
+            break;
+        }
+        tmp->solidON = false;
+        tmp->rigidbody->position = glm::vec3(0, 5 * i, 0);
+        physicsMeshes.push_back(tmp);
+    }
+
+    testPhysics(physicsMeshes);
+    for (Mesh* m : physicsMeshes) {
+        delete m;
+    }
+#pragma region cleanUp
 
     s->unbind();
-
     for(Mesh* m : meshes)
         delete m;
-
-#pragma region cleanUp
 
     delete crosshair;
     delete s;
     delete c;
 
     glfwTerminate();
-#pragma endregion
 
     return 0;
+#pragma endregion
 }

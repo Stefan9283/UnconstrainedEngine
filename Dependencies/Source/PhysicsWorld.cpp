@@ -26,7 +26,7 @@ std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> PhysicsWorld::
     return collisionPoints;
 }
 
-#define NUM_OF_ITERATIONS_IMPULSE 4
+#define NUM_OF_ITERATIONS_IMPULSE 2
 #define NUM_OF_ITERATION_INTERPENETRATION_FIX 3
 #define NUM_OF_ITERATIONS_POSITION 4
 

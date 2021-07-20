@@ -26,7 +26,7 @@ void RigidBody::gui(int index) {
     if (ImGui::TreeNode(name.c_str())) {
         float t[4] = { position.x, position.y, position.z, 1.0f };
         name = "rb pos " + std::to_string(index);
-        ImGui::SliderFloat3(name.c_str(), t, -10, 10);
+        ImGui::SliderFloat3(name.c_str(), t, -10000, 10000);
         position = glm::vec3(t[0], t[1], t[2]);
         collider->gui(index);
         ImGui::TreePop();

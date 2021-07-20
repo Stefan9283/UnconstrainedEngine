@@ -67,7 +67,7 @@ public:
         localTransform.sc = scale;
     };
 
-    glm::mat4 getLocalTransform();
+    virtual glm::mat4 getLocalTransform();
     glm::mat4 getTransform();
 
     virtual void Draw(Shader* shader);
@@ -88,7 +88,6 @@ public:
 
 class Sphere : public Collider {
 public:
-
     float radius;
     glm::vec3 pos{};
 
@@ -104,13 +103,13 @@ public:
     CollisionPoint checkCollision(Capsule* col) override;
 
     void gui(int index) override;
+    glm::mat4 getLocalTransform() override;
 
     Sphere(Mesh* mesh);
     Sphere(glm::vec3 pos, float radius);
     std::string toString() override;
     bool isInside(glm::vec3 point);
 };
-
 
 class AABB : public Collider{
 public:
@@ -131,6 +130,8 @@ public:
     glm::vec3 getMin();
     glm::vec3 getMax();
 
+    glm::mat4 getLocalTransform() override;
+
     void gui(int index) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
@@ -146,7 +147,6 @@ public:
     glm::vec3 getMin();
     glm::vec3 getMax();
 };
-
 
 class TriangleMesh : public Collider {
 public:
@@ -202,7 +202,6 @@ public:
 
 class Capsule : public Collider { // aka swept sphere
 public:
-    glm::vec3 start0{}, end0{};
     float radius;
 
     glm::vec3 start{}, end{};
@@ -210,9 +209,11 @@ public:
     glm::vec3 getEnd();
     glm::vec3 getStart();
 
-    static Capsule* generateCapsule(Mesh* mesh);
-    void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
-    Capsule(glm::vec3 start, glm::vec3 end, float radius);
+    void gui(int index) override;
+
+    void createBody(glm::vec3 start, glm::vec3 end, float radius);
+    Capsule (Mesh* mesh);
+    Capsule(float length, float radius);
     CollisionPoint checkCollision(Sphere* col) override;
     CollisionPoint checkCollision(AABB* col) override;
     CollisionPoint checkCollision(Triangle* t) override;

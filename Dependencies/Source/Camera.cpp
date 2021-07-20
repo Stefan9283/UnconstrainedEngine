@@ -76,17 +76,13 @@ void Camera::Move(GLFWwindow* window) {
             pitch = 89.0f;
         if (pitch < -89.0f)
             pitch = -89.0f;
-
     }
-
-
 
     // front back
     if (glfwGetKey(window, GLFW_KEY_W))
         position += speed * goFront;
     if (glfwGetKey(window, GLFW_KEY_S))
         position -= speed * goFront;
-
 
     // right left
     if (glfwGetKey(window, GLFW_KEY_D))
@@ -97,13 +93,12 @@ void Camera::Move(GLFWwindow* window) {
     // up down
     if (glfwGetKey(window, GLFW_KEY_SPACE))
         position += speed * goUp;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
+    if (glfwGetKey(window, GLFW_KEY_LEFT_ALT))
         position -= speed * goUp;
 
     // reset
     if (glfwGetKey(window, GLFW_KEY_R))
         reset_camera();
-
 
     update_view();
     update_proj(window);
