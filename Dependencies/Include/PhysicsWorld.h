@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 22-Mar-21.
-//
-
 #ifndef TRIANGLE_PHYSICSWORLD_H
 #define TRIANGLE_PHYSICSWORLD_H
 

@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 22-Feb-21.
-//
-
 #include "ObjLoad.h"
 
 

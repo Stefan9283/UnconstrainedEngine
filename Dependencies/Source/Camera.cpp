@@ -1,6 +1,3 @@
-//
-// Created by Stefan on 23-Jun-21.
-//
 #include "Camera.h"
 
 Camera::Camera(GLFWwindow* window) {

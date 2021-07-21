@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 22-Feb-21.
-//
-
 #include "Mesh.h"
 #include "RigidBody.h"
 #include "glm/gtc/matrix_transform.hpp"

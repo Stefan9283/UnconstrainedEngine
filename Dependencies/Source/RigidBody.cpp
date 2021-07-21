@@ -18,10 +18,10 @@ glm::mat4 RigidBody::getTransform() {
     return getTranslationMatrix() * getRotationMatrix();
 }
 glm::mat4 RigidBody::getTranslationMatrix() {
-    return glm::toMat4(rotation);
+    return glm::translate(glm::mat4(1), position);
 }
 glm::mat4 RigidBody::getRotationMatrix() {
-    return glm::translate(glm::mat4(1), position);
+    return glm::toMat4(rotation);
 }
 
 void RigidBody::gui(int index) {

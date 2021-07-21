@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 16-Mar-21.
-//
-
 #ifndef TRIANGLE_COLLISIONALGOS_H
 #define TRIANGLE_COLLISIONALGOS_H
 

@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 16-Mar-21.
-//
-
 #include "CollisionAlgos.h"
 #include "Colliders.h"
 #include "PhysicsWorld.h"
@@ -134,14 +130,6 @@ glm::vec3 ClosestPointOnLineSegment(glm::vec3 A, glm::vec3 B, glm::vec3 Point) {
    
     glm::vec3 AB = B - A;
     float t = glm::dot(Point - A, AB) / glm::dot(AB, AB);
-    //std::cout << "\nClosest point\n";
-    //std::cout << glm::to_string(Point);
-    //std::cout << glm::to_string(A);
-    //std::cout << glm::to_string(B);
-    //std::cout <<  glm::to_string(AB);
-    //std::cout << t << " ";
-    //std::cout << (float)glm::min(glm::max(t, 0.0f), 1.0f) << "\n";
-    // std::cout << "Closest point end\n";
     return A + (float)glm::min(glm::max(t, 0.0f), 1.0f) * AB; // saturate(t) can be written as: min((max(t, 0), 1)
 }
 glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
@@ -465,7 +453,10 @@ namespace collisionAlgos {
     }
     
     // TODO OBB 
-    CollisionPoint checkCollision(OBB* bv1, AABB *bv2) { return{}; }
+    CollisionPoint checkCollision(OBB* bv1, AABB *bv2) { 
+        bv1->getVerices(); // use the .Position field in the Vertex struct
+        return{};
+    }
     CollisionPoint checkCollision(OBB* bv1, Sphere *bv2) { return{}; }
     CollisionPoint checkCollision(OBB* bv1, OBB* bv2) { return{}; }
     CollisionPoint checkCollision(OBB* bv1, Ray* bv2) { return{}; }

@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 02-Mar-21.
-//
-
 #ifndef TRIANGLE_DEBUG_H
 #define TRIANGLE_DEBUG_H
 

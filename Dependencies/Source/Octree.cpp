@@ -36,7 +36,7 @@ OctreeNode::OctreeNode(std::vector<Triangle>& remainingTriangles, int level) {
     }
 
     box = new AABB(min, max);
-    box->generateNewMesh();
+    box->body = AABB::generateNewMesh();
     box->body->solidON = false;
     box->body->wireframeON = true;
     box->parent = nullptr;

@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 22-Feb-21.
-//
-
 #include "Common.h"
 #include <ObjLoad.h>
 #include "Colliders.h"
@@ -11,6 +7,7 @@
 
 extern Shader *s;
 
+#pragma region utilities
 ColliderMesh* convertMesh2ColliderMesh(Mesh* m) {
     ColliderMesh* mesh = new ColliderMesh;
     mesh->indices = m->indices;
@@ -19,6 +16,74 @@ ColliderMesh* convertMesh2ColliderMesh(Mesh* m) {
     delete m;
     return mesh;
 }
+glm::vec3 getTransformedVertex(glm::mat4 tr, glm::vec3 v) {
+    return glm::vec3(tr * glm::vec4(v, 1.0f));
+}
+float getTriangleArea2(glm::vec3 edge1, glm::vec3 edge2) {
+    glm::highp_vec3 N = glm::cross(edge1, edge2);
+    return 0.5f * glm::sqrt(glm::dot(N, N));
+}
+std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider* col) {
+    Mesh* hit = new Mesh(), * not_hit = new Mesh();
+    std::vector<Mesh*> meshes;
+    meshes.push_back(hit);
+    meshes.push_back(not_hit);
+    bool result = false;
+
+    int total = 0;
+
+    for (int i = 0; i < mesh->body->indices.size(); i += 3) {
+        glm::vec3 meanNormal = (mesh->body->vertices[mesh->body->indices[i]].Normal +
+            mesh->body->vertices[mesh->body->indices[i + 1]].Normal +
+            mesh->body->vertices[mesh->body->indices[i + 2]].Normal)
+            / 3.0f;
+        glm::vec3 faceNormal = glm::normalize(glm::cross(mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 2]].Position,
+            mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 1]].Position));
+        if (glm::dot(faceNormal, meanNormal) < 0)
+            faceNormal = -1.0f * faceNormal;
+
+        Triangle t(
+            getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i]].Position),
+            getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i + 1]].Position),
+            getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i + 2]].Position),
+            glm::mat3(transpose(inverse(mesh->getTransform()))) * faceNormal
+        );
+
+        result = col->checkCollision(&t).hasCollision;
+        std::cout << result << "\n";
+        if (result) {
+            hit->vertices.push_back(mesh->body->vertices[i]);
+            hit->vertices.push_back(mesh->body->vertices[i + 1]);
+            hit->vertices.push_back(mesh->body->vertices[i + 2]);
+            hit->indices.push_back((uint32_t)hit->indices.size());
+            hit->indices.push_back((uint32_t)hit->indices.size());
+            hit->indices.push_back((uint32_t)hit->indices.size());
+            total++;
+        }
+        else {
+            not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i]]);
+            not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i + 1]]);
+            not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i + 2]]);
+            not_hit->indices.push_back((uint32_t)hit->indices.size());
+            not_hit->indices.push_back((uint32_t)hit->indices.size());
+            not_hit->indices.push_back((uint32_t)hit->indices.size());
+        }
+    }
+
+    hit->prepare();
+    not_hit->prepare();
+
+    hit->localTransform.tr = mesh->body->localTransform.tr;
+    hit->localTransform.rot = mesh->body->localTransform.rot;
+    hit->localTransform.sc = mesh->body->localTransform.sc;
+
+    not_hit->localTransform.tr = mesh->body->localTransform.tr;
+    not_hit->localTransform.rot = mesh->body->localTransform.rot;
+    not_hit->localTransform.sc = mesh->body->localTransform.sc;
+
+    return meshes;
+} // adapt for CollisionPoint
+#pragma endregion
 
 #pragma region Collider Specific Funcs
 
@@ -225,6 +290,11 @@ glm::mat4 AABB::getLocalTransform() {
     S = glm::scale(glm::mat4(1), max - glm::vec3(0));
     return T * S;
 }
+glm::mat4 AABB::getTransform() {
+    if (parent)
+        return parent->getTranslationMatrix() * getLocalTransform();
+    else return getLocalTransform();
+}
 
 AABB::AABB(float height, float width, float length) {
     height /= 2.0f;
@@ -236,9 +306,46 @@ AABB::AABB(float height, float width, float length) {
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
     this->max = max;
     this->min = min;
-    generateNewMesh();
+    this->body = generateNewMesh();
 }
+ColliderMesh* AABB::generateNewMesh() {
+    std::vector<Vertex> verticesPos = getVerices(glm::vec3(-1), glm::vec3(1));
 
+    auto body = new ColliderMesh();
+
+    for (auto v : verticesPos)
+        body->vertices.push_back(v);
+
+    body->indices = { 
+                    3, 2, 0,
+                    0, 1, 3,
+                    6, 7, 4,
+                    4, 7, 5,
+                    7, 3, 5,
+                    5, 3, 1,
+                    2, 6, 0,
+                    0, 6, 4,
+                    0, 4, 1,
+                    4, 5, 1,
+                    2, 3, 7,
+                    7, 6, 2 };
+
+    body->prepare();
+
+    return body;
+}
+std::vector<Vertex> AABB::getVerices(glm::vec3 min_, glm::vec3 max_) {
+    std::vector<Vertex> vertices;
+    vertices.push_back(Vertex{ glm::vec3(min_.x, min_.y, min_.z),  glm::vec3(min_.x, min_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(min_.x, min_.y, max_.z),  glm::vec3(min_.x, min_.y, max_.z) });
+    vertices.push_back(Vertex{ glm::vec3(min_.x, max_.y, min_.z),  glm::vec3(min_.x, max_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(min_.x, max_.y, max_.z),  glm::vec3(min_.x, max_.y, max_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, min_.y, min_.z),  glm::vec3(max_.x, min_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, min_.y, max_.z),  glm::vec3(max_.x, min_.y, max_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, max_.y, min_.z),  glm::vec3(max_.x, max_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, max_.y, max_.z),  glm::vec3(max_.x, max_.y, max_.z) });
+    return vertices;
+}
 
 AABB::AABB(Mesh* mesh) {
     min = mesh->vertices[0].Position;
@@ -255,110 +362,19 @@ AABB::AABB(Mesh* mesh) {
     
     body = generateNewMesh();
 }
-std::vector<Vertex> AABB::generateVerices(glm::vec3 min_, glm::vec3 max_) {
-    std::vector<Vertex> vertices;
-    vertices.push_back(Vertex{glm::vec3(min_.x, min_.y, min_.z),  glm::vec3(min_.x, min_.y, min_.z)});
-    vertices.push_back(Vertex{glm::vec3(min_.x, min_.y, max_.z),  glm::vec3(min_.x, min_.y, max_.z)});
-    vertices.push_back(Vertex{glm::vec3(min_.x, max_.y, min_.z),  glm::vec3(min_.x, max_.y, min_.z)});
-    vertices.push_back(Vertex{glm::vec3(min_.x, max_.y, max_.z),  glm::vec3(min_.x, max_.y, max_.z)});
-    vertices.push_back(Vertex{glm::vec3(max_.x, min_.y, min_.z),  glm::vec3(max_.x, min_.y, min_.z)});
-    vertices.push_back(Vertex{glm::vec3(max_.x, min_.y, max_.z),  glm::vec3(max_.x, min_.y, max_.z)});
-    vertices.push_back(Vertex{glm::vec3(max_.x, max_.y, min_.z),  glm::vec3(max_.x, max_.y, min_.z)});
-    vertices.push_back(Vertex{glm::vec3(max_.x, max_.y, max_.z),  glm::vec3(max_.x, max_.y, max_.z)});
-    return vertices;
-}
-ColliderMesh *AABB::generateNewMesh() {
-    std::vector<Vertex> verticesPos = generateVerices(glm::vec3(-1), glm::vec3(1));
-
-    body = new ColliderMesh();
-
-    for (auto v : verticesPos)
-        body->vertices.push_back(v);
-
-    body->indices.push_back(3);
-    body->indices.push_back(2);
-    body->indices.push_back(0);
-
-    body->indices.push_back(0);
-    body->indices.push_back(1);
-    body->indices.push_back(3);
-
-    body->indices.push_back(6);
-    body->indices.push_back(7);
-    body->indices.push_back(4);
-
-    body->indices.push_back(4);
-    body->indices.push_back(7);
-    body->indices.push_back(5);
-
-    body->indices.push_back(7);
-    body->indices.push_back(3);
-    body->indices.push_back(5);
-
-    body->indices.push_back(5);
-    body->indices.push_back(3);
-    body->indices.push_back(1);
-
-    body->indices.push_back(2);
-    body->indices.push_back(6);
-    body->indices.push_back(0);
-
-    body->indices.push_back(0);
-    body->indices.push_back(6);
-    body->indices.push_back(4);
-
-    body->indices.push_back(0);
-    body->indices.push_back(4);
-    body->indices.push_back(1);
-
-    body->indices.push_back(4);
-    body->indices.push_back(5);
-    body->indices.push_back(1);
-
-    body->indices.push_back(2);
-    body->indices.push_back(3);
-    body->indices.push_back(7);
-
-    body->indices.push_back(7);
-    body->indices.push_back(6);
-    body->indices.push_back(2);
-
-    body->prepare();
-
-    return body;
-}
 
 void AABB::gui(int index) {
     ImGui::Text("AABB Collider Settings");
 
     glm::vec3 size = max - min;
 
-    ImGui::Text(glm::to_string(size).c_str());
-    ImGui::Text(glm::to_string(min).c_str());
-    ImGui::Text(glm::to_string(max).c_str());
-
     ImGui::InputFloat("H ", &size.y);
-    //ImGui::SameLine();
     ImGui::InputFloat("L ", &size.x);
-    //ImGui::SameLine();
     ImGui::InputFloat("W ", &size.z);
 
     size = glm::max(glm::vec3(0.1f), size / 2.0f);
     max = size;
     min = - size;
-
-    //std::string s = "min" + std::to_string(index);
-    //float min_[] = { min.x, min.y, min.z };
-    //ImGui::SliderFloat3(s.c_str(), min_, -100, 100);
-    //
-    //s = "max" + std::to_string(index);
-    //float max_[] = { max.x, max.y, max.z };
-    //ImGui::SliderFloat3(s.c_str(), max_, -100, 100);
-    //
-    //for (int i = 0; i < 3; i++) {
-    //    min[i] = min_[i];
-    //    max[i] = max_[i];
-    //}
 }
 
 glm::vec3 AABB::getMin() {
@@ -374,7 +390,6 @@ glm::vec3 AABB::getOffset() {
         return offs + parent->position;
     return offs;
 }
-
 
 std::string AABB::toString() {
     return "AABB:\n\tmin: " + glm::to_string(getMin()) + "\n\tmax: "+ glm::to_string(getMax()) + "\n";
@@ -528,33 +543,58 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
     return {getPointOnRectangle({min.x, min.y}, {max.x, max.y}, {point.x, point.y}), max.z};
 }
 
-glm::mat4 AABB::getTransform() {
-    // TODO find out why AABB is still rotating
-    if (parent)
-        return parent->getTranslationMatrix() * getLocalTransform();
-    else return getLocalTransform();
-}
-
 #pragma endregion
 
 #pragma region OBB
-OBB::OBB(float height, float width, float length) {
-    height /= 2.0f;
-    width /= 2.0f;
-    length /= 2.0f;
-    max = glm::vec3(width, height, length);
-    min = -max;
-}
+/*
 glm::vec3 OBB::getMin() {
     return glm::vec3(getTransform() * glm::vec4(min + offset, 1.0f));
 }
 glm::vec3 OBB::getMax() {
     return glm::vec3(getTransform() * glm::vec4(max + offset, 1.0f));
 }
+*/
+OBB::OBB(float height, float width, float length) {
+    height /= 2.0f;
+    width /= 2.0f;
+    length /= 2.0f;
+    max = glm::vec3(width, height, length);
+    min = -max;
+    this->body = AABB::generateNewMesh();
+}
+void OBB::gui(int index) {
+    ImGui::Text("OBB Collider Settings");
 
-// TODO
+    glm::vec3 size = max - min;
+
+    ImGui::InputFloat("H ", &size.y);
+    ImGui::InputFloat("L ", &size.x);
+    ImGui::InputFloat("W ", &size.z);
+
+    size = glm::max(glm::vec3(0.1f), size / 2.0f);
+    max = size;
+    min = -size;
+}
+std::vector<Vertex> OBB::getVerices() {
+    std::vector<Vertex> v = AABB::getVerices(this->min, this->max);
+    for (size_t i = 0; i < v.size(); i++) {
+        v[i].Position = getTransformedVertex(getTransform(), v[i].Position);
+    }
+    return v;
+}
 std::string OBB::toString() {
-    return std::string();
+    std::string s = "OBB:\n";
+    glm::vec3 sizes = max - min;
+
+    s += "\tL: " + std::to_string(sizes.x);
+    s += "\tH: " + std::to_string(sizes.y);
+    s += "\tW: " + std::to_string(sizes.z);
+
+    s += "\tVertices";
+    for each (auto v in getVerices())
+        s += "\n\t" + glm::to_string(v.Position);
+    s += "\n";
+    return s;
 }
 
 #pragma endregion
@@ -615,76 +655,6 @@ std::string Ray::toString() {
 
 #pragma endregion
 #pragma region TriangleMesh
-
-
-glm::vec3 getTransformedVertex(glm::mat4 tr, glm::vec3 v) {
-    return glm::vec3(tr * glm::vec4(v, 1.0f));
-}
-float getTriangleArea2(glm::vec3 edge1, glm::vec3 edge2) {
-    glm::highp_vec3 N = glm::cross(edge1, edge2);
-    return 0.5f * glm::sqrt(glm::dot(N, N));
-}
-
-
-std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
-    Mesh* hit = new Mesh(), *not_hit = new Mesh();
-    std::vector<Mesh*> meshes;
-    meshes.push_back(hit);
-    meshes.push_back(not_hit);
-    bool result = false;
-
-    int total = 0;
-
-    for (int i = 0; i < mesh->body->indices.size(); i+=3) {
-        glm::vec3 meanNormal = (mesh->body->vertices[mesh->body->indices[i]].Normal + 
-                                mesh->body->vertices[mesh->body->indices[i + 1]].Normal + 
-                                mesh->body->vertices[mesh->body->indices[i + 2]].Normal) 
-                                / 3.0f;
-        glm::vec3 faceNormal = glm::normalize(glm::cross(mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 2]].Position, 
-                                                         mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 1]].Position));
-        if (glm::dot(faceNormal, meanNormal) < 0)
-            faceNormal = -1.0f * faceNormal;
-
-        Triangle t(
-                getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i]].Position),
-                getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i + 1]].Position),
-                getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i + 2]].Position),
-                glm::mat3(transpose(inverse(mesh->getTransform()))) * faceNormal
-        );
-
-        result = col->checkCollision(&t).hasCollision;
-        std::cout << result << "\n";
-        if (result) {
-            hit->vertices.push_back(mesh->body->vertices[i]);
-            hit->vertices.push_back(mesh->body->vertices[i+1]);
-            hit->vertices.push_back(mesh->body->vertices[i+2]);
-            hit->indices.push_back((uint32_t)hit->indices.size());
-            hit->indices.push_back((uint32_t)hit->indices.size());
-            hit->indices.push_back((uint32_t)hit->indices.size());
-            total++;
-        } else {
-            not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i]]);
-            not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i+1]]);
-            not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i+2]]);
-            not_hit->indices.push_back((uint32_t)hit->indices.size());
-            not_hit->indices.push_back((uint32_t)hit->indices.size());
-            not_hit->indices.push_back((uint32_t)hit->indices.size());
-        }
-    }
-
-    hit->prepare();
-    not_hit->prepare();
-
-    hit->localTransform.tr = mesh->body->localTransform.tr;
-    hit->localTransform.rot = mesh->body->localTransform.rot;
-    hit->localTransform.sc = mesh->body->localTransform.sc;
-
-    not_hit->localTransform.tr = mesh->body->localTransform.tr;
-    not_hit->localTransform.rot = mesh->body->localTransform.rot;
-    not_hit->localTransform.sc = mesh->body->localTransform.sc;
-
-    return meshes;
-} // adapt for CollisionPoint
 
 TriangleMesh::TriangleMesh(Mesh *mesh) {
     Mesh* m = new Mesh(*mesh);

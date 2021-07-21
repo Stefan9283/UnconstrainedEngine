@@ -1,6 +1,3 @@
-//
-// Created by Stefan on 02-Mar-21.
-//
 #include "Debug.h"
 #include "Mesh.h"
 #include "Camera.h"

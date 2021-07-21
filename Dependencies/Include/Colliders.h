@@ -53,14 +53,16 @@ public:
     std::string toString();
 };
 
+
 class Collider {
 public:
-    ColliderMesh* body = nullptr;
     transform localTransform = {
         glm::vec3(0), glm::vec3(1), glm::quat()
     };
-    //glm::mat4 localTransform = glm::mat4(1);
+    // contains data relevant for velocity/position resolution
     RigidBody* parent = nullptr;
+    // used for rendering
+    ColliderMesh* body = nullptr;
 
     virtual void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
         localTransform.tr = pos;
@@ -119,9 +121,10 @@ class AABB : public Collider{
 public:
     glm::vec3 max{}, min{}, offset{};
 
-    std::vector<Vertex> generateVerices(glm::vec3 min, glm::vec3 max);
-    ColliderMesh *generateNewMesh();
     glm::vec3 closestPoint(glm::vec3 p);
+
+    static ColliderMesh* generateNewMesh();
+    static std::vector<Vertex> getVerices(glm::vec3 min_, glm::vec3 max_);
 
     CollisionPoint checkCollision(AABB* bv) override;
     CollisionPoint checkCollision(Sphere* bv) override;
@@ -136,7 +139,7 @@ public:
     glm::vec3 getMax();
 
     glm::mat4 getLocalTransform() override;
-    glm::mat4 getTransform();
+    glm::mat4 getTransform() override;
 
     void gui(int index) override;
 
@@ -153,10 +156,13 @@ public:
     glm::vec3 max{}, min{}, offset{};
     OBB(float height, float width, float length);
 
-    glm::vec3 getMin();
-    glm::vec3 getMax();
+    //glm::vec3 getMin();
+    //glm::vec3 getMax();
+
+    std::vector<Vertex> getVerices();
 
     std::string toString() override;
+    void gui(int index) override;
 
     CollisionPoint checkCollision(AABB* bv) override;
     CollisionPoint checkCollision(Sphere* bv) override;

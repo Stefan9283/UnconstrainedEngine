@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 23-Jun-21.
-//
-
 #ifndef TRIANGLE_CONSTRAINT_H
 #define TRIANGLE_CONSTRAINT_H
 

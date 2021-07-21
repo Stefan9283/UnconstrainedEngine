@@ -1,7 +1,3 @@
-//
-// Created by Stefan on 21-Feb-21.
-//
-
 #ifndef TRIANGLE_OBJLOAD_H
 #define TRIANGLE_OBJLOAD_H
 

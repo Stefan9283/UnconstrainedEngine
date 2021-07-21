@@ -33,7 +33,6 @@ Shader* s = nullptr;
 Camera* c = nullptr;
 Ray* r = nullptr;
 Mesh* crosshair = nullptr;
-Mesh* floorBox; // TODO
 
 Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
     std::vector<glm::vec3> verticesPos;
@@ -675,12 +674,6 @@ int main() {
     c = new Camera(window);
     glClearColor(0, 102 / 255.f, 102 / 255.f, 1);
 #pragma region meshes
-    floorBox = new Mesh();
-    floorBox->addBody(new RigidBody(new AABB(1, 100, 100)));
-    floorBox->vertices = ((AABB*)floorBox->rigidbody->collider)->generateVerices(((AABB*)floorBox->rigidbody->collider)->min, ((AABB*)floorBox->rigidbody->collider)->max);
-    for each (Vertex v in floorBox->vertices)
-        floorBox->indices.push_back(floorBox->indices.size());
-    
     std::vector<Mesh*> meshes;
 
 
@@ -719,6 +712,7 @@ int main() {
 
     Mesh* cube3 = readObj("3D/Box.obj");
     cube3->addBody(new RigidBody(new OBB(1,1,1)));
+    cube3->rigidbody->rotation = glm::quat(0.855f, 0.157f, -0.494f, 0);
     meshes.push_back(cube3);
 
     r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
@@ -735,13 +729,13 @@ int main() {
     //testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
 
-    testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
+    // testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
     // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(sphere, Yen); // Capsule Sphere
     // testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
 
-    // testBasicCollisionWithPoints(cube3, cube); // AABB OBB
+    testBasicCollisionWithPoints(cube3, cube); // AABB OBB
     // testBasicCollisionWithPoints(sphere, cube3); // Sphere OBB
 
     std::vector<Mesh*> physicsMeshes;
@@ -793,7 +787,6 @@ int main() {
     delete crosshair;
     delete s;
     delete c;
-    delete floorBox;
 
     glfwTerminate();
 
