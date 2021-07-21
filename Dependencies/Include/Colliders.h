@@ -10,6 +10,7 @@ class Shader;
 
 class Collider;
 class AABB;
+class OBB;
 class Sphere;
 class Ray;
 class TriangleMesh;
@@ -68,7 +69,7 @@ public:
     };
 
     virtual glm::mat4 getLocalTransform();
-    glm::mat4 getTransform();
+    virtual glm::mat4 getTransform();
 
     virtual void Draw(Shader* shader);
 
@@ -81,6 +82,8 @@ public:
     virtual CollisionPoint checkCollision(TriangleMesh* col) = 0;
     virtual CollisionPoint checkCollision(Ray* col) = 0;
     virtual CollisionPoint checkCollision(Capsule* col) = 0;
+    virtual CollisionPoint checkCollision(OBB* col) = 0;
+
     virtual void gui(int index) {}
 
     virtual ~Collider();
@@ -101,6 +104,7 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
 
     void gui(int index) override;
     glm::mat4 getLocalTransform() override;
@@ -125,27 +129,43 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
 
     glm::vec3 getOffset();
     glm::vec3 getMin();
     glm::vec3 getMax();
 
     glm::mat4 getLocalTransform() override;
+    glm::mat4 getTransform();
 
     void gui(int index) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
+    AABB(float height, float width, float length);
+
     explicit AABB(Mesh* mesh);
     std::string toString() override;
     bool isInside(glm::vec3 point);
 };
 
-class OBB : public AABB {
+class OBB : public Collider {
 public:
     glm::vec3 max{}, min{}, offset{};
-    
+    OBB(float height, float width, float length);
+
     glm::vec3 getMin();
     glm::vec3 getMax();
+
+    std::string toString() override;
+
+    CollisionPoint checkCollision(AABB* bv) override;
+    CollisionPoint checkCollision(Sphere* bv) override;
+    CollisionPoint checkCollision(Ray* r) override;
+    CollisionPoint checkCollision(TriangleMesh* col) override;
+    CollisionPoint checkCollision(Triangle* t) override;
+    CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
+
 };
 
 class TriangleMesh : public Collider {
@@ -156,6 +176,7 @@ public:
     CollisionPoint checkCollision(Ray* r) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
 
     TriangleMesh(Mesh* mesh);
     ~TriangleMesh() { body = nullptr; }
@@ -176,6 +197,7 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
 
     bool isInside(glm::vec3 point);
 
@@ -194,6 +216,7 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
     Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh = false);
@@ -220,6 +243,8 @@ public:
     CollisionPoint checkCollision(TriangleMesh* col) override;
     CollisionPoint checkCollision(Ray* col) override;
     CollisionPoint checkCollision(Capsule* col) override;
+    CollisionPoint checkCollision(OBB* col) override;
+
     std::string toString() override;
 
 

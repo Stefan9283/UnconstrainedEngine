@@ -13,7 +13,7 @@ Mesh::Mesh() {
     localTransform = transform{
         glm::vec3(0),
         glm::vec3(1),
-        glm::quat()};
+        glm::quat(1, 0, 0, 0)};
 }
 Mesh::~Mesh() {
     if (rigidbody) delete rigidbody;
@@ -80,30 +80,34 @@ void Mesh::Draw(Shader* shader) {
     glBindVertexArray(0);
     shader->unbind();
 }
-void Mesh::gui(int outIndex = 0) {
+void Mesh::gui(int index = 0) {
     std::string s;
-    s = name + " " + std::to_string(outIndex);
+    s = name + " " + std::to_string(index);
     if (ImGui::TreeNode(s.c_str())) {
-        s = "wireframeON " + std::to_string(outIndex);
+        s = "wireframeON " + std::to_string(index);
         ImGui::Checkbox(s.c_str(), &wireframeON);
-        s = "solidON " + std::to_string(outIndex);
+        ImGui::SameLine();
+        s = "solidON " + std::to_string(index);
         ImGui::Checkbox(s.c_str(), &solidON);
-        s = "boundingBoxON " + std::to_string(outIndex);
+        ImGui::SameLine();
+        s = "boundingBoxON " + std::to_string(index);
         ImGui::Checkbox(s.c_str(), &boundingBoxON);
 
-        float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
-        s = "mesh offset (don't use)" + std::to_string(outIndex);
+        float t[] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z};
+        s = "mesh offset (don't use)" + std::to_string(index);
         ImGui::SliderFloat3(s.c_str(), t, -10, 10);
         localTransform.tr = glm::vec3(t[0], t[1], t[2]);
 
-        glm::vec3 rot = glm::eulerAngles(localTransform.rot);
-        float r[4] = {rot.x, rot.y, rot.z, 1.0f};
-        s = "rotation (don't use)" + std::to_string(outIndex);
-        ImGui::SliderFloat3(s.c_str(), r, - glm::pi<float>() * 4, glm::pi<float>() * 4);
-        localTransform.rot = glm::quat(glm::vec3(r[0], r[1], r[2]));
-        
+        float r[] = { localTransform.rot.w, localTransform.rot.x, localTransform.rot.y, localTransform.rot.z };
+        ImGui::SliderFloat4(("rotation " + std::to_string(index)).c_str(), r, -1, 1);
+        glm::quat newRot = glm::quat(r[0], r[1], r[2], r[3]);
+        if (newRot != localTransform.rot) {
+            localTransform.rot = newRot;
+            localTransform.rot = glm::normalize(localTransform.rot);
+        }
+
         if (rigidbody) 
-            rigidbody->gui(outIndex);
+            rigidbody->gui(index);
 
         ImGui::TreePop();
     }

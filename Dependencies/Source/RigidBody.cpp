@@ -15,10 +15,13 @@ RigidBody::RigidBody(Collider* c, float m) {
 }
 
 glm::mat4 RigidBody::getTransform() {
-    glm::mat4 T, R;
-    T = glm::translate(glm::mat4(1), position);
-    R = glm::toMat4(rotation);
-    return T * R;
+    return getTranslationMatrix() * getRotationMatrix();
+}
+glm::mat4 RigidBody::getTranslationMatrix() {
+    return glm::toMat4(rotation);
+}
+glm::mat4 RigidBody::getRotationMatrix() {
+    return glm::translate(glm::mat4(1), position);
 }
 
 void RigidBody::gui(int index) {
@@ -28,7 +31,20 @@ void RigidBody::gui(int index) {
         name = "rb pos " + std::to_string(index);
         ImGui::SliderFloat3(name.c_str(), t, -10000, 10000);
         position = glm::vec3(t[0], t[1], t[2]);
+
+        float r[] = { rotation.w, rotation.x, rotation.y, rotation.z };
+        ImGui::SliderFloat4(("rotation " + std::to_string(index)).c_str(), r, -1, 1);
+        glm::quat newRot = glm::quat(r[0], r[1], r[2], r[3]);
+        if (newRot != rotation) {
+            rotation = newRot;
+            rotation = glm::normalize(rotation);
+        }
+
         collider->gui(index);
+
         ImGui::TreePop();
     }
+
+
+
 }

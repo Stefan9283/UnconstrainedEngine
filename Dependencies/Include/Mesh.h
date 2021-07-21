@@ -29,7 +29,7 @@ public:
 
     void prepare();
     void Draw(Shader* shader);
-    void gui(int outIndex);
+    void gui(int index);
     void addBody(RigidBody* body);
     void setPosition(glm::vec3 pos);
 

@@ -116,6 +116,7 @@ void ColliderMesh::gui(int outIndex = 0) {
     if (ImGui::TreeNode(name.c_str())) {
         name = "wireframeON " + std::to_string(outIndex);
         ImGui::Checkbox(name.c_str(), &wireframeON);
+        ImGui::SameLine();
         name = "solidON " + std::to_string(outIndex);
         ImGui::Checkbox(name.c_str(), &solidON);
 
@@ -224,6 +225,20 @@ glm::mat4 AABB::getLocalTransform() {
     S = glm::scale(glm::mat4(1), max - glm::vec3(0));
     return T * S;
 }
+
+AABB::AABB(float height, float width, float length) {
+    height /= 2.0f;
+    width /= 2.0f;
+    length /= 2.0f;
+    max = glm::vec3(width, height, length);
+    min = - max;
+}
+AABB::AABB(glm::vec3 min, glm::vec3 max) {
+    this->max = max;
+    this->min = min;
+    generateNewMesh();
+}
+
 
 AABB::AABB(Mesh* mesh) {
     min = mesh->vertices[0].Position;
@@ -360,10 +375,7 @@ glm::vec3 AABB::getOffset() {
     return offs;
 }
 
-AABB::AABB(glm::vec3 min, glm::vec3 max) {
-    this->min = min;
-    this->max = max;
-}
+
 std::string AABB::toString() {
     return "AABB:\n\tmin: " + glm::to_string(getMin()) + "\n\tmax: "+ glm::to_string(getMax()) + "\n";
 }
@@ -441,12 +453,9 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
     else result.z = newMin.z;
     */
 
-    // TODO Ovidiu AABB point projection
     glm::vec3 min = getMin(), max = getMax();
 
     // Point is inside
-
-
     if (isInside(point)) {
         double dist1 = abs(point.x - min.x);
         double dist2 = abs(point.x - max.x);
@@ -518,14 +527,34 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
 
     return {getPointOnRectangle({min.x, min.y}, {max.x, max.y}, {point.x, point.y}), max.z};
 }
+
+glm::mat4 AABB::getTransform() {
+    // TODO find out why AABB is still rotating
+    if (parent)
+        return parent->getTranslationMatrix() * getLocalTransform();
+    else return getLocalTransform();
+}
+
 #pragma endregion
 
 #pragma region OBB
+OBB::OBB(float height, float width, float length) {
+    height /= 2.0f;
+    width /= 2.0f;
+    length /= 2.0f;
+    max = glm::vec3(width, height, length);
+    min = -max;
+}
 glm::vec3 OBB::getMin() {
     return glm::vec3(getTransform() * glm::vec4(min + offset, 1.0f));
 }
 glm::vec3 OBB::getMax() {
     return glm::vec3(getTransform() * glm::vec4(max + offset, 1.0f));
+}
+
+// TODO
+std::string OBB::toString() {
+    return std::string();
 }
 
 #pragma endregion
@@ -607,19 +636,24 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
     int total = 0;
 
     for (int i = 0; i < mesh->body->indices.size(); i+=3) {
-        glm::vec3 meanNormal = (mesh->body->vertices[mesh->body->indices[i]].Normal + mesh->body->vertices[mesh->body->indices[i + 1]].Normal + mesh->body->vertices[mesh->body->indices[i + 2]].Normal) / 3.0f;
-        glm::vec3 faceNormal = glm::normalize(glm::cross(mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 2]].Position, mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 1]].Position));
+        glm::vec3 meanNormal = (mesh->body->vertices[mesh->body->indices[i]].Normal + 
+                                mesh->body->vertices[mesh->body->indices[i + 1]].Normal + 
+                                mesh->body->vertices[mesh->body->indices[i + 2]].Normal) 
+                                / 3.0f;
+        glm::vec3 faceNormal = glm::normalize(glm::cross(mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 2]].Position, 
+                                                         mesh->body->vertices[mesh->body->indices[i]].Position - mesh->body->vertices[mesh->body->indices[i + 1]].Position));
         if (glm::dot(faceNormal, meanNormal) < 0)
             faceNormal = -1.0f * faceNormal;
 
         Triangle t(
-                getTransformedVertex(mesh->getLocalTransform(), mesh->body->vertices[mesh->body->indices[i]].Position),
-                getTransformedVertex(mesh->getLocalTransform(), mesh->body->vertices[mesh->body->indices[i + 1]].Position),
-                getTransformedVertex(mesh->getLocalTransform(), mesh->body->vertices[mesh->body->indices[i + 2]].Position),
-                glm::mat3(transpose(inverse(mesh->getLocalTransform()))) * faceNormal
+                getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i]].Position),
+                getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i + 1]].Position),
+                getTransformedVertex(mesh->getTransform(), mesh->body->vertices[mesh->body->indices[i + 2]].Position),
+                glm::mat3(transpose(inverse(mesh->getTransform()))) * faceNormal
         );
 
         result = col->checkCollision(&t).hasCollision;
+        std::cout << result << "\n";
         if (result) {
             hit->vertices.push_back(mesh->body->vertices[i]);
             hit->vertices.push_back(mesh->body->vertices[i+1]);
@@ -629,7 +663,6 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider *col) {
             hit->indices.push_back((uint32_t)hit->indices.size());
             total++;
         } else {
-
             not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i]]);
             not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i+1]]);
             not_hit->vertices.push_back(mesh->body->vertices[mesh->body->indices[i+2]]);
@@ -814,7 +847,6 @@ CollisionPoint reverseCollisionPoint(CollisionPoint p) {
     p.wasReversed = true;
     return p;
 }
-
 CollisionPoint Collider::checkCollision(Collider* col) {
     if (dynamic_cast<Sphere*>(col)) {
         return checkCollision(dynamic_cast<Sphere*>(col));
@@ -841,6 +873,7 @@ CollisionPoint Collider::checkCollision(Collider* col) {
     return {};
 }
 
+#pragma region Sphere
 CollisionPoint Sphere::checkCollision(TriangleMesh *bv) {
     return collisionAlgos::checkCollision(bv, this);
 }
@@ -859,7 +892,12 @@ CollisionPoint Sphere::checkCollision(Triangle *t) {
 CollisionPoint Sphere::checkCollision(Capsule *bv) {
     return reverseCollisionPoint(collisionAlgos::checkCollision(this, bv));
 }
-
+CollisionPoint Sphere::checkCollision(OBB* col)
+{
+    return CollisionPoint();
+}
+#pragma endregion
+#pragma region AABB
 CollisionPoint AABB::checkCollision(TriangleMesh *bv) {
     return collisionAlgos::checkCollision(bv, this);
 }
@@ -878,7 +916,35 @@ CollisionPoint AABB::checkCollision(Triangle *t) {
 CollisionPoint AABB::checkCollision(Capsule *bv) {
     return reverseCollisionPoint(collisionAlgos::checkCollision(this, bv));
 }
-
+CollisionPoint AABB::checkCollision(OBB* col)
+{
+    return CollisionPoint();
+}
+#pragma endregion 
+#pragma region OBB
+CollisionPoint OBB::checkCollision(AABB* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+CollisionPoint  OBB::checkCollision(Sphere* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+CollisionPoint OBB::checkCollision(Ray* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+CollisionPoint OBB::checkCollision(TriangleMesh* bv) {
+    return collisionAlgos::checkCollision(bv, this);
+}
+CollisionPoint OBB::checkCollision(Triangle* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+CollisionPoint  OBB::checkCollision(Capsule* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+CollisionPoint  OBB::checkCollision(OBB* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+#pragma endregion
+#pragma region Ray
 CollisionPoint Ray::checkCollision(TriangleMesh *col) {
     return collisionAlgos::checkCollision(col, this);
 }
@@ -897,7 +963,11 @@ CollisionPoint Ray::checkCollision(Triangle *t) {
 CollisionPoint Ray::checkCollision(Capsule *col) {
     return collisionAlgos::checkCollision(col, this);
 }
-
+CollisionPoint Ray::checkCollision(OBB* col) {
+    return collisionAlgos::checkCollision(col, this);
+}
+#pragma endregion
+#pragma region TriangleMesh
 CollisionPoint TriangleMesh::checkCollision(TriangleMesh *bv) {
     return collisionAlgos::checkCollision(this, bv);
 }
@@ -916,7 +986,11 @@ CollisionPoint TriangleMesh::checkCollision(Triangle *t) {
 CollisionPoint TriangleMesh::checkCollision(Capsule *col) {
     return collisionAlgos::checkCollision(this, col);
 }
-
+CollisionPoint TriangleMesh::checkCollision(OBB* col) {
+    return collisionAlgos::checkCollision(this, col); // TODO ????
+}
+#pragma endregion
+#pragma region Triangle
 CollisionPoint Triangle::checkCollision(TriangleMesh *col) {
     return collisionAlgos::checkCollision(col, this);
 }
@@ -925,6 +999,9 @@ CollisionPoint Triangle::checkCollision(Ray *r) {
 }
 CollisionPoint Triangle::checkCollision(Capsule *col) {
     return collisionAlgos::checkCollision(this, col);
+}
+CollisionPoint Triangle::checkCollision(OBB* col) {
+    return collisionAlgos::checkCollision(col, this);
 }
 // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/aabb-triangle.html
 CollisionPoint Triangle::checkCollision(AABB *bv) {
@@ -937,8 +1014,9 @@ CollisionPoint Triangle::checkCollision(Sphere *bv) {
 // http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
 CollisionPoint Triangle::checkCollision(Triangle *t) {
     return collisionAlgos::checkCollision(this, t);
-} // TODO return CollisionPoint
-
+} 
+#pragma endregion
+#pragma region Capsule
 CollisionPoint Capsule::checkCollision(TriangleMesh *col) {
     return collisionAlgos::checkCollision(col, this);
 }
@@ -959,4 +1037,8 @@ CollisionPoint Capsule::checkCollision(Ray *bv) {
 CollisionPoint Capsule::checkCollision(Capsule *bv) {
     return collisionAlgos::checkCollision(this, bv);
 }
+CollisionPoint Capsule::checkCollision(OBB* col) {
+    return collisionAlgos::checkCollision(col, this);
+}
+#pragma endregion
 #pragma endregion

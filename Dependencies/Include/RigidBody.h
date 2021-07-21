@@ -19,6 +19,8 @@ public:
     float drag = 0.01f;
     RigidBody(Collider* c,  float m = 1);
     glm::mat4 getTransform();
+    glm::mat4 getTranslationMatrix();
+    glm::mat4 getRotationMatrix();
     void gui(int index);
 };
 

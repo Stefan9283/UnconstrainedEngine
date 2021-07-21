@@ -463,6 +463,14 @@ namespace collisionAlgos {
 
         return {};
     }
+    
+    // TODO OBB 
+    CollisionPoint checkCollision(OBB* bv1, AABB *bv2) { return{}; }
+    CollisionPoint checkCollision(OBB* bv1, Sphere *bv2) { return{}; }
+    CollisionPoint checkCollision(OBB* bv1, OBB* bv2) { return{}; }
+    CollisionPoint checkCollision(OBB* bv1, Ray* bv2) { return{}; }
+    CollisionPoint checkCollision(OBB* bv1, Capsule* bv2) { return{}; }
+    CollisionPoint checkCollision(OBB* bv1, Triangle *bv2) { return{}; }
 
     CollisionPoint checkCollision(Sphere* bv1, Triangle* bv2) {
         for (auto & vertex : bv2->vertices)
@@ -470,8 +478,16 @@ namespace collisionAlgos {
         Ray r0(bv2->vertices[0], glm::normalize(-bv2->vertices[0] + bv2->vertices[1]), glm::length(bv2->vertices[0] - bv2->vertices[1]));
         Ray r1(bv2->vertices[1], glm::normalize(-bv2->vertices[1] + bv2->vertices[2]), glm::length(bv2->vertices[1] - bv2->vertices[2]));
         Ray r2(bv2->vertices[0], glm::normalize(-bv2->vertices[0] + bv2->vertices[2]), glm::length(bv2->vertices[0] - bv2->vertices[2]));
-        return {}; // return r0.checkCollision(bv) || r1.checkCollision(bv) || r2.checkCollision(bv);
-    }// TODO return CollisionPoint
+        CollisionPoint p;
+        p = bv1->checkCollision(&r0);
+        if (p.hasCollision)
+            return p;
+        p = bv1->checkCollision(&r1);
+        if (p.hasCollision)
+            return p;
+        p = bv1->checkCollision(&r2);
+        return p;
+    }
     CollisionPoint checkCollision(Sphere* bv1, Capsule* bv2) {
         glm::vec3 bestPoint = ClosestPointOnLineSegment(bv2->getStart(), bv2->getEnd(), bv1->getCurrentPosition());
         Sphere s(bestPoint, bv2->radius);
@@ -620,21 +636,29 @@ namespace collisionAlgos {
 
     CollisionPoint checkCollision(Triangle* bv1, Capsule* bv2) {
         // for triangle inside a capsule
-        for (auto & vertex : bv1->vertices) {
+        for (auto& vertex : bv1->vertices) {
             glm::vec3 mid = getMidPoint(bv2->getStart(), bv2->getEnd(), vertex);
-            if(glm::length(mid - vertex) < bv2->radius)
+            if (glm::length(mid - vertex) < bv2->radius)
                 return {}; // return true;
         }
 
         bool twoway = bv1->twoway;
         bv1->twoway = true;
-        Ray r0(bv1->vertices[0], glm::normalize(- bv1->vertices[0] + bv1->vertices[1]), glm::length(bv1->vertices[0] - bv1->vertices[1]));
-        Ray r1(bv1->vertices[1], glm::normalize(- bv1->vertices[1] + bv1->vertices[2]), glm::length(bv1->vertices[1] - bv1->vertices[2]));
-        Ray r2(bv1->vertices[0], glm::normalize(- bv1->vertices[0] + bv1->vertices[2]), glm::length(bv1->vertices[0] - bv1->vertices[2]));
-        return {}; //bool result = r0.checkCollision(this) || r1.checkCollision(this) || r2.checkCollision(this);
-        bv1->twoway = twoway;
-        return {}; //return result;
-    } // TODO return CollisionPoint
+        Ray r0(bv1->vertices[0], glm::normalize(-bv1->vertices[0] + bv1->vertices[1]), glm::length(bv1->vertices[0] - bv1->vertices[1]));
+        Ray r1(bv1->vertices[1], glm::normalize(-bv1->vertices[1] + bv1->vertices[2]), glm::length(bv1->vertices[1] - bv1->vertices[2]));
+        Ray r2(bv1->vertices[0], glm::normalize(-bv1->vertices[0] + bv1->vertices[2]), glm::length(bv1->vertices[0] - bv1->vertices[2]));
+
+        CollisionPoint p;
+        p = bv2->checkCollision(&r0);
+        if (p.hasCollision)
+            return p;
+        p = bv2->checkCollision(&r1);
+        if (p.hasCollision)
+            return p;
+        p = bv2->checkCollision(&r2);
+        return p;
+        //bv1->twoway = twoway;
+    }
     CollisionPoint checkCollision(Triangle* bv1, Ray* bv2) {
         glm::vec3 A = bv2->origin, B = bv2->origin + bv2->length * bv2->direction;
 
@@ -643,8 +667,10 @@ namespace collisionAlgos {
 
         // The intersection is an infinite number on points
         if (glm::dot(bv1->norm, B - A) == 0) {
-            if (bv1->isInside(A) || bv1->isInside(B))
-                return {}; // return true;
+            if (bv1->isInside(A))
+                return { A, A + glm::vec3(0.01f) };
+            if (bv1->isInside(B))
+                return { B, B + glm::vec3(0.01f) };
         }
 
         float x0 = A.x, y0 = A.y, z0 = A.z;
@@ -670,10 +696,23 @@ namespace collisionAlgos {
 
             if (a + (c1 + c3) != 0) {
                 // No intersection at all
+                std::cout << "BUna sera0\n";
+
                 if (d - (c2 - c4))
                     return {};
 
-                return {}; // return checkCollision(&r0) || checkCollision(&r1) || checkCollision(&r2);
+                CollisionPoint p;
+                p = bv2->checkCollision(&r0);
+                if (p.hasCollision)
+                    return p;
+                p = bv2->checkCollision(&r1);
+                if (p.hasCollision)
+                    return p;
+                p = bv2->checkCollision(&r2);
+                if (p.hasCollision)
+                    return p;
+                std::cout << "BUna sera1\n";
+
             }
 
             solution = xIsFixed(A, B, (d - c2 - c4) / (a + c1 + c3));
@@ -686,10 +725,23 @@ namespace collisionAlgos {
 
             if (b + c1 + c3 != 0) {
                 // No intersection at all
+                std::cout << "BUna sera-1\n";
+
                 if (d - c2 - c4)
                     return {};
 
-                return {}; // return checkCollision(&r0) || checkCollision(&r1) || checkCollision(&r2);
+                CollisionPoint p;
+                p = bv2->checkCollision(&r0);
+                if (p.hasCollision)
+                    return p;
+                p = bv2->checkCollision(&r1);
+                if (p.hasCollision)
+                    return p;
+                p = bv2->checkCollision(&r2);
+                if (p.hasCollision)
+                    return p;
+                std::cout << "BUna sera2\n";
+
             }
 
             solution = yIsFixed(A, B, (d - c2 - c4) / (b + c1 + c3));
@@ -701,11 +753,23 @@ namespace collisionAlgos {
             c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
 
             if (c + c1 + c3 != 0) {
+                std::cout << "BUna sera-2\n";
+
                 // No intersection at all
                 if (d - c2 - c4 != 0)
                     return {};
 
-                return {}; //return checkCollision(&r0) || checkCollision(&r1) || checkCollision(&r2);
+                CollisionPoint p;
+                p = bv2->checkCollision(&r0);
+                if (p.hasCollision)
+                    return p;
+                p = bv2->checkCollision(&r1);
+                if (p.hasCollision)
+                    return p;
+                p = bv2->checkCollision(&r2);
+                if (p.hasCollision)
+                    return p;
+                std::cout << "BUna sera3\n";
             }
 
             solution = zIsFixed(A, B, (d - c2 - c4) / (c + c1 + c3));
@@ -717,7 +781,11 @@ namespace collisionAlgos {
         if (distance1 > bv2->length || distance2 > bv2->length)
             return {};
 
-        return {}; // return bv1->isInside(solution.point);
+
+        if (bv1->isInside(solution.point))
+            return { solution.point, solution.point + glm::vec3(0.01) };
+
+        return {};
     } // TODO return CollisionPoint
 
     CollisionPoint checkCollision(Capsule* bv1, Ray* bv2) {

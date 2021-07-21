@@ -25,12 +25,15 @@ void resize(GLFWwindow* window, int width, int height) {
 extern ImGuizmo::OPERATION mCurrentGizmoOperation;
 
 
+
+
 bool continuouslyChecking = false;
 GLFWwindow* window = nullptr;
 Shader* s = nullptr;
 Camera* c = nullptr;
 Ray* r = nullptr;
 Mesh* crosshair = nullptr;
+Mesh* floorBox; // TODO
 
 Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
     std::vector<glm::vec3> verticesPos;
@@ -308,7 +311,6 @@ void testRayMeshIntersection(Mesh* mesh) {
         s->setMat4("model", &model);
         glViewport(0, 0, display_w, display_h);
 
-
         ImGui::SliderFloat("cam speed", &c->speed, 0.001f, 0.5f);
 
         s->setVec3("color", glm::vec3(0, 1, 0));
@@ -455,20 +457,12 @@ void testPhysics(std::vector<Mesh*> meshes) {
                 auto* contact = new RestingConstraint(r1, r2);
                 physicsWorld.addConstraint(contact, rbs);
             } else break;
-    //{
-    //    Constraint* c = new DistanceConstraint(rbs[2], rbs[1], 1, std::numeric_limits<float>().max());
-    //    physicsWorld.addConstraint(c, rbs);
-    //}
 
     bool runWithPhysics = false;
-
-    //physicsWorld.addSolver(new ImpulseSolver);
-    //physicsWorld.addSolver(new RestingForceSolver);
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        //std::cout << glm::to_string(rbs[0]->velocity) << "\n";
 
         s->setVec3("cameraPos", c->position);
 
@@ -492,7 +486,6 @@ void testPhysics(std::vector<Mesh*> meshes) {
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
             rb->collider->Draw(s);
-            // rb->collider->body->gui(++index);
             rb->gui(++index);
         }
 
@@ -668,9 +661,7 @@ int main() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-    // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -684,7 +675,14 @@ int main() {
     c = new Camera(window);
     glClearColor(0, 102 / 255.f, 102 / 255.f, 1);
 #pragma region meshes
+    floorBox = new Mesh();
+    floorBox->addBody(new RigidBody(new AABB(1, 100, 100)));
+    floorBox->vertices = ((AABB*)floorBox->rigidbody->collider)->generateVerices(((AABB*)floorBox->rigidbody->collider)->min, ((AABB*)floorBox->rigidbody->collider)->max);
+    for each (Vertex v in floorBox->vertices)
+        floorBox->indices.push_back(floorBox->indices.size());
+    
     std::vector<Mesh*> meshes;
+
 
     Mesh* cube = readObj("3D/Box.obj");
     cube->addBody(new RigidBody(new AABB(cube)));
@@ -692,7 +690,6 @@ int main() {
 
    Mesh* sphere = readObj("3D/Sphere.obj");
    sphere->addBody(new RigidBody(new Sphere(sphere)));
-   sphere->solidON = false;
    meshes.push_back(sphere);
   
    Mesh* cube2 = readObj("3D/Box.obj");
@@ -702,7 +699,6 @@ int main() {
   
    Mesh* sphere2 = readObj("3D/Sphere.obj");
    sphere2->addBody(new RigidBody(new Sphere(sphere2)));
-   sphere2->solidON = false;
    sphere2->rigidbody->position = glm::vec3(0, 1.5f, 0);
    meshes.push_back(sphere2);
   
@@ -716,10 +712,14 @@ int main() {
    Mercy->addBody(new RigidBody(new TriangleMesh(Mercy)));
    meshes.push_back(Mercy);
 
-    //Mesh* Triangle = readObj("3D/Triangle.obj");
-    //Triangle->rigidbody = new TriangleMesh(Triangle);
-    //Triangle->solidON = false;
-    //meshes.push_back(Triangle);
+    Mesh* Triangle = readObj("3D/Triangle.obj");
+    Triangle->addBody(new RigidBody(new TriangleMesh(Triangle)));
+    meshes.push_back(Triangle);
+
+
+    Mesh* cube3 = readObj("3D/Box.obj");
+    cube3->addBody(new RigidBody(new OBB(1,1,1)));
+    meshes.push_back(cube3);
 
     r = new Ray(glm::vec3(-0.117, 1.522, 0.281), glm::vec3(0.143, -0.057, -0.988), 100, true); // nullptr;
 
@@ -730,17 +730,20 @@ int main() {
     // testBasicCollision(meshes);
 
     // TODO FIX IT
-    // testRayMeshIntersection(Mercy); 
+    // testRayMeshIntersection(Triangle);
 
     //testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
 
-    // testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
+    testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
     // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
     // testBasicCollisionWithPoints(sphere, Yen); // Capsule Sphere
     // testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
-    
+
+    // testBasicCollisionWithPoints(cube3, cube); // AABB OBB
+    // testBasicCollisionWithPoints(sphere, cube3); // Sphere OBB
+
     std::vector<Mesh*> physicsMeshes;
 
     Mesh* cubePhy = readObj("3D/Box.obj");
@@ -790,6 +793,7 @@ int main() {
     delete crosshair;
     delete s;
     delete c;
+    delete floorBox;
 
     glfwTerminate();
 
