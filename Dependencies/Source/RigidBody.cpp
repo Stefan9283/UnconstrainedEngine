@@ -11,6 +11,8 @@ RigidBody::RigidBody(Collider* c, float m) {
     angularVel = glm::vec3(0);
 
     mass = m;
+    
+    rotation = glm::quat(1, 0, 0, 0);
     position = glm::vec3(0);
 }
 
@@ -27,9 +29,8 @@ glm::mat4 RigidBody::getRotationMatrix() {
 void RigidBody::gui(int index) {
     std::string name = "RigidBody " + std::to_string(index) + " Settings";
     if (ImGui::TreeNode(name.c_str())) {
-        float t[4] = { position.x, position.y, position.z, 1.0f };
-        name = "rb pos " + std::to_string(index);
-        ImGui::SliderFloat3(name.c_str(), t, -10000, 10000);
+        float t[] = { position.x, position.y, position.z };
+        ImGui::SliderFloat3(("position " + std::to_string(index)).c_str(), t, -10000, 10000);
         position = glm::vec3(t[0], t[1], t[2]);
 
         float r[] = { rotation.w, rotation.x, rotation.y, rotation.z };
@@ -39,6 +40,14 @@ void RigidBody::gui(int index) {
             rotation = newRot;
             rotation = glm::normalize(rotation);
         }
+
+        float v[] = { velocity.x, velocity.y, velocity.z};
+        ImGui::SliderFloat3(("velocity " + std::to_string(index)).c_str(), v, -10000, 10000);
+        velocity = glm::vec3(v[0], v[1], v[2]);
+
+        float ang[] = { angularVel.x, angularVel.y, angularVel.z };
+        ImGui::SliderFloat3(("angular velocity " + std::to_string(index)).c_str(), ang, -10000, 10000);
+        angularVel = glm::vec3(ang[0], ang[1], ang[2]);
 
         collider->gui(index);
 

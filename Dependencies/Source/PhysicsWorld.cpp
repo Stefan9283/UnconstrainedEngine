@@ -84,19 +84,6 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
         }
 
     // TODO position solver
-//    for (int l = 0; l < NUM_OF_ITERATION_INTERPENETRATION_FIX; l++) {
-//        for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
-//            size_t i, j;
-//            i = collisionPoints[colIndex].first.first;
-//            j = collisionPoints[colIndex].first.second;
-//
-//            for (auto c : constraints[i][j]) {
-//                if (dynamic_cast<DistanceConstraint*>(c))
-//                    c->solve(collisionPoints[colIndex].second, dt);
-//            }
-//        }
-//    }
-//
 //    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
 //        for (auto line : constraints)
 //            for (auto row : line)
@@ -107,13 +94,16 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     // calculate final velocities
     for (auto* r : rb) {
         if (r->movable) {
-            r->velocity += r->force / r->mass * dt;
             r->position += r->velocity * dt;
-            r->angularVel += r->torque / dt;
+
+            r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
+            r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
+            r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
+
+            //r->rotation = glm::normalize(r->rotation);
+
             r->force = glm::vec3(0);
-        } else {
-            r->velocity = {};
-        }
+        } 
     }
 }
 

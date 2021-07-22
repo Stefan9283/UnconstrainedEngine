@@ -10,22 +10,31 @@ Constraint::~Constraint() {}
 
 #pragma region RestingConstraint
 void RestingConstraint::buildJacobian(CollisionPoint &p) {
+    glm::vec3 ra, rb;
+    ra = p.A - rb1->position;
+    rb = p.B - rb2->position;
+
+    glm::vec3 rota, rotb;
+    rota = glm::cross(ra, p.normal);
+    rotb = glm::cross(rb, p.normal);
+
     // va
     Jacobian(0, 0) = - p.normal.x;
     Jacobian(0, 1) = - p.normal.y;
     Jacobian(0, 2) = - p.normal.z;
     // wa
-    Jacobian(0, 3) = -0;
-    Jacobian(0, 4) = -0;
-    Jacobian(0, 5) = -0;
+
+    Jacobian(0, 3) = - rota.x;
+    Jacobian(0, 4) = - rota.y;
+    Jacobian(0, 5) = - rota.z;
     // vb
     Jacobian(0, 6) = p.normal.x;
     Jacobian(0, 7) = p.normal.y;
     Jacobian(0, 8) = p.normal.z;
     // wb
-    Jacobian(0, 9) = 0;
-    Jacobian(0, 10) = 0;
-    Jacobian(0, 11) = 0;
+    Jacobian(0,  9) = rotb.x;
+    Jacobian(0, 10) = rotb.y;
+    Jacobian(0, 11) = rotb.z;
 
 }
 // solve the collision between 2 bodies based on the constraint
@@ -39,10 +48,17 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         velocity(i + 9) = rb2->angularVel[i];
     }
 
+    
+    float beta = 0.7f;
+
     Eigen::VectorXf biasTerm(1);
 
-    float beta = 0.7f;
-    glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity;
+    glm::vec3 ra, rb;
+    ra = p.A - rb1->position;
+    rb = p.B - rb2->position;
+    
+    glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity 
+                                - glm::cross(ra, rb1->angularVel) + glm::cross(ra, rb2->angularVel);
     float closingVelocity = glm::dot(relativeVelocity, p.normal);
 
     biasTerm(0) =
@@ -88,8 +104,9 @@ RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constrain
         invM(i, i) = invM1;
         invM(i + 6, i + 6) = invM2;
         
-        //invM(i + 3, i + 3) = 0;
-        //invM(i + 9, i + 9) = 0;
+        // TODO replace identity matrices with inertia tensors
+        invM(i + 3, i + 3) = 1;
+        invM(i + 9, i + 9) = 1;
     }
 
     Jacobian.resize(1, 12);

@@ -23,15 +23,11 @@ public:
 class RestingConstraint : public Constraint {
 public:
 
-    
-
     RestingConstraint(RigidBody* rb1, RigidBody* rb2);
     ~RestingConstraint();
   
     void buildJacobian(CollisionPoint& p) override;
     void solve(CollisionPoint& p, float dt) override;
-    
-    
 };
 
 class DistanceConstraint : public Constraint {

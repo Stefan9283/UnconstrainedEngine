@@ -735,9 +735,11 @@ int main() {
     // testBasicCollisionWithPoints(sphere, Yen); // Capsule Sphere
     // testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
 
+    // TODO Ovidiu OBB collisions
     testBasicCollisionWithPoints(cube3, cube); // AABB OBB
     // testBasicCollisionWithPoints(sphere, cube3); // Sphere OBB
 
+    /*
     std::vector<Mesh*> physicsMeshes;
 
     Mesh* cubePhy = readObj("3D/Box.obj");
@@ -758,15 +760,15 @@ int main() {
 
     for (int i = 5; i < 10; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
-        switch (i % 3) {
+        switch (i % 2) {
         case 0:
             tmp->addBody(new RigidBody(new Sphere(sphere), 1));
             break;
         case 1:
-            tmp->addBody(new RigidBody(new AABB(sphere), 1));
+            tmp->addBody(new RigidBody(new Capsule(sphere), 1));
             break;
         case 2:
-            tmp->addBody(new RigidBody(new Capsule(sphere), 1));
+            tmp->addBody(new RigidBody(new AABB(sphere), 1));
             break;
         }
         tmp->solidON = false;
@@ -777,7 +779,7 @@ int main() {
     testPhysics(physicsMeshes);
     for (Mesh* m : physicsMeshes) {
         delete m;
-    }
+    }*/
 #pragma region cleanUp
 
     s->unbind();
