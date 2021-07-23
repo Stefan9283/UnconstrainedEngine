@@ -449,13 +449,17 @@ void testPhysics(std::vector<Mesh*> meshes) {
     for (auto* m : meshes)
         rbs.push_back(m->rigidbody);
 
-    
+
+    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
+    physicsWorld.addConstraint(dist);
+
     for (auto r1 : rbs)
         for (auto r2 : rbs)
             if (r1 != r2) {
                 auto* contact = new RestingConstraint(r1, r2);
-                physicsWorld.addConstraint(contact, rbs);
+                physicsWorld.addConstraint(contact);
             } else break;
+
 
     bool runWithPhysics = false;
 
@@ -475,6 +479,7 @@ void testPhysics(std::vector<Mesh*> meshes) {
         if(runWithPhysics || ImGui::Button("Do one simulation step"))
               physicsWorld.step(1/90.0f, rbs);
 
+        physicsWorld.gui();
 
         c->Move(window);
 
@@ -736,10 +741,9 @@ int main() {
     // testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
 
     // TODO Ovidiu OBB collisions
-    testBasicCollisionWithPoints(cube3, cube); // AABB OBB
+    //testBasicCollisionWithPoints(cube3, cube); // AABB OBB
     // testBasicCollisionWithPoints(sphere, cube3); // Sphere OBB
 
-    /*
     std::vector<Mesh*> physicsMeshes;
 
     Mesh* cubePhy = readObj("3D/Box.obj");
@@ -758,7 +762,7 @@ int main() {
         physicsMeshes.push_back(cubePhy);
     }
 
-    for (int i = 5; i < 10; ++i) {
+    for (int i = 3; i < 4; ++i) {
         Mesh* tmp = readObj("3D/Sphere.obj");
         switch (i % 2) {
         case 0:
@@ -772,14 +776,13 @@ int main() {
             break;
         }
         tmp->solidON = false;
-        tmp->rigidbody->position = glm::vec3(0, 5 * i, 0);
+        tmp->rigidbody->position = glm::vec3(1, 5 * i, 0);
         physicsMeshes.push_back(tmp);
     }
 
     testPhysics(physicsMeshes);
-    for (Mesh* m : physicsMeshes) {
+    for (Mesh* m : physicsMeshes)
         delete m;
-    }*/
 #pragma region cleanUp
 
     s->unbind();

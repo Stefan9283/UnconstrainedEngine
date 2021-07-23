@@ -4,24 +4,22 @@
 PhysicsWorld::~PhysicsWorld() {
     std::set<Constraint*> unique_constraints;
 
-    for (auto& row : constraints)
-        for (auto &constrVec : row)
-            for (auto *c : constrVec)
-                unique_constraints.insert(c);
-
-    for (auto c : unique_constraints)
+    for (auto c : constraints)
         delete c;
 }
-std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
-    std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints;
+
+
+
+std::vector<collision> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
+    std::vector<collision> collisionPoints;
     // get all collision points
-    for (size_t i = 0; i < rb.size(); i++) {
-        for (size_t j = i + 1; j < rb.size(); j++) {
-            CollisionPoint p = rb[i]->collider->checkCollision(rb[j]->collider);
-            if (p.hasCollision)
-                collisionPoints.emplace_back(std::make_pair(i, j), p);
+    for (auto c : constraints)
+        if (dynamic_cast<RestingConstraint*>(c)) {
+            CollisionPoint p = c->rb1->collider->checkCollision(c->rb2->collider);
+            if (p.hasCollision) {
+                collisionPoints.push_back({c->rb1, c->rb2, p});
+            }
         }
-    }
 
     return collisionPoints;
 }
@@ -41,57 +39,23 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     }
 
 
-    std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> collisionPoints = getCollisionPoints(rb);
+    std::vector<collision> collisionPoints = getCollisionPoints(rb);
 
-
-//    if (collisionPoints.size())
-//        std::cout << "////////////// STEP /////////////\n";
-
-    size_t max = 0;
-    for (auto& col : collisionPoints)
-        max = std::max(max, std::max(col.first.first, col.first.second));
-    max++;
-
-    if (constraints.size() < max) {
-        constraints.resize(max);
-        for (auto& constr : constraints)
-            constr.resize(max);
-    }
-
-//    for (auto & collisionPoint : collisionPoints) {
-//        std::cout << collisionPoint.second.toString() << "\n";
-//        size_t i, j;
-//        i = collisionPoint.first.first;
-//        j = collisionPoint.first.second;
-//        for (auto c : constraints[i][j]) {
-//            std::cout << c->rb1->collider->toString();
-//            std::cout << c->rb2->collider->toString();
-//        }
-//        std::cout << "//////////////////////////////\n";
-//    }
-
-
-        // sequential impulse solver
+    // sequential impulse solver
     for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++)
-        for (int colIndex = 0; colIndex < collisionPoints.size(); colIndex++) {
-            size_t i, j;
-            i = collisionPoints[colIndex].first.first;
-            j = collisionPoints[colIndex].first.second;
-
-            for (auto c : constraints[i][j])
-                if (dynamic_cast<RestingConstraint*>(c))
-                    c->solve(collisionPoints[colIndex].second, dt);
+        for (auto & collisionPoint : collisionPoints) {
+            for (auto c : constraints)
+                if (dynamic_cast<RestingConstraint*>(c)) {
+                    if (c->rb1 == collisionPoint.rb1 && c->rb2 == collisionPoint.rb2) {
+                        CollisionPoint reversed = reverseCollisionPoint(collisionPoint.p);
+                        c->solve(reversed, dt);
+                    } else if (c->rb2 == collisionPoint.rb1 && c->rb1 == collisionPoint.rb2) {
+                        c->solve(collisionPoint.p, dt);
+                    }
+                }
         }
 
-    // TODO position solver
-//    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
-//        for (auto line : constraints)
-//            for (auto row : line)
-//                for (auto c : row)
-//                    if (dynamic_cast<DistanceConstraint*>(c))
-//                        ((DistanceConstraint*)c)->check(dt);
-//
-    // calculate final velocities
+    //   calculate final velocities
     for (auto* r : rb) {
         if (r->movable) {
             r->position += r->velocity * dt;
@@ -100,39 +64,41 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
             r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
             r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
 
-            //r->rotation = glm::normalize(r->rotation);
-
             r->force = glm::vec3(0);
-        } 
+        }
     }
+
+    // TODO position solver
+    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
+        for (auto c : constraints)
+            if (dynamic_cast<DistanceConstraint*>(c))
+                if (!((DistanceConstraint*)c)->check())
+                    ((DistanceConstraint*)c)->solve(dt);
+
+
 }
 
-int getRbIndex(RigidBody* rb, const std::vector<RigidBody*>& rbs) {
-    int i = 0;
-    for (auto body : rbs) {
-        if (body == rb)
-            return i;
-        i++;
-    }
-    assert("RigidBody wasn't found in rbs vector " && rb);
-    return -1;
-}
-PhysicsWorld *PhysicsWorld::addConstraint(Constraint* c, std::vector<RigidBody*> &rbs) {
-    size_t i, j;
-    i = getRbIndex(c->rb1, rbs);
-    j = getRbIndex(c->rb2, rbs);
-
-    size_t maxValue = std::max(constraints.size(), std::max(i, j)) + 1;
-
-    constraints.resize(maxValue);
-
-    constraints[i].resize(maxValue);
-    constraints[j].resize(maxValue);
-
-    constraints[i][j].push_back(c);
-    constraints[j][i].push_back(c);
-
+PhysicsWorld *PhysicsWorld::addConstraint(Constraint* c) {
+    constraints.push_back(c);
     return this;
 }
 
+void PhysicsWorld::gui() {
+    if (ImGui::TreeNode("PhysicsWorld")) {
+        float g[] = {gravity.x, gravity.y, gravity.z};
+        ImGui::SliderFloat3("Gravity ", g, -100, 100);
+        gravity = glm::vec3(g[0], g[1], g[2]);
 
+        for (int i = 0; i < constraints.size(); ++i) {
+            if (ImGui::TreeNode(("Constraint" + std::to_string(i)).c_str())) {
+                constraints[i]->gui(i);
+                if (ImGui::Button("Remove Constraint? WIP")) {} // TODO
+                ImGui::TreePop();
+            }
+        }
+
+        if (ImGui::Button("Add Constraint? WIP")) {}  // TODO
+
+        ImGui::TreePop();
+    }
+}

@@ -53,6 +53,7 @@ public:
     std::string toString();
 };
 
+CollisionPoint reverseCollisionPoint(CollisionPoint p);
 
 class Collider {
 public:

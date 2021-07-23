@@ -7,18 +7,24 @@
 
 class Constraint;
 
+struct collision {
+    RigidBody *rb1, *rb2;
+    CollisionPoint p;
+};
 
 class PhysicsWorld {
 public:
     glm::vec3 gravity{0, -9.81, 0};
 
-    std::vector<std::vector<std::vector<Constraint*>>> constraints;
+    std::vector<Constraint*> constraints;
 
-    PhysicsWorld* addConstraint(Constraint* c, std::vector<RigidBody*> &rbs);
+    PhysicsWorld* addConstraint(Constraint* c);
 
     void step(float dt, const std::vector<RigidBody*>& rb);
-    std::vector<std::pair<std::pair<size_t, size_t>, CollisionPoint>> getCollisionPoints(const std::vector<RigidBody *>& rb);
-    
+    std::vector<collision> getCollisionPoints(const std::vector<RigidBody *>& rb);
+
+    void gui();
+
     ~PhysicsWorld();
 };
 

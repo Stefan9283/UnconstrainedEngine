@@ -125,57 +125,39 @@ DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
     this->rb1 = rb1;
     this->rb2 = rb2;
 }
-void DistanceConstraint::solve(CollisionPoint& p, float dt) {
 
-   /* std::cout << glm::to_string(p.A);
-    std::cout << glm::to_string(p.B) << "\n";
-    std::cout << glm::to_string(rb1->position);
-    std::cout << glm::to_string(rb2->position) << "\n";
-    rb1->collider->toString();
-    rb2->collider->toString();
-    std::cout << "//////////////////////////////////////\n";
+void DistanceConstraint::buildJacobian(CollisionPoint& p) {}
+void DistanceConstraint::solve(float dt) {
 
+    float beta = 0.5;
 
-    glm::vec3 pos1, pos2;
-    pos1 = rb1->position + p.normal * p.depth / 2.0f;
-    pos2 = rb2->position - p.normal * p.depth / 2.0f;
-    
-    rb1->velocity = (pos1 - rb1->position) / dt;
-    rb2->velocity = (pos2 - rb2->position) / dt;
-    
-    rb1->position = pos1;
-    rb2->position = pos2;*/
-}
-void DistanceConstraint::check(float dt) {
-    float d = glm::distance(rb1->position, rb2->position);
+    float dist = glm::distance(rb1->position, rb2->position);
 
+    float limit = minD - dist;
+    if (dist > maxD) limit = dist - maxD;
 
-    if (d < minD) {
-      /*  glm::vec3 direction = glm::normalize(rb2->position - rb1->position);
-        
-        glm::vec3 pos1, pos2;
-        pos1 = rb1->position - direction * d / 2.0f;
-        pos2 = rb2->position + direction * d / 2.0f;
-
-        rb1->velocity = (pos1 - rb1->position) / dt;
-        rb2->velocity = (pos2 - rb2->position) / dt;
-
-        rb1->position = pos1;
-        rb2->position = pos2;*/
-    } else if (d > maxD) {
-       /* glm::vec3 direction = glm::normalize(rb2->position - rb1->position);
-
-        glm::vec3 pos1, pos2;
-        pos1 = rb1->position + direction * d / 2.0f;
-        pos2 = rb2->position - direction * d / 2.0f;
-
-        rb1->velocity = (pos1 - rb1->position) / dt;
-        rb2->velocity = (pos2 - rb2->position) / dt;
-
-        rb1->position = pos1;
-        rb2->position = pos2;*/
+    if (rb1->movable) {
+        glm::vec3 c = limit * glm::normalize(rb1->position - rb2->position);
+        glm::vec3 v = (- beta / dt) * c;
+        v *= 0.9;
+        rb1->position = v * dt;
+    }
+    if (rb2->movable) {
+        glm::vec3 c = limit * glm::normalize(rb1->position - rb2->position);
+        c = -c;
+        glm::vec3 v = (- beta / dt) * c;
+        v *= 0.9;
+        rb2->position += v * dt;
+        rb2->velocity += v;
     }
 }
-
+bool DistanceConstraint::check() {
+    float d = glm::distance(rb1->position, rb2->position);
+    return d <= maxD && d >= minD;
+}
+void DistanceConstraint::gui(int index) {
+    ImGui::DragFloat("min", &minD, 0, maxD);
+    ImGui::DragFloat("max", &maxD, minD, 100);
+}
 
 #pragma endregion 
