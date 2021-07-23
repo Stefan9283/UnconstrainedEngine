@@ -5,7 +5,7 @@
 #ifndef TRIANGLE_DEBUG_H
 #define TRIANGLE_DEBUG_H
 
-
+#include "imgui.h"
 #include "ImGuizmo.h"
 #include "ImSequencer.h"
 #include "ImZoomSlider.h"
