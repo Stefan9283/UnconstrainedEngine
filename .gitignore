@@ -1,0 +1,13 @@
+cmake-build-debug/*
+PhysicsEngine/*
+CMakeFiles/*
+CMakeCache*
+cmake_*
+build/*
+*.vcxproj*
+*.sln
+*.dir
+x64/*
+.vs/*
+.vscode/*
+.idea/*
