@@ -228,7 +228,7 @@ namespace collisionAlgos {
     CollisionPoint checkCollision(TriangleMesh* bv1, Collider* bv2) {
         bool result = false;
 
-        for (int i = 0; i < bv1->body->indices.size(); i += 3) {
+        for (size_t i = 0; i < bv1->body->indices.size(); i += 3) {
             glm::vec3 meanNormal = bv1->body->vertices[i].Normal + bv1->body->vertices[i + 1].Normal + bv1->body->vertices[i + 2].Normal;
             glm::vec3 faceNormal = glm::normalize(glm::cross(bv1->body->vertices[i].Position - bv1->body->vertices[i + 2].Position, bv1->body->vertices[i].Position - bv1->body->vertices[i + 1].Position));
             if (glm::dot(faceNormal, meanNormal) < 0)
@@ -774,7 +774,7 @@ namespace collisionAlgos {
 
 
         if (bv1->isInside(solution.point))
-            return { solution.point, solution.point + glm::vec3(0.01) };
+            return { solution.point, solution.point + glm::vec3(0.01f) };
 
         return {};
     } // TODO return CollisionPoint

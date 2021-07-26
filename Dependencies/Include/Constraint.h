@@ -7,16 +7,11 @@ class CollisionPoint;
 
 class Constraint {
 public:
-    RigidBody *rb1, *rb2;
-
     Eigen::MatrixXf Jacobian, invM;
-
     Eigen::VectorXf total_lambda;
 
-    Constraint(RigidBody* rb1, RigidBody* rb2);
-    virtual void solve(CollisionPoint& p, float dt) {};
+    Constraint();
     virtual void solve(float dt) {};
-    virtual void buildJacobian(CollisionPoint& p) = 0;
     virtual void gui(int index) {};
 
     virtual ~Constraint();
@@ -24,25 +19,50 @@ public:
 
 class RestingConstraint : public Constraint {
 public:
+    RigidBody *rb1, *rb2;
 
     RestingConstraint(RigidBody* rb1, RigidBody* rb2);
     ~RestingConstraint();
 
-    void buildJacobian(CollisionPoint& p) override;
-    void solve(CollisionPoint& p, float dt) override;
+    void buildJacobian(CollisionPoint& p);
+    void solve(CollisionPoint& p, float dt);
 };
 
 class DistanceConstraint : public Constraint {
 public:
+    RigidBody *rb1, *rb2;
     float minD, maxD;
     
     DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
                 float minDistance, float maxDistance);
 
-    void buildJacobian(CollisionPoint& p) override;
     void solve(float dt) override;
     bool check();
 
+    void gui(int index) override;
+};
+
+
+class limitConstraint {
+public:
+    bool enabled;
+    float offset;
+    float lower, upper;
+    void toggle(float lower = 0, float upper = 0);
+    bool check(float dist);
+};
+
+class GenericConstraint : public Constraint {
+public:
+    limitConstraint angular[3]{}, linear[3]{};
+    RigidBody *first, *second;
+    bool breakable; float impulseTreshold;
+    glm::vec3 fstAnchor, sndAnchor;
+
+    GenericConstraint(RigidBody* fst, RigidBody* snd);
+    void setBreakable(float impulseTreshold);
+    void solve(float dt) override;
+    bool check();
     void gui(int index) override;
 };
 

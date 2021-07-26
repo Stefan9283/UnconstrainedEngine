@@ -28,10 +28,10 @@ OctreeNode::OctreeNode(std::vector<Triangle>& remainingTriangles, int level) {
     glm::vec3 min = remainingTriangles[0].vertices[0],
               max = remainingTriangles[0].vertices[0];
 
-    for (int i = 0; i < remainingTriangles.size(); i++) {
-        for (int j = 0; j < 3; ++j) {
-            min = glm::min(min, remainingTriangles[i].vertices[j]);
-            max = glm::max(max, remainingTriangles[i].vertices[j]);
+    for (auto & remainingTriangle : remainingTriangles) {
+        for (auto & vertex : remainingTriangle.vertices) {
+            min = glm::min(min, vertex);
+            max = glm::max(max, vertex);
         }
     }
 
@@ -70,30 +70,30 @@ void OctreeNode::divide(std::vector<Triangle>& remainingTriangles, int level) {
     std::vector<std::pair<AABB, std::vector<Triangle>>> boxes;
 
     // bottom
-    boxes.push_back(std::make_pair(AABB(min, mid), std::vector<Triangle>()));
-    boxes.push_back(std::make_pair(AABB(glm::vec3(mid.x, min.y, min.z), glm::vec3(max.x, mid.y, mid.z)), std::vector<Triangle>()));
-    boxes.push_back(std::make_pair(AABB(glm::vec3(min.x, min.y, mid.z), glm::vec3(mid.x, mid.y, max.z)), std::vector<Triangle>()));
-    boxes.push_back(std::make_pair(AABB(glm::vec3(mid.x, min.y, mid.z), glm::vec3(max.x, mid.y, max.z)), std::vector<Triangle>()));
+    boxes.emplace_back(AABB(min, mid), std::vector<Triangle>());
+    boxes.emplace_back(AABB(glm::vec3(mid.x, min.y, min.z), glm::vec3(max.x, mid.y, mid.z)), std::vector<Triangle>());
+    boxes.emplace_back(AABB(glm::vec3(min.x, min.y, mid.z), glm::vec3(mid.x, mid.y, max.z)), std::vector<Triangle>());
+    boxes.emplace_back(AABB(glm::vec3(mid.x, min.y, mid.z), glm::vec3(max.x, mid.y, max.z)), std::vector<Triangle>());
 
     // top
-    boxes.push_back(std::make_pair(AABB(mid, max), std::vector<Triangle>()));
-    boxes.push_back(std::make_pair(AABB(glm::vec3(min.x, mid.y, min.z), glm::vec3(mid.x, max.y, mid.z)), std::vector<Triangle>()));
-    boxes.push_back(std::make_pair(AABB(glm::vec3(mid.x, mid.y, min.z), glm::vec3(max.x, max.y, mid.z)), std::vector<Triangle>()));
-    boxes.push_back(std::make_pair(AABB(glm::vec3(min.x, mid.y, mid.z), glm::vec3(mid.x, max.y, max.z)), std::vector<Triangle>()));
+    boxes.emplace_back(AABB(mid, max), std::vector<Triangle>());
+    boxes.emplace_back(AABB(glm::vec3(min.x, mid.y, min.z), glm::vec3(mid.x, max.y, mid.z)), std::vector<Triangle>());
+    boxes.emplace_back(AABB(glm::vec3(mid.x, mid.y, min.z), glm::vec3(max.x, max.y, mid.z)), std::vector<Triangle>());
+    boxes.emplace_back(AABB(glm::vec3(min.x, mid.y, mid.z), glm::vec3(mid.x, max.y, max.z)), std::vector<Triangle>());
 
     for (Triangle& triangle : remainingTriangles) {
-        for (int i = 0; i < boxes.size(); ++i) {
-            if (boxes[i].first.checkCollision(&triangle).hasCollision) {
-                boxes[i].second.push_back(triangle);
+        for (auto & b : boxes) {
+            if (b.first.checkCollision(&triangle).hasCollision) {
+                b.second.push_back(triangle);
             }
         }
     }
 
     // divide some more
     if (level >= 0) {
-        for (int j = 0; j < boxes.size(); ++j) {
-            if (!boxes[j].second.empty()) {
-                children.push_back(new OctreeNode(boxes[j].second, level));
+        for (auto & b : boxes) {
+            if (!b.second.empty()) {
+                children.push_back(new OctreeNode(b.second, level));
             }
         }
     }

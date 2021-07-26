@@ -15,7 +15,10 @@ public:
 
     float restitution = 0.5;
     float mass = 1;
+
     bool movable = true;
+    bool canBeRotated = true;
+
     float drag = 0.01f;
     RigidBody(Collider* c,  float m = 1);
     glm::mat4 getTransform();

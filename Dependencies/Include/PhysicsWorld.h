@@ -23,7 +23,7 @@ public:
     void step(float dt, const std::vector<RigidBody*>& rb);
     std::vector<collision> getCollisionPoints(const std::vector<RigidBody *>& rb);
 
-    void gui();
+    void gui(std::vector<RigidBody*> rbs);
 
     ~PhysicsWorld();
 };

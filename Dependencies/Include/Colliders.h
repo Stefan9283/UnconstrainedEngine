@@ -113,7 +113,7 @@ public:
     glm::mat4 getLocalTransform() override;
 
     Sphere(Mesh* mesh);
-    Sphere(glm::vec3 pos, float radius);
+    Sphere(glm::vec3 pos = glm::vec3(0), float radius = 1);
     std::string toString() override;
     bool isInside(glm::vec3 point);
 };
@@ -145,7 +145,7 @@ public:
     void gui(int index) override;
 
     AABB(glm::vec3 min, glm::vec3 max);
-    AABB(float height, float width, float length);
+    AABB(float height = 1, float width = 1, float length = 1);
 
     explicit AABB(Mesh* mesh);
     std::string toString() override;
@@ -243,7 +243,7 @@ public:
 
     void createBody(glm::vec3 start, glm::vec3 end, float radius);
     Capsule (Mesh* mesh);
-    Capsule(float length, float radius);
+    Capsule(float length = 2, float radius = 0.5f);
     CollisionPoint checkCollision(Sphere* col) override;
     CollisionPoint checkCollision(AABB* col) override;
     CollisionPoint checkCollision(Triangle* t) override;

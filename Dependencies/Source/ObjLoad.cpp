@@ -45,7 +45,7 @@ Mesh* readObj(const char* filepath) {
 
     }
 
-    for (int i = 0; i < objvert.size(); i++) {
+    for (size_t i = 0; i < objvert.size(); i++) {
         Vertex v
                 {
                         posArr[objvert[i].pos - 1],

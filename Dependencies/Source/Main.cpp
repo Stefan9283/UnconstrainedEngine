@@ -120,7 +120,7 @@ void createCrosshair() {
 
 void testBasicCollision(std::vector<Mesh*> meshes) {
     std::vector<bool> collision;
-    for (int i = 0; i < meshes.size() ; i++)
+    for (size_t i = 0; i < meshes.size() ; i++)
         collision.push_back(false);
     collision.push_back(false);
 
@@ -147,7 +147,7 @@ void testBasicCollision(std::vector<Mesh*> meshes) {
         //ImGuizmo::DrawGrid(camviewvec, projvec, identity, 100.f);
 
         s->setFloat("flatColorsON", 0);
-        for (int i = 0; i < collision.size() - 1 ; ++i) {
+        for (size_t i = 0; i < collision.size() - 1 ; ++i) {
             //EditTransform(c, &c->view, &c->proj, meshes[i]);
             meshes[i]->gui(i);
             if (collision[i])
@@ -195,12 +195,12 @@ void testBasicCollision(std::vector<Mesh*> meshes) {
             //hit_or_nah = wasMeshHit(meshes[0]->rigidbody, r);
 
 
-            for (int l = 0; l < collision.size(); ++l) {
-                collision[l] = false;
+            for (auto && l : collision) {
+                l = false;
             }
-            for(int i=0; i<meshes.size(); i++) {
+            for(size_t i=0; i<meshes.size(); i++) {
                 Mesh* m = meshes[i];
-                for (int j=0; j<meshes.size(); j++) {
+                for (size_t j=0; j<meshes.size(); j++) {
                     Mesh* m2 = meshes[j];
                     if (m != m2)
                         if(m->rigidbody->collider->checkCollision(m2->rigidbody->collider).hasCollision) {
@@ -210,7 +210,7 @@ void testBasicCollision(std::vector<Mesh*> meshes) {
                 }
             }
             if(r) {
-                for (int i=0; i<meshes.size(); i++) {
+                for (size_t i=0; i<meshes.size(); i++) {
                     Mesh* m = meshes[i];
                     if (m->rigidbody->collider->checkCollision(r).hasCollision) {
                         collision[i] = true;
@@ -250,14 +250,12 @@ void testBasicCollision(std::vector<Mesh*> meshes) {
         }
 
         if(ImGui::Button("Toggle bounding volumes all" )) {
-            for (int i = 0; i < meshes.size(); ++i) {
-                Mesh* m = meshes[i];
+            for (auto m : meshes) {
                 m->boundingBoxON = !m->boundingBoxON;
             }
         }
         if(ImGui::Button("Toggle solid all" )) {
-            for (int i = 0; i < meshes.size(); ++i) {
-                Mesh* m = meshes[i];
+            for (auto m : meshes) {
                 m->solidON = !m->solidON;
             }
         }
@@ -440,25 +438,26 @@ void testOctree(Mesh* mesh) {
     }
     delete octree;
 }
-void testPhysics(std::vector<Mesh*> meshes) {
+void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld;
 
-    std::vector<RigidBody*> rbs;
-    rbs.reserve(meshes.size());
+    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
+//    generic->linear[0].toggle(0, 5);
+    generic->linear[1].toggle(0, 5);
+    generic->angular[0].toggle(0, 0);
+//    generic->linear[2].toggle(0, 5);
+    physicsWorld.addConstraint(generic);
 
-    for (auto* m : meshes)
-        rbs.push_back(m->rigidbody);
+    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 
-
-    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
-    physicsWorld.addConstraint(dist);
-
-    for (auto r1 : rbs)
-        for (auto r2 : rbs)
-            if (r1 != r2) {
-                auto* contact = new RestingConstraint(r1, r2);
-                physicsWorld.addConstraint(contact);
-            } else break;
+//    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
+//    physicsWorld.addConstraint(dist);
+//    for (auto r1 : rbs)
+//        for (auto r2 : rbs)
+//            if (r1 != r2) {
+//                auto* contact = new RestingConstraint(r1, r2);
+//                physicsWorld.addConstraint(contact);
+//            } else break;
 
 
     bool runWithPhysics = false;
@@ -475,22 +474,37 @@ void testPhysics(std::vector<Mesh*> meshes) {
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-        ImGui::Checkbox("run with physics", &runWithPhysics);
-        if(runWithPhysics || ImGui::Button("Do one simulation step"))
-              physicsWorld.step(1/90.0f, rbs);
+        bool doOneStep = false;
+        if (ImGui::BeginTabBar("Bar")) {
+            if (ImGui::BeginTabItem("Physics")) {
+                physicsWorld.gui(rbs);
+                doOneStep = ImGui::Button("Do one simulation step");
+                ImGui::Checkbox("run with physics", &runWithPhysics);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("RigidBodies")) {
+                int index = 0;
+                for (auto rb : rbs)
+                    rb->gui(++index);
+                doOneStep = ImGui::Button("Do one simulation step");
+                ImGui::Checkbox("run with physics", &runWithPhysics);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
 
-        physicsWorld.gui();
+
+        if(runWithPhysics || doOneStep)
+              physicsWorld.step(1/90.0f, rbs);
 
         c->Move(window);
 
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
 
-        int index = 0;
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
             rb->collider->Draw(s);
-            rb->gui(++index);
         }
 
 
@@ -744,45 +758,45 @@ int main() {
     //testBasicCollisionWithPoints(cube3, cube); // AABB OBB
     // testBasicCollisionWithPoints(sphere, cube3); // Sphere OBB
 
-    std::vector<Mesh*> physicsMeshes;
+    std::vector<RigidBody*> rbs;
 
-    Mesh* cubePhy = readObj("3D/Box.obj");
-    cubePhy->addBody(new RigidBody(new AABB(cubePhy)));
-    cubePhy->solidON = true;
-
-    Mesh* spherePhy = readObj("3D/Sphere.obj");
-    spherePhy->addBody(new RigidBody(new Sphere(spherePhy)));
-    spherePhy->solidON = true;
+    auto* cubePhy = new RigidBody(new AABB());
+    auto* spherePhy = new RigidBody(new Sphere());
 
     if (true) {
-        spherePhy->rigidbody->movable = false;
-        physicsMeshes.push_back(spherePhy);
+        spherePhy->movable = false;
+        rbs.push_back(spherePhy);
     } else {
-        cubePhy->rigidbody->movable = false;
-        physicsMeshes.push_back(cubePhy);
+        cubePhy->movable = false;
+        rbs.push_back(cubePhy);
     }
 
+    {
+        RigidBody* tmp = new RigidBody(new Capsule(), 1);
+        tmp->position = glm::vec3(1, 0, 0);
+        rbs.push_back(tmp);
+    }
+/*
     for (int i = 3; i < 4; ++i) {
-        Mesh* tmp = readObj("3D/Sphere.obj");
+        RigidBody* tmp;
         switch (i % 2) {
         case 0:
-            tmp->addBody(new RigidBody(new Sphere(sphere), 1));
+            tmp = new RigidBody(new Sphere(), 1);
             break;
         case 1:
-            tmp->addBody(new RigidBody(new Capsule(sphere), 1));
+            tmp = new RigidBody(new Capsule(), 1);
             break;
         case 2:
-            tmp->addBody(new RigidBody(new AABB(sphere), 1));
+            tmp = new RigidBody(new AABB(), 1);
             break;
         }
-        tmp->solidON = false;
-        tmp->rigidbody->position = glm::vec3(1, 5 * i, 0);
-        physicsMeshes.push_back(tmp);
+        tmp->position = glm::vec3(1, 5 * i, 0);
+        rbs.push_back(tmp);
     }
-
-    testPhysics(physicsMeshes);
-    for (Mesh* m : physicsMeshes)
-        delete m;
+*/
+    testPhysics(rbs);
+    for (auto* r : rbs)
+        delete r;
 #pragma region cleanUp
 
     s->unbind();

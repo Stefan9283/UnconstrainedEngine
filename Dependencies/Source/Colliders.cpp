@@ -32,7 +32,7 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider* col) {
 
     int total = 0;
 
-    for (int i = 0; i < mesh->body->indices.size(); i += 3) {
+    for (size_t i = 0; i < mesh->body->indices.size(); i += 3) {
         glm::vec3 meanNormal = (mesh->body->vertices[mesh->body->indices[i]].Normal +
             mesh->body->vertices[mesh->body->indices[i + 1]].Normal +
             mesh->body->vertices[mesh->body->indices[i + 2]].Normal)
@@ -237,6 +237,8 @@ std::string CollisionPoint::toString() {
 Sphere::Sphere(glm::vec3 pos, float radius) {
     this->pos = pos;
     this->radius = radius;
+    body = convertMesh2ColliderMesh(readObj("3D/Sphere.obj"));
+    body->prepare();
 }
 Sphere::Sphere(Mesh *mesh) {
     pos = glm::vec3(0);
@@ -302,6 +304,7 @@ AABB::AABB(float height, float width, float length) {
     length /= 2.0f;
     max = glm::vec3(width, height, length);
     min = - max;
+    this->body = generateNewMesh();
 }
 AABB::AABB(glm::vec3 min, glm::vec3 max) {
     this->max = max;
@@ -713,8 +716,8 @@ void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
 
     glm::mat4 scaleMatrixTube = glm::scale(glm::mat4(1), glm::vec3(radius, diff/2, radius));
 
-    for (int l = 0; l < body->vertices.size(); ++l)
-        body->vertices[l].Position = getTransformedVertex(scaleMatrixTube, body->vertices[l].Position);
+    for (auto & vertice : body->vertices)
+        vertice.Position = getTransformedVertex(scaleMatrixTube, vertice.Position);
 
     glm::mat4 scaleMatrixHalfSphere = glm::scale(glm::mat4(1), glm::vec3(radius));
 
@@ -726,22 +729,22 @@ void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
 
     size_t indicesCount = Tube->indices.size();
 
-    for (auto i = 0; i < halfSphere->vertices.size(); ++i) {
-        Vertex v{ getTransformedVertex(modelEnd, halfSphere->vertices[i].Position), halfSphere->vertices[i].Normal};
+    for (auto & vertice : halfSphere->vertices) {
+        Vertex v{ getTransformedVertex(modelEnd, vertice.Position), vertice.Normal};
         body->vertices.push_back(v);
     }
-    for (auto j = 0; j < halfSphere->indices.size(); ++j) {
-        body->indices.push_back((uint32_t)(halfSphere->indices[j] + indicesCount));
+    for (unsigned int indice : halfSphere->indices) {
+        body->indices.push_back((uint32_t)(indice + indicesCount));
     }
 
     indicesCount = body->indices.size();
 
-    for (auto i = 0; i < halfSphere->vertices.size(); ++i) {
-        Vertex v{ getTransformedVertex(modelStart, halfSphere->vertices[i].Position), halfSphere->vertices[i].Normal};
+    for (auto & vertice : halfSphere->vertices) {
+        Vertex v{ getTransformedVertex(modelStart, vertice.Position), vertice.Normal};
         body->vertices.push_back(v);
     }
-    for (auto j = 0; j < halfSphere->indices.size(); ++j) {
-        body->indices.push_back((uint32_t)(halfSphere->indices[j] + indicesCount));
+    for (unsigned int indice : halfSphere->indices) {
+        body->indices.push_back((uint32_t)(indice + indicesCount));
     }
 
     delete Tube;

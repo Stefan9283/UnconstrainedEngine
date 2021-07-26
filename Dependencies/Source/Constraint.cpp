@@ -2,9 +2,7 @@
 #include "PhysicsWorld.h"
 
 #pragma region Basic Constraint
-Constraint::Constraint(RigidBody* rb1, RigidBody* rb2) {
-    
-}
+Constraint::Constraint() {}
 Constraint::~Constraint() {}
 #pragma endregion
 
@@ -48,7 +46,6 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         velocity(i + 9) = rb2->angularVel[i];
     }
 
-    
     float beta = 0.7f;
 
     Eigen::VectorXf biasTerm(1);
@@ -88,7 +85,7 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
     }
 }
 
-RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint(rb1, rb2) {
+RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint() {
     this->rb1 = rb1;
     this->rb2 = rb2;
 
@@ -119,28 +116,29 @@ RestingConstraint::~RestingConstraint() {}
 
 #pragma region DistanceConstraint
 DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2, 
-                                    float minDistance, float maxDistance) : Constraint(rb1, rb2) {
+                                    float minDistance, float maxDistance) : Constraint() {
     minD = minDistance;
     maxD = maxDistance;
     this->rb1 = rb1;
     this->rb2 = rb2;
 }
 
-void DistanceConstraint::buildJacobian(CollisionPoint& p) {}
 void DistanceConstraint::solve(float dt) {
+    if (!check()) return;
 
     float beta = 0.5;
 
     float dist = glm::distance(rb1->position, rb2->position);
 
-    float limit = minD - dist;
+    float limit = - minD + dist;
     if (dist > maxD) limit = dist - maxD;
 
     if (rb1->movable) {
         glm::vec3 c = limit * glm::normalize(rb1->position - rb2->position);
         glm::vec3 v = (- beta / dt) * c;
         v *= 0.9;
-        rb1->position = v * dt;
+        rb1->position += v * dt;
+        rb1->velocity += v;
     }
     if (rb2->movable) {
         glm::vec3 c = limit * glm::normalize(rb1->position - rb2->position);
@@ -156,8 +154,157 @@ bool DistanceConstraint::check() {
     return d <= maxD && d >= minD;
 }
 void DistanceConstraint::gui(int index) {
-    ImGui::DragFloat("min", &minD, 0, maxD);
-    ImGui::DragFloat("max", &maxD, minD, 100);
+    ImGui::SliderFloat("min", &minD, 0, maxD);
+    ImGui::SliderFloat("max", &maxD, minD, 100);
 }
 
 #pragma endregion 
+
+
+void limitConstraint::toggle(float lower, float upper) {
+    if (!enabled) {
+        this->lower = lower;
+        this->upper = upper;
+    }
+    enabled = !enabled;
+}
+bool limitConstraint::check(float dist) {
+    if (!enabled) return true;
+    return !(dist - offset < lower || dist - offset > upper);
+}
+
+
+#pragma region GenericConstraint
+
+GenericConstraint::GenericConstraint(RigidBody* fst, RigidBody* snd) {
+    first = fst; second = snd;
+}
+void GenericConstraint::setBreakable(float impulseTreshold) {
+    breakable = true; this->impulseTreshold = impulseTreshold;
+}
+void GenericConstraint::gui(int index) {
+    ImGui::Text("Angular");
+
+    ImGui::Checkbox(("Enabled AngX" + std::to_string(index)).c_str(), &angular[0].enabled);
+    if (angular[0].enabled) {
+        ImGui::SliderFloat(("ang x lower" + std::to_string(index)).c_str(), &angular[0].lower, -10000, angular[0].upper);
+        ImGui::SliderFloat(("ang x upper" + std::to_string(index)).c_str(), &angular[0].upper, angular[0].lower, 10000);
+    }
+    ImGui::Checkbox(("Enabled AngY" + std::to_string(index)).c_str(), &angular[1].enabled);
+    if (angular[1].enabled) {
+        ImGui::SliderFloat(("ang y lower" + std::to_string(index)).c_str(), &angular[1].lower, -10000, angular[1].upper);
+        ImGui::SliderFloat(("ang y upper" + std::to_string(index)).c_str(), &angular[1].upper, angular[1].lower, 10000);
+    }
+
+    ImGui::Checkbox(("Enabled AngZ" + std::to_string(index)).c_str(), &angular[2].enabled);
+    if (angular[2].enabled) {
+        ImGui::SliderFloat(("ang z lower" + std::to_string(index)).c_str(), &angular[2].lower, -10000, angular[2].upper);
+        ImGui::SliderFloat(("ang z upper" + std::to_string(index)).c_str(), &angular[2].upper, angular[2].lower, 10000);
+    }
+
+
+    ImGui::Text("Linear");
+
+    ImGui::Checkbox(("Enabled LinX" + std::to_string(index)).c_str(), &linear[0].enabled);
+    if (linear[0].enabled) {
+        ImGui::SliderFloat(("linear x lower" + std::to_string(index)).c_str(), &linear[0].lower, -10000, linear[0].upper);
+        ImGui::SliderFloat(("linear x upper" + std::to_string(index)).c_str(), &linear[0].upper, linear[0].lower,10000);
+    }
+    ImGui::Checkbox(("Enabled LinY" + std::to_string(index)).c_str(), &linear[1].enabled);
+    if (linear[1].enabled) {
+        ImGui::SliderFloat(("linear y lower" + std::to_string(index)).c_str(), &linear[1].lower, -10000, linear[1].upper);
+        ImGui::SliderFloat(("linear y upper" + std::to_string(index)).c_str(), &linear[1].upper, linear[1].lower,10000);
+    }
+    ImGui::Checkbox(("Enabled LinZ" + std::to_string(index)).c_str(), &linear[2].enabled);
+    if (linear[2].enabled) {
+        ImGui::SliderFloat(("linear z lower" + std::to_string(index)).c_str(), &linear[2].lower, -10000, linear[2].upper);
+        ImGui::SliderFloat(("linear z upper" + std::to_string(index)).c_str(), &linear[2].upper, linear[2].lower, 10000);
+    }
+}
+
+// TODO
+void GenericConstraint::solve(float dt) {
+    if (check()) return;
+
+    auto lin = glm::vec3(0);
+
+    Eigen::MatrixXf Jacobian;
+    Jacobian.resize(1, 3);
+    Jacobian.setZero();
+
+    for (int i = 0; i < 3; i++) {
+        if (angular[i].enabled) {
+            Jacobian(0, i) = 1;
+        }
+        if (linear[i].enabled) lin[i] = 1;
+    }
+
+    glm::vec3 dist = second->position - first->position;
+
+    for (int i = 0; i < 3; i++) {
+        if (linear[i].lower > dist[i])
+            dist[i] = dist[i] - linear[i].lower;
+        else if(linear[i].upper < dist[i])
+            dist[i] = dist[i] - linear[i].upper;
+        else dist[i] = 0;
+    }
+
+    float beta = 0.7f;
+    glm::vec3 vlin = 0.9f * (- beta / dt) * dist * lin;
+
+    // Rotation
+
+    /*
+    second->position += vlin * dt;
+    second->velocity += vlin;
+
+    Eigen::VectorXf v_snd, bias;
+    v_snd.resize(3);
+    bias.resize(1);
+
+    glm::vec3 rot = glm::eulerAngles(second->rotation) - glm::eulerAngles(first->rotation);
+
+    Eigen::MatrixXf inertia;
+    inertia.resize(3, 3);
+    inertia.setIdentity();
+
+
+    Eigen::VectorXf totalAngVel;
+    totalAngVel.resize(3);
+    totalAngVel.setZero();
+    for (int i = 0; i < 3; i++) {
+        v_snd.setZero();
+        v_snd(i) = second->angularVel[i];
+        bias(0) = rot[i];
+        Jacobian.setZero();
+        Jacobian(0, i) = 1;
+
+        Eigen::VectorXf lambda = (Jacobian * inertia.inverse() * Jacobian.transpose()).inverse() * ( - (Jacobian * v_snd + bias));
+        Eigen::VectorXf newAng = inertia.inverse() * Jacobian.transpose() * lambda;
+        std::cout << newAng.transpose() * dt << "\n";
+        totalAngVel += newAng;
+    }
+
+    std::cout << "\n";
+    */
+
+//    second->rotation = glm::rotate(second->rotation, totalAngVel(0) * dt, glm::vec3(1, 0, 0));
+//    second->rotation = glm::rotate(second->rotation, totalAngVel(1) * dt, glm::vec3(0, 1, 0));
+//    second->rotation = glm::rotate(second->rotation, totalAngVel(2) * dt, glm::vec3(0, 0, 1));
+//
+//    for (int i = 0; i < 3; i++)
+//        second->angularVel[i] += totalAngVel(i);
+}
+bool GenericConstraint::check() {
+    glm::vec3 rot = glm::eulerAngles(glm::inverse(first->rotation) * second->rotation);
+    glm::vec3 dist = - first->position + second->position;
+    for (int i = 0; i < 3; i++) {
+//        std::cout << angular[i].check(rot[i]) << linear[i].check(dist[i]) << "\n";
+        if (!angular[i].check(rot[i])) return false;
+        if (!linear[i].check(dist[i])) return false;
+    }
+    return true;
+}
+
+
+#pragma endregion

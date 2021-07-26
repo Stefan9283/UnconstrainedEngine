@@ -29,6 +29,10 @@ glm::mat4 RigidBody::getRotationMatrix() {
 void RigidBody::gui(int index) {
     std::string name = "RigidBody " + std::to_string(index) + " Settings";
     if (ImGui::TreeNode(name.c_str())) {
+        ImGui::Checkbox(("Movable" + std::to_string(index)).c_str(), &movable);
+
+        ImGui::SliderFloat(("mass" + std::to_string(index)).c_str(), &mass, 0, 100000);
+
         float t[] = { position.x, position.y, position.z };
         ImGui::SliderFloat3(("position " + std::to_string(index)).c_str(), t, -10000, 10000);
         position = glm::vec3(t[0], t[1], t[2]);
@@ -49,7 +53,8 @@ void RigidBody::gui(int index) {
         ImGui::SliderFloat3(("angular velocity " + std::to_string(index)).c_str(), ang, -10000, 10000);
         angularVel = glm::vec3(ang[0], ang[1], ang[2]);
 
-        collider->gui(index);
+        if (collider)
+            collider->gui(index);
 
         ImGui::TreePop();
     }
