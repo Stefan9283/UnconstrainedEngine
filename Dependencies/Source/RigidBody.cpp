@@ -30,6 +30,8 @@ void RigidBody::gui(int index) {
     std::string name = "RigidBody " + std::to_string(index) + " Settings";
     if (ImGui::TreeNode(name.c_str())) {
         ImGui::Checkbox(("Movable" + std::to_string(index)).c_str(), &movable);
+        ImGui::SameLine();
+        ImGui::Checkbox(("Rotatable" + std::to_string(index)).c_str(), &canBeRotated);
 
         ImGui::SliderFloat(("mass" + std::to_string(index)).c_str(), &mass, 0, 100000);
 
@@ -61,4 +63,8 @@ void RigidBody::gui(int index) {
 
 
 
+}
+
+glm::mat3 RigidBody::getInertiaTensor() {
+    return inertia;
 }

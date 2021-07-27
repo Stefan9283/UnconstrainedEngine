@@ -13,7 +13,7 @@ public:
     Constraint();
     virtual void solve(float dt) {};
     virtual void gui(int index) {};
-
+    virtual void updateMassInverse() {};
     virtual ~Constraint();
 };
 
@@ -26,6 +26,7 @@ public:
 
     void buildJacobian(CollisionPoint& p);
     void solve(CollisionPoint& p, float dt);
+    void updateMassInverse();
 };
 
 class DistanceConstraint : public Constraint {
@@ -40,6 +41,18 @@ public:
     bool check();
 
     void gui(int index) override;
+};
+
+class BallSocketConstraint : public Constraint {
+public:
+    RigidBody *first, *second;
+    glm::vec3 fstAnchor, sndAnchor;
+
+    BallSocketConstraint(RigidBody *fst, RigidBody *snd);
+    void solve(float dt) override;
+    bool check();
+    void gui(int index) override;
+    void updateMassInverse() override;
 };
 
 

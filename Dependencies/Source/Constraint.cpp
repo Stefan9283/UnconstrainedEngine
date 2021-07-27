@@ -8,13 +8,13 @@ Constraint::~Constraint() {}
 
 #pragma region RestingConstraint
 void RestingConstraint::buildJacobian(CollisionPoint &p) {
-    glm::vec3 ra, rb;
-    ra = p.A - rb1->position;
-    rb = p.B - rb2->position;
+    glm::vec3 r1, r2;
+    r1 = p.A - rb1->position;
+    r2 = p.B - rb2->position;
 
-    glm::vec3 rota, rotb;
-    rota = glm::cross(ra, p.normal);
-    rotb = glm::cross(rb, p.normal);
+    glm::vec3 rot1, rot2;
+    rot1 = glm::cross(r1, p.normal);
+    rot2 = glm::cross(r2, p.normal);
 
     // va
     Jacobian(0, 0) = - p.normal.x;
@@ -22,21 +22,45 @@ void RestingConstraint::buildJacobian(CollisionPoint &p) {
     Jacobian(0, 2) = - p.normal.z;
     // wa
 
-    Jacobian(0, 3) = - rota.x;
-    Jacobian(0, 4) = - rota.y;
-    Jacobian(0, 5) = - rota.z;
+    Jacobian(0, 3) = - rot1.x;
+    Jacobian(0, 4) = - rot1.y;
+    Jacobian(0, 5) = - rot1.z;
     // vb
     Jacobian(0, 6) = p.normal.x;
     Jacobian(0, 7) = p.normal.y;
     Jacobian(0, 8) = p.normal.z;
     // wb
-    Jacobian(0,  9) = rotb.x;
-    Jacobian(0, 10) = rotb.y;
-    Jacobian(0, 11) = rotb.z;
+    Jacobian(0,  9) = rot2.x;
+    Jacobian(0, 10) = rot2.y;
+    Jacobian(0, 11) = rot2.z;
 
 }
 // solve the collision between 2 bodies based on the constraint
+void RestingConstraint::updateMassInverse() {
+    invM.resize(12, 12);
+    invM.setZero();
+    // if the rigid body is immovable then the inverse of its mass approaches infinity
+    float invM1, invM2;
+    invM1 = rb1->movable ? 1 / rb1->mass : 0;
+    invM2 = rb2->movable ? 1 / rb2->mass : 0;
+    for (auto i = 0; i < 3; i++) {
+        invM(i, i) = invM1;
+        invM(i + 6, i + 6) = invM2;
+    }
+
+    glm::mat3 inertia1, inertia2;
+    inertia1 = rb1->getInertiaTensor();
+    inertia2 = rb2->getInertiaTensor();
+
+    for (auto i = 0; i < 3; i++)
+        for (int j = 0; j < 3; ++j) {
+            invM(i + 3, j + 3) = inertia1[i][j];
+            invM(i + 9, j + 9) = inertia2[i][j];
+        }
+}
 void RestingConstraint::solve(CollisionPoint& p, float dt) {
+    updateMassInverse();
+
     Eigen::VectorXf velocity(12);
 
     for (auto i = 0; i < 3; i++) {
@@ -46,20 +70,23 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         velocity(i + 9) = rb2->angularVel[i];
     }
 
-    float beta = 0.7f;
+    float beta = 1.f;
 
     Eigen::VectorXf biasTerm(1);
 
-    glm::vec3 ra, rb;
-    ra = p.A - rb1->position;
-    rb = p.B - rb2->position;
+    glm::vec3 r1, r2;
+    r1 = p.A - rb1->position;
+    r2 = p.B - rb2->position;
     
-    glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity 
-                                - glm::cross(ra, rb1->angularVel) + glm::cross(ra, rb2->angularVel);
+    glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity
+                                 - glm::cross(r1, rb1->angularVel) + glm::cross(r2, rb2->angularVel);
     float closingVelocity = glm::dot(relativeVelocity, p.normal);
 
-    biasTerm(0) =
-            - p.depth * beta / dt + closingVelocity * rb1->restitution * rb2->restitution;
+    biasTerm(0) = - (beta / dt) * p.depth; // + closingVelocity * rb1->restitution * rb2->restitution;
+
+    std::cout << biasTerm << "\n";
+
+    std::cout << p.toString() << " point\n";
 
     buildJacobian(p);
 
@@ -83,6 +110,9 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         rb2->velocity[j]   += dv[j + 6];
         rb2->angularVel[j] += dv[j + 9];
     }
+    std::cout << total_lambda << "\n";
+    std::cout << glm::to_string(rb1->velocity * dt) << glm::to_string(rb2->velocity * dt) << "\n"; // ????
+
 }
 
 RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint() {
@@ -160,6 +190,16 @@ void DistanceConstraint::gui(int index) {
 
 #pragma endregion 
 
+glm::mat3 crossProductSkewMatrix(glm::vec3 a) {
+    auto skew = glm::mat3(0);
+    skew[0][1] = - a[2];
+    skew[1][0] = + a[2];
+    skew[0][2] = + a[1];
+    skew[2][0] = - a[1];
+    skew[1][2] = - a[0];
+    skew[2][1] = + a[0];
+    return skew;
+}
 
 void limitConstraint::toggle(float lower, float upper) {
     if (!enabled) {
@@ -172,7 +212,6 @@ bool limitConstraint::check(float dist) {
     if (!enabled) return true;
     return !(dist - offset < lower || dist - offset > upper);
 }
-
 
 #pragma region GenericConstraint
 
@@ -308,3 +347,160 @@ bool GenericConstraint::check() {
 
 
 #pragma endregion
+
+#pragma region BallSocket
+BallSocketConstraint::BallSocketConstraint(RigidBody *fst, RigidBody *snd) {
+    first = fst;
+    second = snd;
+    glm::vec3 anchor = fst->position + snd->position;
+    anchor /= 2.0f;
+    fstAnchor = glm::inverse(fst->getTransform()) * glm::vec4(anchor, 1);
+    sndAnchor = glm::inverse(snd->getTransform()) * glm::vec4(anchor, 1);
+    updateMassInverse();
+}
+void BallSocketConstraint::updateMassInverse() {
+    invM.resize(12, 12);
+    invM.setZero();
+    // if the rigid body is immovable then the inverse of its mass approaches infinity
+    float invM1, invM2;
+    invM1 = first->movable ? 1 / first->mass : 0;
+    invM2 = second->movable ? 1 / second->mass : 0;
+    for (auto i = 0; i < 3; i++) {
+        invM(i, i) = invM1;
+        invM(i + 6, i + 6) = invM2;
+    }
+
+    glm::mat3 inertia1, inertia2;
+    inertia1 = first->getInertiaTensor();
+    inertia2 = second->getInertiaTensor();
+
+    for (auto i = 0; i < 3; i++)
+        for (int j = 0; j < 3; ++j) {
+            invM(i + 3, j + 3) = inertia1[i][j];
+            invM(i + 9, j + 9) = inertia2[i][j];
+        }
+}
+bool BallSocketConstraint::check() {
+    if (first->getTransform() * glm::vec4(fstAnchor, 1)
+        != second->getTransform() * glm::vec4(sndAnchor, 1))
+        return false;
+    return true;
+}
+void BallSocketConstraint::gui(int index) {
+    float anchor[] = {
+                        fstAnchor.x, fstAnchor.y, fstAnchor.z,
+                        sndAnchor.x, sndAnchor.y, sndAnchor.z
+                    };
+    ImGui::SliderFloat3(("anchor1 " + std::to_string(index)).c_str(), anchor, -100, 100);
+    ImGui::SliderFloat3(("anchor2 " + std::to_string(index)).c_str(), anchor + 3, -100, 100);
+    fstAnchor = glm::vec3(anchor[0], anchor[1], anchor[2]);
+    sndAnchor = glm::vec3(anchor[3], anchor[4], anchor[5]);
+}
+void BallSocketConstraint::solve(float dt) {
+    if (check()) return;
+
+    updateMassInverse();
+
+    float beta = 0.9f;
+
+    Eigen::VectorXf biasTerm(3);
+    Eigen::VectorXf velocity(12);
+
+    Eigen::MatrixXf Jacobian(3, 12);
+    Jacobian.setZero();
+
+    glm::vec3
+            r1 = first->position + fstAnchor,
+            r2 = second->position + sndAnchor;
+
+
+    for (int i = 0; i < 3; i++) {
+        biasTerm(i) =  - beta / dt * (r1[i] - r2[i]);
+
+        velocity(i + 0) = first->velocity[i];
+        velocity(i + 3) = first->angularVel[i];
+        velocity(i + 6) = second->velocity[i];
+        velocity(i + 9) = second->angularVel[i];
+
+        Jacobian(i, i) = -1;
+        Jacobian(i, i + 6) = 1;
+    }
+
+    glm::mat3 skew1, skew2;
+    skew1 = crossProductSkewMatrix(r1);
+    skew2 = crossProductSkewMatrix(r2);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; ++j) {
+            Jacobian(i, j + 3) = - skew1[i][j];
+            Jacobian(i, j + 9) = skew2[i][j];
+        }
+    }
+
+
+    Eigen::MatrixXf effectiveMass = Jacobian * invM * Jacobian.transpose();
+    // inverse
+    effectiveMass = effectiveMass.inverse();
+
+    Eigen::VectorXf lambda = effectiveMass * ( - (Jacobian * velocity + biasTerm));
+
+    Eigen::VectorXf dv = invM * Jacobian.transpose() * lambda;
+
+    /*
+    float beta = 0.7f;
+
+    Eigen::VectorXf biasTerm(1);
+
+    Eigen::VectorXf velocity;
+
+    velocity.resize(12);
+
+
+    Eigen::MatrixXf Jacobian;
+    Jacobian.resize(1, 12);
+
+
+    glm::vec3
+        r1 = first->position + fstAnchor,
+        r2 = second->position + sndAnchor;
+
+    biasTerm(0) =
+            - beta / dt * glm::length(r1 - r2);
+
+
+    for (int i = 0; i < 3; i++) {
+        velocity(i) = first->velocity[i];
+        velocity(i + 3) = first->angularVel[i];
+        velocity(i + 6) = second->velocity[i];
+        velocity(i + 9) = second->angularVel[i];
+
+        Jacobian(i) = -1;
+        Jacobian(i + 3) = r1[i];
+        Jacobian(i + 6) = 1;
+        Jacobian(i + 9) = r2[i];
+    }
+
+    std::cout << Jacobian << "\n";
+
+
+    Eigen::MatrixXf effectiveMass = Jacobian * invM * Jacobian.transpose();
+    // inverse
+    effectiveMass(0) = 1.0f / effectiveMass(0);
+    Eigen::VectorXf lambda = effectiveMass * ( - (Jacobian * velocity + biasTerm));
+    lambda(0) = std::max(0.0f, lambda(0));
+    std::cout << lambda << " l\n";
+
+    Eigen::VectorXf dv = 0.9f * invM * Jacobian.transpose() * lambda;
+ */
+
+//    std::cout << invM * Jacobian.transpose() << "\n\n";
+    std::cout << dv.transpose() << "\n";
+
+    for (int j = 0; j < 3; ++j) {
+        first->angularVel[j]  += dv[j + 3];
+        second->angularVel[j] += dv[j + 9];
+        first->velocity[j]    += dv[j];
+        second->velocity[j]   += dv[j + 6];
+    }
+}
+#pragma endregion
+

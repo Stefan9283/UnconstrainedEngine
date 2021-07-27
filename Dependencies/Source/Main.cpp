@@ -34,73 +34,6 @@ Camera* c = nullptr;
 Ray* r = nullptr;
 Mesh* crosshair = nullptr;
 
-Mesh* generateBoxMesh(glm::vec3 min, glm::vec3 max) {
-    std::vector<glm::vec3> verticesPos;
-    verticesPos.emplace_back(glm::vec3(min.x, min.y, min.z));
-    verticesPos.emplace_back(glm::vec3(min.x, min.y, max.z));
-    verticesPos.emplace_back(glm::vec3(min.x, max.y, min.z));
-    verticesPos.emplace_back(glm::vec3(min.x, max.y, max.z));
-    verticesPos.emplace_back(glm::vec3(max.x, min.y, min.z));
-    verticesPos.emplace_back(glm::vec3(max.x, min.y, max.z));
-    verticesPos.emplace_back(glm::vec3(max.x, max.y, min.z));
-    verticesPos.emplace_back(glm::vec3(max.x, max.y, max.z));
-
-    Mesh* body = new Mesh();
-
-    for (auto v : verticesPos)
-        body->vertices.push_back(Vertex{v, v});
-
-    body->indices.push_back(3);
-    body->indices.push_back(2);
-    body->indices.push_back(0);
-
-    body->indices.push_back(0);
-    body->indices.push_back(1);
-    body->indices.push_back(3);
-
-    body->indices.push_back(6);
-    body->indices.push_back(7);
-    body->indices.push_back(4);
-
-    body->indices.push_back(4);
-    body->indices.push_back(7);
-    body->indices.push_back(5);
-
-    body->indices.push_back(7);
-    body->indices.push_back(3);
-    body->indices.push_back(5);
-
-    body->indices.push_back(5);
-    body->indices.push_back(3);
-    body->indices.push_back(1);
-
-    body->indices.push_back(2);
-    body->indices.push_back(6);
-    body->indices.push_back(0);
-
-    body->indices.push_back(0);
-    body->indices.push_back(6);
-    body->indices.push_back(4);
-
-    body->indices.push_back(0);
-    body->indices.push_back(4);
-    body->indices.push_back(1);
-
-    body->indices.push_back(4);
-    body->indices.push_back(5);
-    body->indices.push_back(1);
-
-    body->indices.push_back(2);
-    body->indices.push_back(3);
-    body->indices.push_back(7);
-
-    body->indices.push_back(7);
-    body->indices.push_back(6);
-    body->indices.push_back(2);
-    body->prepare();
-    return body;
-}
-
 void createCrosshair() {
     crosshair = new Mesh();
     crosshair->vertices.push_back(Vertex{ glm::vec3(0,  1,  -25.0f) });
@@ -441,15 +374,18 @@ void testOctree(Mesh* mesh) {
 void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld;
 
-    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
+//    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
+    physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
+    physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[2]));
+
+
+//    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
 //    generic->linear[0].toggle(0, 5);
-    generic->linear[1].toggle(0, 5);
-    generic->angular[0].toggle(0, 0);
+//    generic->linear[1].toggle(0, 5);
+//    generic->angular[0].toggle(0, 0);
 //    generic->linear[2].toggle(0, 5);
-    physicsWorld.addConstraint(generic);
-
-    rbs[0]->angularVel = glm::vec3(1, 0, 0);
-
+//    physicsWorld.addConstraint(generic);
+//    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 //    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
 //    physicsWorld.addConstraint(dist);
 //    for (auto r1 : rbs)
@@ -507,8 +443,6 @@ void testPhysics(std::vector<RigidBody*> rbs) {
             rb->collider->Draw(s);
         }
 
-
-
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -557,14 +491,14 @@ void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
         m2->gui(2);
 
         if (pointA) {
-            s->setVec3("color", glm::vec3(152, 3, 252)/255.0f);
+            s->setVec3("color", glm::vec3(252, 223, 3) / 255.0f);
             m1->Draw(s);
             pointA->Draw(s);
         } else {
             m1->Draw(s);
         }
         if (pointB) {
-            s->setVec3("color", glm::vec3(252, 223, 3) / 255.0f);
+            s->setVec3("color", glm::vec3(152, 3, 252)/255.0f);
             m2->Draw(s);
             pointB->Draw(s);
         } else {
@@ -748,11 +682,11 @@ int main() {
     //testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
 
-    // testBasicCollisionWithPoints(cube, sphere); // AABB Sphere
+//     testBasicCollisionWithPoints(sphere, cube); // AABB Sphere
     // testBasicCollisionWithPoints(sphere, sphere2); // Sphere Sphere
     // testBasicCollisionWithPoints(cube, cube2); // AABB AABB
-    // testBasicCollisionWithPoints(sphere, Yen); // Capsule Sphere
-    // testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
+//     testBasicCollisionWithPoints(sphere, Yen); // Capsule Sphere
+//     testBasicCollisionWithPoints(Yen, cube); // AABB Capsule
 
     // TODO Ovidiu OBB collisions
     //testBasicCollisionWithPoints(cube3, cube); // AABB OBB
@@ -762,6 +696,8 @@ int main() {
 
     auto* cubePhy = new RigidBody(new AABB());
     auto* spherePhy = new RigidBody(new Sphere());
+    spherePhy->movable = true;
+
 
     if (true) {
         spherePhy->movable = false;
@@ -773,7 +709,12 @@ int main() {
 
     {
         RigidBody* tmp = new RigidBody(new Capsule(), 1);
-        tmp->position = glm::vec3(1, 0, 0);
+        tmp->position = glm::vec3(1, -2.6, 0);
+        rbs.push_back(tmp);
+
+        tmp = new RigidBody(new AABB(4, 7, 7), 1);
+        tmp->movable = false;
+        tmp->position = glm::vec3(0, -6, 0);
         rbs.push_back(tmp);
     }
 /*

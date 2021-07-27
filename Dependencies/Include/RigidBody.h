@@ -19,8 +19,11 @@ public:
     bool movable = true;
     bool canBeRotated = true;
 
+    glm::mat3 inertia = glm::mat3(1);
+
     float drag = 0.01f;
     RigidBody(Collider* c,  float m = 1);
+    glm::mat3 getInertiaTensor();
     glm::mat4 getTransform();
     glm::mat4 getTranslationMatrix();
     glm::mat4 getRotationMatrix();
