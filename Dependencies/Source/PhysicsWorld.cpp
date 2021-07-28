@@ -25,7 +25,7 @@ std::vector<collision> PhysicsWorld::getCollisionPoints(const std::vector<RigidB
     return collisionPoints;
 }
 
-#define NUM_OF_ITERATIONS_IMPULSE 1
+#define NUM_OF_ITERATIONS_IMPULSE 4
 #define NUM_OF_ITERATIONS_POSITION 4
 
 void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
@@ -42,28 +42,30 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     std::vector<collision> collisionPoints = getCollisionPoints(rb);
 
     // sequential impulse solver
-    for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++)
-        for (auto & collisionPoint : collisionPoints) {
+    for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++) {
+        for (auto &collisionPoint : collisionPoints) {
             for (auto c : constraints) {
                 if (dynamic_cast<RestingConstraint *>(c)) {
-                    auto* constr = dynamic_cast<RestingConstraint *>(c);
+                    auto *constr = dynamic_cast<RestingConstraint *>(c);
                     if (constr->rb1 == collisionPoint.rb1 && constr->rb2 == collisionPoint.rb2) {
                         CollisionPoint reversed = reverseCollisionPoint(collisionPoint.p);
                         constr->solve(reversed, dt);
                     } else if (constr->rb2 == collisionPoint.rb1 && constr->rb1 == collisionPoint.rb2) {
                         constr->solve(collisionPoint.p, dt);
                     }
-                } else if (dynamic_cast<BallSocketConstraint *>(c)) {
-//                    c->solve(dt);
                 }
-
             }
         }
+        for (auto c : constraints) {
+            if (dynamic_cast<BallSocketConstraint *>(c)) {
+                c->solve(dt);
+            }
+        }
+    }
 
     //   calculate final positions and rotations
     for (auto* r : rb) {
         if (r->movable) {
-            std::cout << glm::to_string(r->velocity * dt) << "\n";
             r->position += r->velocity * dt;
         }// else r->velocity = glm::vec3(0);
         if (r->canBeRotated) {
@@ -101,8 +103,6 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
 //        r->force = glm::vec3(0);
 //
 //    }
-
-    std::cout << "////////////////////////////////////\n";
 }
 
 PhysicsWorld *PhysicsWorld::addConstraint(Constraint* c) {

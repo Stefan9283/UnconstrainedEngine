@@ -374,7 +374,7 @@ void testOctree(Mesh* mesh) {
 void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld;
 
-//    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
+    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
     physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
     physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[2]));
 
@@ -709,7 +709,7 @@ int main() {
 
     {
         RigidBody* tmp = new RigidBody(new Capsule(), 1);
-        tmp->position = glm::vec3(1, -2.6, 0);
+        tmp->position = glm::vec3(1, 0, 0);
         rbs.push_back(tmp);
 
         tmp = new RigidBody(new AABB(4, 7, 7), 1);

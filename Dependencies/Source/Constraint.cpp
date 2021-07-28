@@ -21,19 +21,30 @@ void RestingConstraint::buildJacobian(CollisionPoint &p) {
     Jacobian(0, 1) = - p.normal.y;
     Jacobian(0, 2) = - p.normal.z;
     // wa
+    if (rb1->movable) {
+        Jacobian(0, 3) = - rot1.x;
+        Jacobian(0, 4) = - rot1.y;
+        Jacobian(0, 5) = - rot1.z;
+    } else {
+        Jacobian(0, 3) = 0;
+        Jacobian(0, 4) = 0;
+        Jacobian(0, 5) = 0;
 
-    Jacobian(0, 3) = - rot1.x;
-    Jacobian(0, 4) = - rot1.y;
-    Jacobian(0, 5) = - rot1.z;
+    }
     // vb
     Jacobian(0, 6) = p.normal.x;
     Jacobian(0, 7) = p.normal.y;
     Jacobian(0, 8) = p.normal.z;
     // wb
-    Jacobian(0,  9) = rot2.x;
-    Jacobian(0, 10) = rot2.y;
-    Jacobian(0, 11) = rot2.z;
-
+    if (rb2->movable) {
+        Jacobian(0,  9) = rot2.x;
+        Jacobian(0, 10) = rot1.y;
+        Jacobian(0, 11) = rot2.z;
+    } else {
+        Jacobian(0,  9) = 0;
+        Jacobian(0, 10) = 0;
+        Jacobian(0, 11) = 0;
+    }
 }
 // solve the collision between 2 bodies based on the constraint
 void RestingConstraint::updateMassInverse() {
@@ -70,23 +81,26 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         velocity(i + 9) = rb2->angularVel[i];
     }
 
-    float beta = 1.f;
+    float beta = 0.5f;
 
     Eigen::VectorXf biasTerm(1);
 
-    glm::vec3 r1, r2;
-    r1 = p.A - rb1->position;
-    r2 = p.B - rb2->position;
-    
-    glm::vec3 relativeVelocity = - rb1->velocity + rb2->velocity
-                                 - glm::cross(r1, rb1->angularVel) + glm::cross(r2, rb2->angularVel);
-    float closingVelocity = glm::dot(relativeVelocity, p.normal);
+    biasTerm(0) = -(beta / dt) * p.depth;
 
-    biasTerm(0) = - (beta / dt) * p.depth; // + closingVelocity * rb1->restitution * rb2->restitution;
+    glm::vec3 relativeVelocity;
+    float closingVelocity;
+    if (rb1->movable && rb2->movable) {
+        glm::vec3
+            r1 = p.A - rb1->position,
+            r2 = p.B - rb2->position;
 
-    std::cout << biasTerm << "\n";
-
-    std::cout << p.toString() << " point\n";
+        relativeVelocity = -rb1->velocity + rb2->velocity
+                                     - glm::cross(r1, rb1->angularVel) + glm::cross(r2, rb2->angularVel);
+    } else {
+        relativeVelocity = -rb1->velocity + rb2->velocity;
+    }
+    closingVelocity = glm::dot(relativeVelocity, p.normal);
+    biasTerm(0) += closingVelocity * rb1->restitution * rb2->restitution;
 
     buildJacobian(p);
 
@@ -94,7 +108,6 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
 
     // inverse
     effectiveMass(0) = 1.0f / effectiveMass(0);
-    // effectiveMass = effectiveMass.llt().solve(Eigen::MatrixXf::Identity(effectiveMass.rows(), effectiveMass.cols()));
 
     Eigen::VectorXf lambda = effectiveMass * ( - (Jacobian * velocity + biasTerm));
     Eigen::VectorXf old_total_lambda(1);
@@ -110,9 +123,6 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
         rb2->velocity[j]   += dv[j + 6];
         rb2->angularVel[j] += dv[j + 9];
     }
-    std::cout << total_lambda << "\n";
-    std::cout << glm::to_string(rb1->velocity * dt) << glm::to_string(rb2->velocity * dt) << "\n"; // ????
-
 }
 
 RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint() {
@@ -491,9 +501,6 @@ void BallSocketConstraint::solve(float dt) {
 
     Eigen::VectorXf dv = 0.9f * invM * Jacobian.transpose() * lambda;
  */
-
-//    std::cout << invM * Jacobian.transpose() << "\n\n";
-    std::cout << dv.transpose() << "\n";
 
     for (int j = 0; j < 3; ++j) {
         first->angularVel[j]  += dv[j + 3];
