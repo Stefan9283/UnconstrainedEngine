@@ -29,6 +29,9 @@ std::vector<collision> PhysicsWorld::getCollisionPoints(const std::vector<RigidB
 #define NUM_OF_ITERATIONS_POSITION 4
 
 void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
+    std::cout << "/////////////////////////////\n";
+
+
     for (auto* r : rb) {
         if (r->movable) {
             // add gravity

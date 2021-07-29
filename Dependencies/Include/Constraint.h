@@ -14,6 +14,8 @@ public:
     virtual void solve(float dt) {};
     virtual void gui(int index) {};
     virtual void updateMassInverse() {};
+    virtual void buildJacobian() {};
+    virtual void buildJacobian(CollisionPoint& p) {};
     virtual ~Constraint();
 };
 
@@ -24,9 +26,27 @@ public:
     RestingConstraint(RigidBody* rb1, RigidBody* rb2);
     ~RestingConstraint();
 
-    void buildJacobian(CollisionPoint& p);
     void solve(CollisionPoint& p, float dt);
+    void buildJacobian(CollisionPoint& p);
     void updateMassInverse();
+};
+
+class BallSocketConstraint : public Constraint {
+public:
+    RigidBody *first, *second;
+    glm::vec3 fstAnchor, sndAnchor;
+
+    bool render = false;
+    Mesh* body = nullptr;
+
+    BallSocketConstraint(RigidBody *fst, RigidBody *snd);
+    ~BallSocketConstraint();
+    void gui(int index) override;
+
+    bool check();
+    void solve(float dt) override;
+    void updateMassInverse() override;
+    void buildJacobian();
 };
 
 class DistanceConstraint : public Constraint {
@@ -36,24 +56,13 @@ public:
     
     DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
                 float minDistance, float maxDistance);
-
-    void solve(float dt) override;
-    bool check();
-
     void gui(int index) override;
+
+    bool check();
+    void solve(float dt) override;
 };
 
-class BallSocketConstraint : public Constraint {
-public:
-    RigidBody *first, *second;
-    glm::vec3 fstAnchor, sndAnchor;
 
-    BallSocketConstraint(RigidBody *fst, RigidBody *snd);
-    void solve(float dt) override;
-    bool check();
-    void gui(int index) override;
-    void updateMassInverse() override;
-};
 
 
 class limitConstraint {

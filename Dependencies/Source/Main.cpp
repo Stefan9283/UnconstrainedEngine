@@ -374,9 +374,9 @@ void testOctree(Mesh* mesh) {
 void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld;
 
-    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
     physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
     physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[2]));
+    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
 
 
 //    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
