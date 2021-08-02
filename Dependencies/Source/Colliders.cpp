@@ -1,15 +1,42 @@
 #include "Common.h"
 #include <ObjLoad.h>
 #include "Colliders.h"
+#include "CollisionAlgos.h"
 #include "Mesh.h"
-#include "CollisionALgos.h"
 #include "RigidBody.h"
 
 extern Shader *s;
 
 #pragma region utilities
+glm::vec2 getPointOnRectangle(glm::vec2 leftDownCorner, glm::vec2 rightUpCorner, glm::vec2 point) {
+    // Corners
+    if (point.x < leftDownCorner.x && point.y < leftDownCorner.y)
+        return leftDownCorner;
+
+    if (point.x < leftDownCorner.x && point.y > rightUpCorner.y)
+        return {leftDownCorner.x, rightUpCorner.y};
+
+    if (point.y < leftDownCorner.y && point.x > rightUpCorner.x)
+        return {rightUpCorner.x, leftDownCorner.y};
+
+    if (point.x > rightUpCorner.x && point.y > rightUpCorner.y)
+        return rightUpCorner;
+
+    // Points on edges
+    if (point.x < leftDownCorner.x && point.y >= leftDownCorner.y && point.y <= rightUpCorner.y)
+        return {leftDownCorner.x, point.y};
+
+    if (point.x > rightUpCorner.x && point.y >= leftDownCorner.y && point.y <= rightUpCorner.y)
+        return {rightUpCorner.x, point.y};
+
+    if (point.y < leftDownCorner.y && point.x >= leftDownCorner.x && point.x <= rightUpCorner.x)
+        return {point.x, leftDownCorner.y};
+
+    return {point.x, rightUpCorner.y};
+}
+
 ColliderMesh* convertMesh2ColliderMesh(Mesh* m) {
-    ColliderMesh* mesh = new ColliderMesh;
+    auto* mesh = new ColliderMesh;
     mesh->indices = m->indices;
     mesh->vertices = m->vertices;
     mesh->prepare();
@@ -73,13 +100,14 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider* col) {
     hit->prepare();
     not_hit->prepare();
 
-    hit->localTransform.tr = mesh->body->localTransform.tr;
-    hit->localTransform.rot = mesh->body->localTransform.rot;
-    hit->localTransform.sc = mesh->body->localTransform.sc;
+    hit->localTransform.tr = mesh->localTransform.tr;
+    hit->localTransform.rot = mesh->localTransform.rot;
+    hit->localTransform.sc = mesh->localTransform.sc;
 
-    not_hit->localTransform.tr = mesh->body->localTransform.tr;
-    not_hit->localTransform.rot = mesh->body->localTransform.rot;
-    not_hit->localTransform.sc = mesh->body->localTransform.sc;
+
+    not_hit->localTransform.tr = mesh->localTransform.tr;
+    not_hit->localTransform.rot = mesh->localTransform.rot;
+    not_hit->localTransform.sc = mesh->localTransform.sc;
 
     return meshes;
 } // adapt for CollisionPoint
@@ -88,9 +116,11 @@ std::vector<Mesh*> wasMeshHit(Collider* mesh, Collider* col) {
 #pragma region Collider Specific Funcs
 
 #pragma region Collider
+void Collider::setType(colliderType type) {
+    this->type = type;
+}
 Collider::~Collider() {
-    if (body)
-        delete body;
+    delete body;
 }
 void Collider::Draw(Shader *shader) {
     if (body) 
@@ -114,21 +144,16 @@ glm::mat4 Collider::getTransform() {
 
 #pragma endregion
 #pragma region ColliderMesh
-ColliderMesh::ColliderMesh() {
-    localTransform = transform{
-            glm::vec3(0),
-            glm::vec3(1),
-            glm::quat()};
-}
 ColliderMesh::~ColliderMesh() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 }
+
 void ColliderMesh::prepare() {
     //assert(vertices.size() != 0);
 
-    if (vertices.size() == 0) return;
+    if (vertices.empty()) return;
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -142,7 +167,7 @@ void ColliderMesh::prepare() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)nullptr);
 
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
@@ -150,9 +175,7 @@ void ColliderMesh::prepare() {
     glBindVertexArray(0);
 }
 void ColliderMesh::Draw(glm::mat4 parentMatrix, Shader *shader) {
-    glm::mat4 model = getTransform();
-    model = parentMatrix * model;
-    shader->setMat4("model", &model);
+    shader->setMat4("model", &parentMatrix);
     shader->bind();
     glBindVertexArray(VAO);
     if (wireframeON) {
@@ -167,28 +190,12 @@ void ColliderMesh::Draw(glm::mat4 parentMatrix, Shader *shader) {
     glBindVertexArray(0);
     shader->unbind();
 }
-glm::mat4 ColliderMesh::getTransform() {
-    glm::mat4 T, R = glm::mat4(1), S;
-    T = glm::translate(glm::mat4(1), localTransform.tr);
-    R = glm::toMat4(localTransform.rot);
-    S = glm::scale(glm::mat4(1), localTransform.sc);
-    return T * R * S;
-}
 void ColliderMesh::gui(int outIndex = 0) {
 
-    std::string name;
-    name = name + " " + std::to_string(outIndex);
-    if (ImGui::TreeNode(name.c_str())) {
-        name = "wireframeON " + std::to_string(outIndex);
-        ImGui::Checkbox(name.c_str(), &wireframeON);
+    if (ImGui::TreeNode((name + " " + std::to_string(outIndex)).c_str())) {
+        ImGui::Checkbox(("wireframeON " + std::to_string(outIndex)).c_str(), &wireframeON);
         ImGui::SameLine();
-        name = "solidON " + std::to_string(outIndex);
-        ImGui::Checkbox(name.c_str(), &solidON);
-
-        float t[4] = {localTransform.tr.x, localTransform.tr.y, localTransform.tr.z, 1.0f};
-        name = "position " + std::to_string(outIndex);
-        ImGui::SliderFloat3(name.c_str(), t, -10, 10);
-        localTransform.tr = glm::vec3(t[0], t[1], t[2]);
+        ImGui::Checkbox(("solidON " + std::to_string(outIndex)).c_str(), &solidON);
 
         ImGui::TreePop();
     }
@@ -234,15 +241,26 @@ std::string CollisionPoint::toString() {
 #pragma endregion
 
 #pragma region Sphere
-Sphere::Sphere(glm::vec3 pos, float radius) {
+glm::mat4 Sphere::getLocalTransform() {
+    glm::mat4 T, S;
+    T = glm::translate(glm::mat4(1), this->pos);
+    S = glm::scale(glm::mat4(1), glm::vec3(radius));
+    return T * S;
+}
+
+Sphere::Sphere(glm::vec3 pos, float radius, bool createBody) {
+    setType(colliderType::sphere);
     this->pos = pos;
     this->radius = radius;
-    body = convertMesh2ColliderMesh(readObj("3D/Sphere.obj"));
-    body->prepare();
+    if (createBody) {
+        body = convertMesh2ColliderMesh(readObj("3D/Sphere.obj"));
+        body->prepare();
+    }
 }
-Sphere::Sphere(Mesh *mesh) {
-    pos = glm::vec3(0);
+Sphere::Sphere(Mesh *mesh, bool createBody) {
+    setType(colliderType::sphere);
 
+    pos = glm::vec3(0);
     for (Vertex v : mesh->vertices)
         pos = pos + v.Position;
     pos = pos / (float)mesh->vertices.size();
@@ -262,9 +280,6 @@ glm::vec3 Sphere::getCurrentPosition() {
     return pos;
 }
 
-void Sphere::update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) {
-    this->pos += pos;
-}
 std::string Sphere::toString() {
     return "Sphere:\n\tcenter: " + glm::to_string(getCurrentPosition()) + "\n\tradius: " + std::to_string(this->radius) + "\n";
 }
@@ -276,12 +291,6 @@ void Sphere::gui(int index) {
     std::string s = "radius" + std::to_string(index);
     ImGui::SliderFloat(s.c_str(), &this->radius, 0, 100);
     radius = glm::max(0.1f, radius);
-}
-glm::mat4 Sphere::getLocalTransform() {
-    glm::mat4 T, S;
-    T = glm::translate(glm::mat4(1), this->pos);
-    S = glm::scale(glm::mat4(1), glm::vec3(radius));
-    return T * S;
 }
 
 #pragma endregion
@@ -298,59 +307,27 @@ glm::mat4 AABB::getTransform() {
     else return getLocalTransform();
 }
 
-AABB::AABB(float height, float width, float length) {
+AABB::AABB(float height, float width, float length, bool createBody) {
+    setType(colliderType::aabb);
     height /= 2.0f;
     width /= 2.0f;
     length /= 2.0f;
     max = glm::vec3(width, height, length);
     min = - max;
-    this->body = generateNewMesh();
+    if (createBody)
+        this->body = generateNewMesh();
 }
-AABB::AABB(glm::vec3 min, glm::vec3 max) {
-    this->max = max;
-    this->min = min;
-    this->body = generateNewMesh();
+AABB::AABB(glm::vec3 min, glm::vec3 max, bool createBody) {
+    setType(colliderType::aabb);
+    localTransform.tr = (max + min) / 2.0f;
+    this->max = glm::vec3(max - localTransform.tr);
+    this->min = -this->max;
+
+    if (createBody)
+        this->body = generateNewMesh();
 }
-ColliderMesh* AABB::generateNewMesh() {
-    std::vector<Vertex> verticesPos = getVerices(glm::vec3(-1), glm::vec3(1));
-
-    auto body = new ColliderMesh();
-
-    for (auto v : verticesPos)
-        body->vertices.push_back(v);
-
-    body->indices = { 
-                    3, 2, 0,
-                    0, 1, 3,
-                    6, 7, 4,
-                    4, 7, 5,
-                    7, 3, 5,
-                    5, 3, 1,
-                    2, 6, 0,
-                    0, 6, 4,
-                    0, 4, 1,
-                    4, 5, 1,
-                    2, 3, 7,
-                    7, 6, 2 };
-
-    body->prepare();
-
-    return body;
-}
-std::vector<Vertex> AABB::getVerices(glm::vec3 min_, glm::vec3 max_) {
-    std::vector<Vertex> vertices;
-    vertices.push_back(Vertex{ glm::vec3(min_.x, min_.y, min_.z),  glm::vec3(min_.x, min_.y, min_.z) });
-    vertices.push_back(Vertex{ glm::vec3(min_.x, min_.y, max_.z),  glm::vec3(min_.x, min_.y, max_.z) });
-    vertices.push_back(Vertex{ glm::vec3(min_.x, max_.y, min_.z),  glm::vec3(min_.x, max_.y, min_.z) });
-    vertices.push_back(Vertex{ glm::vec3(min_.x, max_.y, max_.z),  glm::vec3(min_.x, max_.y, max_.z) });
-    vertices.push_back(Vertex{ glm::vec3(max_.x, min_.y, min_.z),  glm::vec3(max_.x, min_.y, min_.z) });
-    vertices.push_back(Vertex{ glm::vec3(max_.x, min_.y, max_.z),  glm::vec3(max_.x, min_.y, max_.z) });
-    vertices.push_back(Vertex{ glm::vec3(max_.x, max_.y, min_.z),  glm::vec3(max_.x, max_.y, min_.z) });
-    vertices.push_back(Vertex{ glm::vec3(max_.x, max_.y, max_.z),  glm::vec3(max_.x, max_.y, max_.z) });
-    return vertices;
-}
-
-AABB::AABB(Mesh* mesh) {
+AABB::AABB(Mesh* mesh, bool createBody) {
+    setType(colliderType::aabb);
     min = mesh->vertices[0].Position;
     max = mesh->vertices[0].Position;
 
@@ -362,22 +339,9 @@ AABB::AABB(Mesh* mesh) {
         if (max.y < v.Position.y) max.y = v.Position.y;
         if (max.z < v.Position.z) max.z = v.Position.z;
     }
-    
-    body = generateNewMesh();
-}
 
-void AABB::gui(int index) {
-    ImGui::Text("AABB Collider Settings");
-
-    glm::vec3 size = max - min;
-
-    ImGui::InputFloat("H ", &size.y);
-    ImGui::InputFloat("L ", &size.x);
-    ImGui::InputFloat("W ", &size.z);
-
-    size = glm::max(glm::vec3(0.1f), size / 2.0f);
-    max = size;
-    min = - size;
+    if (createBody)
+        body = generateNewMesh();
 }
 
 glm::vec3 AABB::getMin() {
@@ -386,7 +350,6 @@ glm::vec3 AABB::getMin() {
 glm::vec3 AABB::getMax() {
     return this->max + getOffset();
 }
-
 glm::vec3 AABB::getOffset() {
     glm::vec3 offs = this->offset;
     if (parent)
@@ -394,9 +357,6 @@ glm::vec3 AABB::getOffset() {
     return offs;
 }
 
-std::string AABB::toString() {
-    return "AABB:\n\tmin: " + glm::to_string(getMin()) + "\n\tmax: "+ glm::to_string(getMax()) + "\n";
-}
 bool AABB::isInside(glm::vec3 point) {
     glm::vec3 minValues, maxValues;
 
@@ -405,36 +365,8 @@ bool AABB::isInside(glm::vec3 point) {
 
     return glm::clamp(point, minValues, maxValues) == point;
 }
-
-glm::vec2 getPointOnRectangle(glm::vec2 leftDownCorner, glm::vec2 rightUpCorner, glm::vec2 point) {
-    // Corners
-    if (point.x < leftDownCorner.x && point.y < leftDownCorner.y)
-        return leftDownCorner;
-
-    if (point.x < leftDownCorner.x && point.y > rightUpCorner.y)
-        return {leftDownCorner.x, rightUpCorner.y};
-
-    if (point.y < leftDownCorner.y && point.x > rightUpCorner.x)
-        return {rightUpCorner.x, leftDownCorner.y};
-
-    if (point.x > rightUpCorner.x && point.y > rightUpCorner.y)
-        return rightUpCorner;
-
-    // Points on edges
-    if (point.x < leftDownCorner.x && point.y >= leftDownCorner.y && point.y <= rightUpCorner.y)
-        return {leftDownCorner.x, point.y};
-
-    if (point.x > rightUpCorner.x && point.y >= leftDownCorner.y && point.y <= rightUpCorner.y)
-        return {rightUpCorner.x, point.y};
-
-    if (point.y < leftDownCorner.y && point.x >= leftDownCorner.x && point.x <= rightUpCorner.x)
-        return {point.x, leftDownCorner.y};
-
-    return {point.x, rightUpCorner.y};
-}
-
 glm::vec3 AABB::closestPoint(glm::vec3 point) {
-     glm::vec2 result{};
+    glm::vec2 result{};
     // glm::vec3 newMin = getMin(), newMax = getMax();
     // varianta 1
     /*if(point.x > newMax.x)
@@ -488,7 +420,7 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
 
         if (minDist == dist1)
             return {min.x, point.y, point.z};
-        
+
         if (minDist == dist2)
             return {max.x, point.y, point.z};
 
@@ -507,7 +439,7 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
     // Point is outside, minimum distance is a perpendicular
     if (point.x < min.x && point.y >= min.y && point.y <= max.y && point.z >= min.z && point.z <= max.z)
         return {min.x, point.y, point.z};
-    
+
     if (point.x > max.x && point.y >= min.y && point.y <= max.y && point.z >= min.z && point.z <= max.z)
         return {max.x, point.y, point.z};
 
@@ -529,7 +461,7 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
 
     if (point.x > max.x)
         return {max.x, getPointOnRectangle({min.y, min.z}, {max.y, max.z}, {point.y, point.z})};
-    
+
     if (point.y < min.y) {
         result = getPointOnRectangle({min.x, min.z}, {max.x, max.z}, {point.x, point.z});
         return {result.x, min.y, result.y};
@@ -546,6 +478,61 @@ glm::vec3 AABB::closestPoint(glm::vec3 point) {
     return {getPointOnRectangle({min.x, min.y}, {max.x, max.y}, {point.x, point.y}), max.z};
 }
 
+ColliderMesh* AABB::generateNewMesh() {
+    std::vector<Vertex> verticesPos = getVerices(glm::vec3(-1), glm::vec3(1));
+
+    auto body = new ColliderMesh();
+
+    for (auto v : verticesPos)
+        body->vertices.push_back(v);
+
+    body->indices = {
+            3, 2, 0,
+            0, 1, 3,
+            6, 7, 4,
+            4, 7, 5,
+            7, 3, 5,
+            5, 3, 1,
+            2, 6, 0,
+            0, 6, 4,
+            0, 4, 1,
+            4, 5, 1,
+            2, 3, 7,
+            7, 6, 2 };
+
+    body->prepare();
+
+    return body;
+}
+std::vector<Vertex> AABB::getVerices(glm::vec3 min_, glm::vec3 max_) {
+    std::vector<Vertex> vertices;
+    vertices.push_back(Vertex{ glm::vec3(min_.x, min_.y, min_.z),  glm::vec3(min_.x, min_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(min_.x, min_.y, max_.z),  glm::vec3(min_.x, min_.y, max_.z) });
+    vertices.push_back(Vertex{ glm::vec3(min_.x, max_.y, min_.z),  glm::vec3(min_.x, max_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(min_.x, max_.y, max_.z),  glm::vec3(min_.x, max_.y, max_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, min_.y, min_.z),  glm::vec3(max_.x, min_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, min_.y, max_.z),  glm::vec3(max_.x, min_.y, max_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, max_.y, min_.z),  glm::vec3(max_.x, max_.y, min_.z) });
+    vertices.push_back(Vertex{ glm::vec3(max_.x, max_.y, max_.z),  glm::vec3(max_.x, max_.y, max_.z) });
+    return vertices;
+}
+
+void AABB::gui(int index) {
+    ImGui::Text("AABB Collider Settings");
+
+    glm::vec3 size = max - min;
+
+    ImGui::InputFloat("H ", &size.y);
+    ImGui::InputFloat("L ", &size.x);
+    ImGui::InputFloat("W ", &size.z);
+
+    size = glm::max(glm::vec3(0.1f), size / 2.0f);
+    max = size;
+    min = - size;
+}
+std::string AABB::toString() {
+    return "AABB:\n\tmin: " + glm::to_string(getMin()) + "\n\tmax: "+ glm::to_string(getMax()) + "\n";
+}
 #pragma endregion
 
 #pragma region OBB
@@ -558,6 +545,7 @@ glm::vec3 OBB::getMax() {
 }
 */
 OBB::OBB(float height, float width, float length) {
+    setType(colliderType::obb);
     height /= 2.0f;
     width /= 2.0f;
     length /= 2.0f;
@@ -604,6 +592,7 @@ std::string OBB::toString() {
 
 #pragma region Ray
 Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh) {
+    setType(colliderType::ray);
     this->origin = origin;
     this->direction = direction;
     this->length = length;
@@ -660,6 +649,7 @@ std::string Ray::toString() {
 #pragma region TriangleMesh
 
 TriangleMesh::TriangleMesh(Mesh *mesh) {
+    setType(colliderType::trianglemesh);
     Mesh* m = new Mesh(*mesh);
     body = convertMesh2ColliderMesh(m);
 }
@@ -671,6 +661,7 @@ std::string TriangleMesh::toString() {
 #pragma endregion
 #pragma region Triangle
 Triangle::Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm) {
+    setType(colliderType::triangle);
     this->vertices[0] = v0;
     this->vertices[1] = v1;
     this->vertices[2] = v2;
@@ -753,12 +744,14 @@ void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
     body->prepare();
 }
 Capsule::Capsule(float length, float radius) {
+    setType(colliderType::capsule);
     this->start = glm::vec3(0, length / 2, 0);
     this->end = glm::vec3(0, - length / 2, 0);
     this->radius = radius;
     createBody(start, end, radius);
 }
 Capsule::Capsule(Mesh *mesh) {
+    setType(colliderType::capsule);
     glm::vec3 min, max;
     min = mesh->vertices[0].Position;
     max = mesh->vertices[0].Position;
@@ -821,26 +814,26 @@ CollisionPoint reverseCollisionPoint(CollisionPoint p) {
     return p;
 }
 CollisionPoint Collider::checkCollision(Collider* col) {
-    if (dynamic_cast<Sphere*>(col)) {
-        return checkCollision(dynamic_cast<Sphere*>(col));
+    if (col->type == colliderType::sphere) {
+        return checkCollision((Sphere*)col);
     }
-    if (dynamic_cast<AABB*>(col)) {
-        return checkCollision(dynamic_cast<AABB*>(col));
+    if (col->type == colliderType::aabb) {
+        return checkCollision((AABB*)col);
     }
-    if (dynamic_cast<Ray*>(col)) {
-        return checkCollision(dynamic_cast<Ray*>(col));
+    if (col->type == colliderType::ray) {
+        return checkCollision((Ray*)col);
     }
-    if (dynamic_cast<TriangleMesh*>(col)) {
-        return checkCollision(dynamic_cast<TriangleMesh*>(col));
+    if (col->type == colliderType::trianglemesh) {
+        return checkCollision((TriangleMesh*)col);
     }
-    if (dynamic_cast<Triangle*>(col)) {
-        return checkCollision(dynamic_cast<Triangle*>(col));
+    if (col->type == colliderType::triangle) {
+        return checkCollision((Triangle*)col);
     }
-    if (dynamic_cast<Capsule*>(col)) {
-        return checkCollision(dynamic_cast<Capsule*>(col));
+    if (col->type == colliderType::capsule) {
+        return checkCollision((Capsule*)col);
     }
-    if (dynamic_cast<OBB*>(col)) {
-        return checkCollision(dynamic_cast<OBB*>(col));
+    if (col->type == colliderType::obb) {
+        return checkCollision((OBB*)col);
     }
     assert("Collider type was not identified");
     return {};

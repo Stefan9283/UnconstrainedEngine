@@ -29,18 +29,18 @@ glm::mat4 RigidBody::getRotationMatrix() {
 void RigidBody::gui(int index) {
     std::string name = "RigidBody " + std::to_string(index) + " Settings";
     if (ImGui::TreeNode(name.c_str())) {
-        ImGui::Checkbox(("Movable" + std::to_string(index)).c_str(), &movable);
+        ImGui::Checkbox("Movable", &movable);
         ImGui::SameLine();
-        ImGui::Checkbox(("Rotatable" + std::to_string(index)).c_str(), &canBeRotated);
+        ImGui::Checkbox("Rotatable", &canBeRotated);
 
-        ImGui::SliderFloat(("mass" + std::to_string(index)).c_str(), &mass, 0, 100000);
+        ImGui::SliderFloat("mass", &mass, 0, 100000);
 
         float t[] = { position.x, position.y, position.z };
-        ImGui::SliderFloat3(("position " + std::to_string(index)).c_str(), t, -10000, 10000);
+        ImGui::SliderFloat3("position ", t, -10000, 10000);
         position = glm::vec3(t[0], t[1], t[2]);
 
         float r[] = { rotation.w, rotation.x, rotation.y, rotation.z };
-        ImGui::SliderFloat4(("rotation " + std::to_string(index)).c_str(), r, -1, 1);
+        ImGui::SliderFloat4("rotation ", r, -1, 1);
         glm::quat newRot = glm::quat(r[0], r[1], r[2], r[3]);
         if (newRot != rotation) {
             rotation = newRot;
@@ -48,12 +48,19 @@ void RigidBody::gui(int index) {
         }
 
         float v[] = { velocity.x, velocity.y, velocity.z};
-        ImGui::SliderFloat3(("velocity " + std::to_string(index)).c_str(), v, -10000, 10000);
+        ImGui::SliderFloat3("velocity ", v, -10000, 10000);
         velocity = glm::vec3(v[0], v[1], v[2]);
 
         float ang[] = { angularVel.x, angularVel.y, angularVel.z };
-        ImGui::SliderFloat3(("angular velocity " + std::to_string(index)).c_str(), ang, -10000, 10000);
+        ImGui::SliderFloat3("angular velocity ", ang, -10000, 10000);
         angularVel = glm::vec3(ang[0], ang[1], ang[2]);
+
+        if (ImGui::Button("Reset")) {
+            velocity = {};
+            rotation = glm::quat(1, 0, 0, 0);
+            position = {};
+            angularVel = {};
+        }
 
         if (collider)
             collider->gui(index);

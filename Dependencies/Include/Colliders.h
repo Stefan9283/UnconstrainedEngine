@@ -19,16 +19,26 @@ class Capsule;
 class RigidBody;
 
 #include "Vertex.h"
+enum class colliderType
+{
+    sphere,
+    aabb,
+    obb,
+    capsule,
+    trianglemesh,
+    triangle,
+    ray,
+    dontknow
+};
+
 
 class ColliderMesh {
 public:
     std::string name;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    transform localTransform;
 
     bool wireframeON = true, solidON = false;
-    ColliderMesh();
     ~ColliderMesh();
 
     unsigned int VAO{}, VBO{}, EBO{};
@@ -36,8 +46,6 @@ public:
     void prepare();
     void gui(int outIndex);
     void Draw(glm::mat4 parentMatrix, Shader* shader);
-
-    glm::mat4 getTransform();
 };
 
 class CollisionPoint {
@@ -60,6 +68,8 @@ public:
     transform localTransform = {
         glm::vec3(0), glm::vec3(1), glm::quat()
     };
+    colliderType type;
+
     // contains data relevant for velocity/position resolution
     RigidBody* parent = nullptr;
     // used for rendering
@@ -77,6 +87,7 @@ public:
     virtual void Draw(Shader* shader);
 
     virtual std::string toString() = 0;
+    void setType(colliderType type);
 
     CollisionPoint checkCollision(Collider* col);
     virtual CollisionPoint checkCollision(Sphere* col) = 0;
@@ -97,8 +108,6 @@ public:
     float radius;
     glm::vec3 pos{};
 
-    void update(glm::vec3 pos, glm::quat rot, glm::vec3 scale) override;
-
     glm::vec3 getCurrentPosition();
 
     CollisionPoint checkCollision(Sphere* bv) override;
@@ -112,8 +121,8 @@ public:
     void gui(int index) override;
     glm::mat4 getLocalTransform() override;
 
-    Sphere(Mesh* mesh);
-    Sphere(glm::vec3 pos = glm::vec3(0), float radius = 1);
+    Sphere(Mesh* mesh, bool createBody = true);
+    Sphere(glm::vec3 pos = glm::vec3(0), float radius = 1, bool createBody = true);
     std::string toString() override;
     bool isInside(glm::vec3 point);
 };
@@ -144,10 +153,10 @@ public:
 
     void gui(int index) override;
 
-    AABB(glm::vec3 min, glm::vec3 max);
-    AABB(float height = 1, float width = 1, float length = 1);
+    AABB(glm::vec3 min, glm::vec3 max, bool createBody = true);
+    AABB(float height = 1, float width = 1, float length = 1, bool createBody = true);
 
-    explicit AABB(Mesh* mesh);
+    explicit AABB(Mesh* mesh, bool createBody = true);
     std::string toString() override;
     bool isInside(glm::vec3 point);
 };

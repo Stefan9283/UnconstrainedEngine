@@ -14,8 +14,8 @@ std::vector<collision> PhysicsWorld::getCollisionPoints(const std::vector<RigidB
     std::vector<collision> collisionPoints;
     // get all collision points
     for (auto c : constraints) {
-        auto *constr = dynamic_cast<RestingConstraint *>(c);
-        if (constr) {
+        if (c->type == constraintType::resting) {
+            auto* constr = ((RestingConstraint*)c);
             CollisionPoint p = constr->rb1->collider->checkCollision(constr->rb2->collider);
             if (p.hasCollision) {
                 collisionPoints.push_back({constr->rb1, constr->rb2, p});
@@ -25,13 +25,8 @@ std::vector<collision> PhysicsWorld::getCollisionPoints(const std::vector<RigidB
     return collisionPoints;
 }
 
-#define NUM_OF_ITERATIONS_IMPULSE 4
-#define NUM_OF_ITERATIONS_POSITION 4
 
 void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
-    std::cout << "/////////////////////////////\n";
-
-
     for (auto* r : rb) {
         if (r->movable) {
             // add gravity
@@ -48,8 +43,8 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
     for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++) {
         for (auto &collisionPoint : collisionPoints) {
             for (auto c : constraints) {
-                if (dynamic_cast<RestingConstraint *>(c)) {
-                    auto *constr = dynamic_cast<RestingConstraint *>(c);
+                if (c->type == constraintType::resting) {
+                    auto* constr = ((RestingConstraint*)c);
                     if (constr->rb1 == collisionPoint.rb1 && constr->rb2 == collisionPoint.rb2) {
                         CollisionPoint reversed = reverseCollisionPoint(collisionPoint.p);
                         constr->solve(reversed, dt);
@@ -60,7 +55,9 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
             }
         }
         for (auto c : constraints) {
-            if (dynamic_cast<BallSocketConstraint *>(c)) {
+            if (c->type == constraintType::ballsocket) {
+                c->solve(dt);
+            } else if (c->type == constraintType::slider) {
                 c->solve(dt);
             }
         }
@@ -113,7 +110,7 @@ PhysicsWorld *PhysicsWorld::addConstraint(Constraint* c) {
     return this;
 }
 
-const char* Constraints[] = {"Distance", "ContactPoint", "Generic"};
+const char* Constraints[] = {"Distance", "ContactPoint", "BallSocket", "Slider", "Generic"};
 int selectedType = -1;
 std::string rb1str = "";
 std::string rb2str = "";
@@ -125,6 +122,11 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
     gravity = glm::vec3(g[0], g[1], g[2]);
 
     int toBeRemoved = -1;
+
+    ImGui::SliderInt("Number of iterations velocity solver", &NUM_OF_ITERATIONS_IMPULSE, 1, 10);
+    ImGui::SliderInt("Number of iterations position solver", &NUM_OF_ITERATIONS_POSITION, 1, 10);
+    ImGui::SliderFloat("Timestep", &timestep, 0.01, 1);
+
 
 
     if (ImGui::TreeNode("Constraints")) {
@@ -178,6 +180,10 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
                             c = new RestingConstraint(rbs[rb1], rbs[rb2]);
                         if (type == "Generic")
                             c = new GenericConstraint(rbs[rb1], rbs[rb2]);
+                        if (type == "BallSocket")
+                            c = new BallSocketConstraint(rbs[rb1], rbs[rb2]);
+                        if (type == "Slider")
+                            c = new SliderConstraint(rbs[rb1], rbs[rb2]);
                         addConstraint(c);
                         rb1 = -1;
                         rb2 = -1;

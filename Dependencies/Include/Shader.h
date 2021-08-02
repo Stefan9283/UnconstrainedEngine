@@ -26,9 +26,7 @@ public:
     void setMat4(const std::string& name, const glm::mat4* mat, size_t how_many = 1)
     {
         bind();
-        int loc;
-        loc = glGetUniformLocation(id, name.c_str());
-        glUniformMatrix4fv(loc, (GLsizei)how_many, GL_FALSE, (const GLfloat*)mat);
+        glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), (GLsizei)how_many, GL_FALSE, (const GLfloat*)mat);
     }
 
 

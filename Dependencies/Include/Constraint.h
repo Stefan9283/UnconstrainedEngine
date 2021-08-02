@@ -5,16 +5,28 @@
 class RigidBody;
 class CollisionPoint;
 
+
+enum class constraintType {
+    resting,
+    ballsocket,
+    distance,
+    slider,
+    generic,
+    dontKnow
+};
+
 class Constraint {
 public:
     Eigen::MatrixXf Jacobian, invM;
     Eigen::VectorXf total_lambda;
-
+    constraintType type;
     Constraint();
     virtual void solve(float dt) {};
     virtual void gui(int index) {};
     virtual void updateMassInverse() {};
     virtual void buildJacobian() {};
+    virtual void buildTrJacobian() {};
+    virtual void buildRotJacobian() {};
     virtual void buildJacobian(CollisionPoint& p) {};
     virtual ~Constraint();
 };
@@ -47,6 +59,31 @@ public:
     void solve(float dt) override;
     void updateMassInverse() override;
     void buildJacobian();
+};
+
+class SliderConstraint : public Constraint {
+public:
+    RigidBody *first, *second;
+    glm::vec3 fstAnchor, sndAnchor,
+            directionAxis;
+    float minDist = 0, maxDist = 10;
+
+    bool render = false;
+    Mesh* body = nullptr;
+
+
+    SliderConstraint(RigidBody *fst, RigidBody *snd);
+    ~SliderConstraint();
+    void gui(int index) override;
+
+    void buildTrJacobian() override;
+    void buildRotJacobian() override;
+
+    bool check();
+    void solve(float dt) override;
+    void updateMassInverse() override;
+
+    std::vector<glm::vec3> getOrthogonalVectors();
 };
 
 class DistanceConstraint : public Constraint {

@@ -15,7 +15,9 @@ struct collision {
 class PhysicsWorld {
 public:
     glm::vec3 gravity{0, -9.81, 0};
-
+    int NUM_OF_ITERATIONS_IMPULSE = 10;
+    int NUM_OF_ITERATIONS_POSITION = 4;
+    float timestep = 1 / 60.f;
     std::vector<Constraint*> constraints;
 
     PhysicsWorld* addConstraint(Constraint* c);

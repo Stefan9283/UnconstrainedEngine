@@ -10,4 +10,15 @@ void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjecti
 
 std::string getTabs(int n);
 
+
+class Timer {
+public:
+	bool printElapsedTimeInDestructor;
+	std::chrono::steady_clock::time_point then;
+	std::string label;
+	Timer(bool printElapsedTimeInDestructor, std::string label);
+	void printTime();
+	~Timer();
+};
+
 #endif //TRIANGLE_DEBUG_H

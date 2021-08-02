@@ -55,7 +55,7 @@ Mesh* readObj(const char* filepath) {
 
         //std::cout << glm::to_string(v.Normal) << "\n";
 
-        m->indices.push_back(i);
+        m->indices.push_back((uint32_t)i);
 
     }
 

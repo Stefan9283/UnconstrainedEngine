@@ -3,6 +3,8 @@
 #include "Camera.h"
 
 
+
+
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
 // TODO modifica sa ia ca parametru glm::vec3 si sa nu mai faca decompose
@@ -116,4 +118,24 @@ std::string getTabs(int n) {
     std::string s = "";
     s.append(n, '\t');    
     return s;
+}
+
+
+
+Timer::Timer(bool printElapsedTimeInDestructor = false, std::string label = "") {
+    this->label = label;
+    this->printElapsedTimeInDestructor = printElapsedTimeInDestructor;
+    then = std::chrono::steady_clock::now();
+}
+void Timer::printTime() {
+    std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
+    std::cout << label << " took" << std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << "ms until now\n";
+}
+
+Timer::~Timer() {
+    if (printElapsedTimeInDestructor) {
+        std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
+        std::cout << label << " took " << std::chrono::duration_cast<std::chrono::nanoseconds>(now - then).count() << "ns or "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << "ms\n";
+    }
 }
