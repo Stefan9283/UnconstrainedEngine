@@ -120,22 +120,34 @@ std::string getTabs(int n) {
     return s;
 }
 
+void Timer::pause() {
+    pausedAt = std::chrono::high_resolution_clock::now();
+    paused = true;
+}
+void Timer::unpause() {
+    std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
+    if (paused) {
+        pausedDuration += std::chrono::duration_cast<std::chrono::milliseconds>(now - pausedAt);
+        paused = false;
+    }
+}
 
 
 Timer::Timer(bool printElapsedTimeInDestructor = false, std::string label = "") {
     this->label = label;
     this->printElapsedTimeInDestructor = printElapsedTimeInDestructor;
+    pausedDuration.zero();
     then = std::chrono::steady_clock::now();
 }
-void Timer::printTime() {
+void Timer::printTime(std::string timestampLabel) {
     std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
-    std::cout << label << " took" << std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << "ms until now\n";
+    std::cout << "[" << timestampLabel << "]" << label << " took" << std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << "ms until now\n";
 }
 
 Timer::~Timer() {
     if (printElapsedTimeInDestructor) {
         std::chrono::steady_clock::time_point now = std::chrono::high_resolution_clock::now();
-        std::cout << label << " took " << std::chrono::duration_cast<std::chrono::nanoseconds>(now - then).count() << "ns or "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << "ms\n";
+        std::cout << label << " took " << std::chrono::duration_cast<std::chrono::nanoseconds>(now - then).count() - pausedDuration.count() << "ns or "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() - std::chrono::duration_cast<std::chrono::milliseconds>(pausedDuration).count() << "ms\n";
     }
 }

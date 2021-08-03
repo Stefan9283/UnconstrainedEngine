@@ -129,7 +129,7 @@ public:
 
 class AABB : public Collider{
 public:
-    glm::vec3 max{}, min{}, offset{};
+    glm::vec3 max{}, min{};
 
     glm::vec3 closestPoint(glm::vec3 p);
 

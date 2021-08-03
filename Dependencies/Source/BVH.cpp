@@ -5,15 +5,11 @@
 #include "Colliders.h"
 #include "RigidBody.h"
 
-#define createMeshes false
+#define createMeshes true
 
-BVH::BVH(std::vector<RigidBody*>& rbs) {
-    /*
-    std::sort(rbs.begin(), rbs.end(), [](RigidBody* rb1, RigidBody* rb2) {
-        return glm::dot(rb1->position, rb1->position) < glm::dot(rb2->position, rb2->position);
-    });*/
-    
+#pragma region BVH
 
+BVH::BVH(std::vector<RigidBody*>& rbs) { // TODO use the smallest surface heuristic
     leafs.resize(rbs.size());
 
     std::deque<BVHNode*> tree;
@@ -24,37 +20,57 @@ BVH::BVH(std::vector<RigidBody*>& rbs) {
     }
     
     while (tree.size() != 1) {
+
+        BVHNode* n1 = tree.back();
+        tree.pop_back();
+
+        uint32_t bestNeigh = -1;
+        float bestScore = 0;
+
+        for (size_t i = 0; i < tree.size(); i++) {
+            BVHNode* node = tree[i];
+            float currentScore = heuristic(node, n1);
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
+                bestNeigh = i;
+            }
+        }
+        tree.push_front(new BVHNode(n1, tree[bestNeigh]));
+        tree.erase(tree.begin() + bestNeigh + 1);
+
+        /*
         size_t size = tree.size();
         for (size_t i = 0; i < size; i += 2) {
             BVHNode* n1, * n2;
             n1 = tree.back();
-            tree.pop_back();
+            
             n2 = tree.back();
             tree.pop_back();
             auto node = new BVHNode(n1, n2);
             tree.push_front(node);
-        }
+        }*/
     }
     this->root = tree[0];
 }
 BVH::~BVH() {
-    if (root)
-        root->clearTree();
     delete root;
 }
 void BVH::removeRigidBody(RigidBody* rb) {
-    for (auto node : leafs)
+    for (size_t i = 0; i < leafs.size(); i++) {
+        BVHNode* node = leafs[i];
         if (node->rb == rb) {
             if (node->isRoot()) {
+                delete root;
                 root = nullptr;
-                node->clearTree();
-            } else {
+            }
+            else {
                 BVHNode* replacement = nullptr;
 
                 if (node->isLeftChild()) {
                     replacement = node->parent->r;
                     node->parent->r = nullptr;
-                } else {
+                }
+                else {
                     replacement = node->parent->l;
                     node->parent->l = nullptr;
                 }
@@ -62,40 +78,97 @@ void BVH::removeRigidBody(RigidBody* rb) {
                 if (node->parent->isRoot()) {
                     root = replacement;
                     root->parent = nullptr;
-                } else {
-                    if (node->parent->isLeftChild())
+                }
+                else {
+                    if (node->parent->isLeftChild()) {
                         node->parent->parent->l = replacement;
-                    else
+                    }
+                    else {
                         node->parent->parent->r = replacement;
+                    }
                     replacement->parent = node->parent->parent;
                 }
                 replacement->resizeParents();
-                node->parent->clearTree();
+                delete node->parent;
             }
-            break;
-        }
-}
-std::vector<CollisionPoint> BVH::getCollisions(RigidBody* rb) {
-    std::vector<CollisionPoint> points;
-    if (rb)
-        root->getCollisions(points, rb);
-
-    return points;
-}
-
-void BVHNode::getCollisions(std::vector<CollisionPoint>& addHere, RigidBody* testWithMe) {
-    CollisionPoint p = testWithMe->collider->checkCollision(c);
-
-    if (p.hasCollision) {
-        if (isLeaf()) {
-            if (rb != testWithMe)
-                addHere.push_back(p);
-        } else {
-            l->getCollisions(addHere, testWithMe);
-            r->getCollisions(addHere, testWithMe);
+            leafs.erase(leafs.begin() + i);
+            return;
         }
     }
 }
+void BVH::insertRigidBody(RigidBody* rb) { // TODO
+    BVHNode* rbNode = new BVHNode(rb);
+    leafs.push_back(rbNode);
+
+    if (!root) {
+        root = rbNode;
+        return;
+    }
+
+    BVHNode* n = root;
+
+    while (!n->isLeaf()) {
+        if (heuristic(n->l, rbNode) > heuristic(n->r, rbNode))
+            n = n->l;
+        else
+            n = n->r;
+    }
+
+    if (n->isRoot()) {
+        root = new BVHNode(n, rbNode);
+        return;
+    }
+
+    BVHNode* parent = n->parent;
+    BVHNode* newNode;
+
+    if (n->isLeftChild()) {
+        newNode = new BVHNode(n, rbNode);
+        parent->l = newNode;
+    } else {
+        newNode = new BVHNode(n, rbNode);
+        parent->r = newNode;
+    }
+    
+    newNode->parent = parent;
+    newNode->resizeParents();
+}
+float BVH::heuristic(BVHNode* n1, BVHNode* n2) {
+    glm::vec3 
+        min = glm::min(n1->getMin(), n2->getMin()),
+        max = glm::max(n1->getMax(), n2->getMax());
+    glm::vec3 res = max - min;
+    float costInv = res.x + res.y + res.z;
+    if (!costInv) return 1;
+    return 1 / costInv;
+}
+void BVH::getCollisions(std::vector<CollisionPoint>* AddHere, RigidBody* rb) {
+    root->getCollisions(AddHere, rb);
+}
+
+void BVH::gui() {
+    ImGui::Checkbox("Draw everything", &drawEverything);
+    ImGui::Checkbox("Draw nothing", &drawNothing);
+    if (drawNothing)
+        drawEverything = false;
+    if (drawEverything)
+        drawNothing = false;
+    ImGui::SliderInt("Level Drawn", &levelDrawn, 0, 16);
+}
+void BVH::Draw(Shader* s) {
+    if (drawNothing) return;
+    if (drawEverything) {
+        root->Draw(s);
+        return;
+    }
+    root->Draw(s, levelDrawn);
+}
+
+#pragma endregion
+
+#pragma region BVHNode
+
+
 
 BVHNode::BVHNode(RigidBody* rb) {
     this->rb = rb;
@@ -115,8 +188,8 @@ BVHNode::BVHNode(RigidBody* rb) {
         min = glm::min(start, end) - glm::vec3(radius);
         max = glm::max(start, end) + glm::vec3(radius);
     }
+    c = new AABB(min, max, true);
 }
-
 BVHNode::BVHNode(BVHNode* n1, BVHNode* n2) {
     n1->parent = this;
     n2->parent = this;
@@ -126,10 +199,25 @@ BVHNode::BVHNode(BVHNode* n1, BVHNode* n2) {
     l = n1;
     r = n2;
 }
-
-glm::vec3 BVHNode::getMax() { return max; }
-glm::vec3 BVHNode::getMin() { return min; }
-
+BVHNode::~BVHNode() {
+    delete c;
+    if (!isLeaf()) {
+        delete l;
+        delete r;
+    }
+}
+void BVHNode::resizeParents() {
+    BVHNode* n = parent;
+    while (n) {
+        n->min = glm::min(n->l->getMin(), n->r->getMin());
+        n->max = glm::max(n->l->getMax(), n->r->getMax());
+        delete n->c;
+        n->c = new AABB(n->min, n->max, createMeshes);
+        n = n->parent;
+    }
+}
+glm::vec3& BVHNode::getMax() { return max; }
+glm::vec3& BVHNode::getMin() { return min; }
 bool BVHNode::isLeaf() {
     return rb != nullptr;
 }
@@ -144,18 +232,23 @@ bool BVHNode::isRightChild() {
     if (isRoot()) return true;
     return parent->r == this;
 }
-void BVHNode::clearTree() {
-    if (!isLeaf()) {
-        if (l)
-            l->clearTree();
-        if (r)
-            r->clearTree();
-        delete c;
-        delete l;
-        delete r;
+void BVHNode::getCollisions(std::vector<CollisionPoint>* addHere, RigidBody* testWithMe) {
+    CollisionPoint p = testWithMe->collider->checkCollision(c);
+ 
+    if (p.hasCollision) {
+        if (isLeaf()) {
+            if (rb != testWithMe) {
+                p = rb->collider->checkCollision(testWithMe->collider);
+                if (p.hasCollision)
+                    addHere->push_back(p);
+            }
+        }
+        else {
+            l->getCollisions(addHere, testWithMe);
+            r->getCollisions(addHere, testWithMe);
+        }
     }
 }
-
 void BVHNode::asciiprint(int tabs) {
     for (size_t i = 0; i < tabs; i++)
         std::cout << "\t";
@@ -165,11 +258,11 @@ void BVHNode::asciiprint(int tabs) {
 
     if (isLeaf()) {
         std::cout << "Rb " << rb;
-        std::cout << glm::to_string(min) << glm::to_string(max);
+        //std::cout << glm::to_string(min) << glm::to_string(max);
         std::cout << "\n";
     } else {
         std::cout << "mid ";
-        std::cout << glm::to_string(min) << glm::to_string(max);
+        //std::cout << glm::to_string(min) << glm::to_string(max);
         std::cout << "\n";
         
         //std::cout << "l";
@@ -181,21 +274,22 @@ void BVHNode::asciiprint(int tabs) {
         r->asciiprint(tabs + 1);
     }
 }
-void BVHNode::resizeParents() {
-    BVHNode* n = parent;
-    while (n) {
-        n->min = glm::min(n->l->getMin(), n->r->getMin());
-        n->max = glm::max(n->l->getMax(), n->r->getMax());
-        delete n->c;
-        n->c = new AABB(min, max, createMeshes);
-        n = n->parent;
-    }
-}
-
 void BVHNode::Draw(Shader* s) {
+    c->Draw(s);
     if (!isLeaf()) {
-        c->Draw(s);
         l->Draw(s);
         r->Draw(s);
     }
 }
+void BVHNode::Draw(Shader* s, int desiredLevel) {
+    if (desiredLevel == 0) {
+        c->Draw(s);
+        return;
+    }
+    if (!isLeaf()) {
+        desiredLevel--;
+        l->Draw(s, desiredLevel);
+        r->Draw(s, desiredLevel);
+    }
+}
+#pragma endregion

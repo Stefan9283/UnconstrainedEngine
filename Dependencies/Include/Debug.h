@@ -16,8 +16,15 @@ public:
 	bool printElapsedTimeInDestructor;
 	std::chrono::steady_clock::time_point then;
 	std::string label;
+
+	bool paused{};
+	std::chrono::steady_clock::time_point pausedAt{};
+	std::chrono::nanoseconds pausedDuration{};
+
 	Timer(bool printElapsedTimeInDestructor, std::string label);
-	void printTime();
+	void pause();
+	void unpause();
+	void printTime(std::string timestampLabel);
 	~Timer();
 };
 

@@ -593,8 +593,11 @@ void testBVH(std::vector<RigidBody*> rbs) {
     {
         Timer t(true, "creating BVH");
         tree = new BVH(rbs);
-        tree->root->asciiprint();
     }
+    
+    std::vector<bool> hasCollision(rbs.size());
+    hasCollision.assign(hasCollision.size(), false);
+
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -608,37 +611,67 @@ void testBVH(std::vector<RigidBody*> rbs) {
 
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
+        s->setVec3("cameraPos", c->position);
 
         if (ImGui::Button("Rebuild")) {
             Timer t(true, "creating BVH");
+            
             delete tree;
             tree = new BVH(rbs);
-            for (size_t i = 0; i < 90; i++)
-                tree->removeRigidBody(rbs[i]);
-            break; // TODO remove
+            //for (size_t i = 0; i < 100; i++) {
+            //    tree->removeRigidBody(rbs[i]);
+            //}
+            //for (size_t i = 0; i < 100; i++) {
+            //    tree->insertRigidBody(rbs[i]);
+            //}
         }
-        /*
-        std::vector<CollisionPoint> points;
+        
+        std::vector<CollisionPoint> collisionPoints;
+
+        if (ImGui::Button("Get Collisions")) 
         {
-            Timer t(true, "drawing everything");
+            collisionPoints.clear();
+            hasCollision.assign(hasCollision.size(), false);
+
+            {
+                Timer t(true, "generating collision points");
+                for (size_t i = 0; i < rbs.size(); i++) {
+                    size_t before = collisionPoints.size();
+                    tree->getCollisions(&collisionPoints, rbs[i]);
+                    size_t after = collisionPoints.size();
+                    if (after - before != 0) {
+                        hasCollision[i] = true;
+                    }
+                }
+            }
+            std::cout << collisionPoints.size() << " collision points\n";
+        }
+        
+        {
+            //Timer t(true, "drawing everything");
+            
+            for (size_t i = 0; i < rbs.size(); i++) {
+                if (hasCollision[i])
+                    s->setVec3("color", glm::vec3(1, 0, 0));
+                else
+                    s->setVec3("color", glm::vec3(0, 1, 0));
+                rbs[i]->collider->Draw(s);
+            }
+
             int i = 0;
-            for each (auto rb in rbs) {
-                s->setVec3("color", glm::vec3(0, 1, 0));
-                rb->gui(i);
-                i++;
-                // std::vector<CollisionPoint> newpoints = tree->getCollisions(rb);
-                //points.insert(points.begin(), newpoints.begin(), newpoints.end());
-                ///std::cout << newpoints.size() << " ";
-                //if (!newpoints.empty())
-                //    s->setVec3("color", glm::vec3(1, 0, 0));
-                rb->collider->Draw(s);
+            if (ImGui::TreeNode("RigidBodies")) {
+                for each (auto rb in rbs) {
+                    rb->gui(i);
+                    i++;
+                }
+                ImGui::TreePop();
             }
         }
-        s->setVec3("color", glm::vec3(1));
-        */
 
-        //if (tree)
-        //    tree->root->Draw(s);
+        if (tree) {
+            tree->gui();
+            tree->Draw(s);
+        }
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -776,12 +809,16 @@ int main() {
         RigidBody* tmp;
         
         for (int i = 0; i < 10; i++)
-            for (int j = 0; j < 10; j++) {
-                tmp = new RigidBody(new Sphere(glm::vec3(i * 2, j * 2, 0), 1), 1); // TODO remove the last param after optimizing BVH
+            for (int j = 0; j < 100; j++) {
+                tmp = new RigidBody(new Sphere(glm::vec3(0), 1, true));
+                tmp->position = glm::vec3(i * 3, j * 2, 0);
                 if (j == 0)
                     tmp->movable = false;
                 rbs.push_back(tmp);
             }
+
+        rbs[0]->position = glm::vec3(5, 0, 0);
+        rbs[1]->position = glm::vec3(0, 3, 0);
     }
 /*
     for (int i = 3; i < 4; ++i) {

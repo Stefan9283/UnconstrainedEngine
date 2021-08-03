@@ -351,7 +351,7 @@ glm::vec3 AABB::getMax() {
     return this->max + getOffset();
 }
 glm::vec3 AABB::getOffset() {
-    glm::vec3 offs = this->offset;
+    glm::vec3 offs = localTransform.tr;
     if (parent)
         return offs + parent->position;
     return offs;
