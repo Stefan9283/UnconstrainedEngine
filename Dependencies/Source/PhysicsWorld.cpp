@@ -1,72 +1,108 @@
 #include "PhysicsWorld.h"
 #include "Mesh.h"
 
-PhysicsWorld::~PhysicsWorld() {
-    std::set<Constraint*> unique_constraints;
+extern Shader *s;
 
-    for (auto c : constraints)
-        delete c;
+
+PhysicsWorld::~PhysicsWorld() {
+    delete bvh;
+
+    for (auto c : restingConstraints)
+        delete c.second;
+    for (auto v : constraints)
+        for (auto* c : v.second)
+            delete c;
 }
 
-
-
-std::vector<collision> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
-    std::vector<collision> collisionPoints;
+std::vector<CollisionPoint> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
+    std::vector<CollisionPoint> collisionPoints;
     // get all collision points
+    /*
     for (auto c : constraints) {
         if (c->type == constraintType::resting) {
             auto* constr = ((RestingConstraint*)c);
             CollisionPoint p = constr->rb1->collider->checkCollision(constr->rb2->collider);
             if (p.hasCollision) {
-                collisionPoints.push_back({constr->rb1, constr->rb2, p});
+                collisionPoints.push_back(p);
             }
         }
-    }
+    }*/
     return collisionPoints;
 }
 
 
-void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
+PhysicsWorld::PhysicsWorld(std::vector<RigidBody*>& rb) {
+    delete bvh;
+    bvh = new BVH(rb);
+}
+void PhysicsWorld::addRigidBody(RigidBody* rb) {
+    bvh->insertRigidBody(rb);
+}
+
+void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
+    Timer t(true, "physics step");
+
     for (auto* r : rb) {
-        if (r->movable) {
+        if (r->movable && !r->sleep) {
             // add gravity
             r->force += r->mass * gravity;
             r->velocity += r->force / r->mass * dt;
             r->force = glm::vec3(0);
+
+            BVHNode* node = bvh->removeRigidBody(r);
+            node->resizeSelf();
+            bvh->insertRigidBody(node);
         }
     }
 
+    std::vector<CollisionPoint> collisionPoints;
 
-    std::vector<collision> collisionPoints = getCollisionPoints(rb);
+    for (auto* r : rb)
+        if (r->movable && !r->sleep)
+            bvh->getCollisions(&collisionPoints, r);
+
+    std::cout << collisionPoints.size() << " collision points\n";
+
+    for (auto& collisionPoint : collisionPoints) {
+       //std::cout << collisionPoint.c1->parent->id << " ";
+       //std::cout << collisionPoint.c2->parent->id << "\n";
+        collisionPoint.c1->parent->sleep = false;
+        collisionPoint.c2->parent->sleep = false;
+    }
+
+    //bvh->Draw(s);
 
     // sequential impulse solver
     for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++) {
-        for (auto &collisionPoint : collisionPoints) {
-            for (auto c : constraints) {
-                if (c->type == constraintType::resting) {
-                    auto* constr = ((RestingConstraint*)c);
-                    if (constr->rb1 == collisionPoint.rb1 && constr->rb2 == collisionPoint.rb2) {
-                        CollisionPoint reversed = reverseCollisionPoint(collisionPoint.p);
-                        constr->solve(reversed, dt);
-                    } else if (constr->rb2 == collisionPoint.rb1 && constr->rb1 == collisionPoint.rb2) {
-                        constr->solve(collisionPoint.p, dt);
-                    }
-                }
+        for (auto point : collisionPoints) {
+            auto key = std::make_pair(point.c1->parent, point.c2->parent);
+            if (restingConstraints.find(key) != restingConstraints.end()) {
+                auto constraint = restingConstraints[key];
+                constraint->solve(point, dt);
             }
         }
+        /*
         for (auto c : constraints) {
             if (c->type == constraintType::ballsocket) {
                 c->solve(dt);
-            } else if (c->type == constraintType::slider) {
+            }
+            else if (c->type == constraintType::slider) {
                 c->solve(dt);
             }
         }
+        */
     }
 
+    uint16_t sleep = 0;
     //   calculate final positions and rotations
     for (auto* r : rb) {
-        if (r->movable) {
+        if (r->sleep)
+            sleep++;
+        if (r->movable && !r->sleep) {
+            glm::vec3 oldPos = r->position;
             r->position += r->velocity * dt;
+            if (glm::length(r->velocity) < 0.1f)
+                r->sleep = true;
         }// else r->velocity = glm::vec3(0);
         if (r->canBeRotated) {
             r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
@@ -78,35 +114,45 @@ void PhysicsWorld::step(float dt, const std::vector<RigidBody *>& rb) {
 
     }
 
-//    // sequential position solver
-//    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
-//        for (auto c : constraints) {
-//            if (dynamic_cast<DistanceConstraint *>(c))
-//                ((DistanceConstraint *) c)->solve(dt);
-////            else if (dynamic_cast<GenericConstraint *>(c))
-////                ((GenericConstraint*)c)->solve(dt);
-//            else if (dynamic_cast<BallSocketConstraint *>(c))
-//                ((BallSocketConstraint*)c)->solve(dt);
-//        }
-//
-//    // calculate final positions and rotations
-//    for (auto* r : rb) {
-//        if (r->movable) {
-//            r->position += r->velocity * dt;
-//        } else r->velocity = glm::vec3(0);
-//        if (r->canBeRotated) {
-//            r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
-//            r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
-//            r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
-//        } else r->angularVel = glm::vec3(0);
-//
-//        r->force = glm::vec3(0);
-//
-//    }
-}
+    std::cout << sleep << "\n";
 
-PhysicsWorld *PhysicsWorld::addConstraint(Constraint* c) {
-    constraints.push_back(c);
+    //    // sequential position solver
+    //    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
+    //        for (auto c : constraints) {
+    //            if (dynamic_cast<DistanceConstraint *>(c))
+    //                ((DistanceConstraint *) c)->solve(dt);
+    ////            else if (dynamic_cast<GenericConstraint *>(c))
+    ////                ((GenericConstraint*)c)->solve(dt);
+    //            else if (dynamic_cast<BallSocketConstraint *>(c))
+    //                ((BallSocketConstraint*)c)->solve(dt);
+    //        }
+    //
+    //    // calculate final positions and rotations
+    //    for (auto* r : rb) {
+    //        if (r->movable) {
+    //            r->position += r->velocity * dt;
+    //        } else r->velocity = glm::vec3(0);
+    //        if (r->canBeRotated) {
+    //            r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
+    //            r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
+    //            r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
+    //        } else r->angularVel = glm::vec3(0);
+    //
+    //        r->force = glm::vec3(0);
+    //
+    //    }
+}
+PhysicsWorld* PhysicsWorld::addConstraint(Constraint* c) {
+    if (c->type == constraintType::resting) {
+        auto first = ((RestingConstraint*)c)->rb1;
+        auto second = ((RestingConstraint*)c)->rb2;
+        if (first->id > second->id)
+            std::swap(first, second);
+        auto key = std::make_pair(first, second);
+        restingConstraints[key] = (RestingConstraint*)c;
+    } else {
+
+    }
     return this;
 }
 
@@ -117,7 +163,7 @@ std::string rb2str = "";
 int rb1 = -1, rb2 = -1;
 
 void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
-    float g[] = {gravity.x, gravity.y, gravity.z};
+    float g[] = { gravity.x, gravity.y, gravity.z };
     ImGui::SliderFloat3("Gravity ", g, -100, 100);
     gravity = glm::vec3(g[0], g[1], g[2]);
 
@@ -127,23 +173,25 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
     ImGui::SliderInt("Number of iterations position solver", &NUM_OF_ITERATIONS_POSITION, 1, 10);
     ImGui::SliderFloat("Timestep", &timestep, 0.01, 1);
 
+    bvh->gui();
 
-
+    // TODO
+    /*
     if (ImGui::TreeNode("Constraints")) {
         for (size_t i = 0; i < constraints.size(); ++i) {
             if (ImGui::TreeNode(("Constraint" + std::to_string(i)).c_str())) {
-                constraints[i]->gui(i);
-                if (ImGui::Button("Remove Constraint? WIP")) {
+                // TODO
+                //constraints[i]->gui(i);
+                if (ImGui::Button("Remove Constraint? WIP"))
                     toBeRemoved = i;
-                } // TODO
                 ImGui::TreePop();
             }
         }
         if (ImGui::TreeNode("Add Constraint?")) {
             ImGui::Combo("Type", &selectedType, Constraints,
-                            IM_ARRAYSIZE(Constraints), 4);
+                IM_ARRAYSIZE(Constraints), 4);
             if (selectedType != -1) {
-                if(ImGui::BeginCombo("RigidBody1", rb1str.c_str())) {
+                if (ImGui::BeginCombo("RigidBody1", rb1str.c_str())) {
                     bool selected = false;
                     int index = 0;
                     for (auto rb : rbs) {
@@ -156,7 +204,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
                     }
                     ImGui::EndCombo();
                 }
-                if(ImGui::BeginCombo("RigidBody2", rb2str.c_str())) {
+                if (ImGui::BeginCombo("RigidBody2", rb2str.c_str())) {
                     bool selected = false;
                     int index = 0;
                     for (auto rb : rbs) {
@@ -171,7 +219,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
                 }
 
                 if (rb1 != -1 && rb2 != -1)
-                    if(ImGui::Button("Add Constraint")) {
+                    if (ImGui::Button("Add Constraint")) {
                         std::string type = std::string(Constraints[selectedType]);
                         Constraint* c;
                         if (type == "Distance")
@@ -195,7 +243,9 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
             ImGui::TreePop();
         }
         ImGui::TreePop();
+    }*/
+    if (toBeRemoved != -1) {
+        //constraints.erase(constraints.begin() + toBeRemoved);
+        std::cout << "TODO Rewrite after implementing unordered_map for constraints\n";
     }
-    if (toBeRemoved != -1)
-        constraints.erase(constraints.begin() + toBeRemoved);
 }

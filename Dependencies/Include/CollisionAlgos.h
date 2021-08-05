@@ -43,4 +43,34 @@ namespace collisionAlgos {
     CollisionPoint checkCollision(Capsule* col1, Ray* col);
 }
 
+
+
+namespace collisionAlgos {
+    bool hasCollision(Sphere* bv1, Sphere* bv2);
+    bool hasCollision(AABB* bv1, AABB* bv2);
+    bool hasCollision(Triangle* bv1, Triangle* bv2);
+    bool hasCollision(TriangleMesh* bv1, Collider* bv2);
+    bool hasCollision(Capsule* bv1, Capsule* col);
+    bool hasCollision(Ray* bv1, Ray* bv2);
+
+    bool hasCollision(AABB* bv1, Sphere* bv2);
+    bool hasCollision(AABB* bv1, Triangle* bv2);
+    bool hasCollision(AABB* bv1, Capsule* bv2);
+    bool hasCollision(AABB* bv1, Ray* bv2);
+    // TODO OBB 
+    bool hasCollision(OBB* bv1, AABB* bv2);
+    bool hasCollision(OBB* bv1, Sphere* bv2);
+    bool hasCollision(OBB* bv1, OBB* bv2);
+    bool hasCollision(OBB* bv1, Ray* bv2);
+    bool hasCollision(OBB* bv1, Capsule* bv2);
+    bool hasCollision(OBB* bv1, Triangle* bv2);
+
+    bool hasCollision(Sphere* bv1, Triangle* bv2);
+    bool hasCollision(Sphere* bv1, Capsule* bv2);
+    bool hasCollision(Sphere* bv1, Ray* bv2);
+
+    bool hasCollision(Triangle* bv1, Capsule* bv2);
+    bool hasCollision(Triangle* bv1, Ray* bv2);
+    bool hasCollision(Capsule* bv1, Ray* bv2);
+}
 #endif //TRIANGLE_COLLISIONALGOS_H

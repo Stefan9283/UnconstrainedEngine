@@ -5,7 +5,7 @@
 #include "Colliders.h"
 #include "RigidBody.h"
 
-#define createMeshes true
+#define createMeshes false
 
 #pragma region BVH
 
@@ -55,51 +55,53 @@ BVH::BVH(std::vector<RigidBody*>& rbs) { // TODO use the smallest surface heuris
 BVH::~BVH() {
     delete root;
 }
-void BVH::removeRigidBody(RigidBody* rb) {
+
+BVHNode* BVH::removeRigidBody(RigidBody* rb) {
     for (size_t i = 0; i < leafs.size(); i++) {
         BVHNode* node = leafs[i];
         if (node->rb == rb) {
             if (node->isRoot()) {
-                delete root;
                 root = nullptr;
-            }
-            else {
+            } else {
                 BVHNode* replacement = nullptr;
 
+                bool wasLeft = false;
+
                 if (node->isLeftChild()) {
+                    wasLeft = true;
                     replacement = node->parent->r;
-                    node->parent->r = nullptr;
-                }
-                else {
+                } else {
                     replacement = node->parent->l;
-                    node->parent->l = nullptr;
                 }
 
                 if (node->parent->isRoot()) {
                     root = replacement;
                     root->parent = nullptr;
-                }
-                else {
+                } else {
                     if (node->parent->isLeftChild()) {
                         node->parent->parent->l = replacement;
-                    }
-                    else {
+                    } else {
                         node->parent->parent->r = replacement;
                     }
                     replacement->parent = node->parent->parent;
                 }
                 replacement->resizeParents();
+                node->parent->r = nullptr;
+                node->parent->l = nullptr;
                 delete node->parent;
+                node->parent = nullptr;
             }
             leafs.erase(leafs.begin() + i);
-            return;
+            return node;
         }
     }
 }
 void BVH::insertRigidBody(RigidBody* rb) { // TODO
     BVHNode* rbNode = new BVHNode(rb);
+    insertRigidBody(rbNode);
+}
+void BVH::insertRigidBody(BVHNode* rbNode) {
     leafs.push_back(rbNode);
-
     if (!root) {
         root = rbNode;
         return;
@@ -125,11 +127,12 @@ void BVH::insertRigidBody(RigidBody* rb) { // TODO
     if (n->isLeftChild()) {
         newNode = new BVHNode(n, rbNode);
         parent->l = newNode;
-    } else {
+    }
+    else {
         newNode = new BVHNode(n, rbNode);
         parent->r = newNode;
     }
-    
+
     newNode->parent = parent;
     newNode->resizeParents();
 }
@@ -143,7 +146,30 @@ float BVH::heuristic(BVHNode* n1, BVHNode* n2) {
     return 1 / costInv;
 }
 void BVH::getCollisions(std::vector<CollisionPoint>* AddHere, RigidBody* rb) {
-    root->getCollisions(AddHere, rb);
+    std::stack<BVHNode*> nodes;
+    if (root)
+        nodes.push(root);
+    while (!nodes.empty()) {
+        BVHNode* n = nodes.top();
+        nodes.pop();
+
+        if (n->isLeaf() && n->rb->id >= rb->id)
+            continue;
+
+        if (rb->collider->hasCollision(n->c)) {
+            if (n->isLeaf()) {
+                if (n->rb != rb) {
+                    CollisionPoint p = n->rb->collider->checkCollision(rb->collider);
+                    if (p.hasCollision)
+                        AddHere->push_back(p);
+                }
+            }
+            else {
+                nodes.push(n->l);
+                nodes.push(n->r);
+            }
+        }
+    }
 }
 
 void BVH::gui() {
@@ -167,28 +193,11 @@ void BVH::Draw(Shader* s) {
 #pragma endregion
 
 #pragma region BVHNode
-
-
-
 BVHNode::BVHNode(RigidBody* rb) {
     this->rb = rb;
     this->c = rb->collider;
-
-    if (rb->collider->type == colliderType::aabb) {
-        min = ((AABB*)rb->collider)->getMin();
-        max = ((AABB*)rb->collider)->getMax();
-    } else if (rb->collider->type == colliderType::sphere) {
-        max = ((Sphere*)rb->collider)->getCurrentPosition() + ((Sphere*)rb->collider)->radius;
-        min = ((Sphere*)rb->collider)->getCurrentPosition() - ((Sphere*)rb->collider)->radius;
-    } else if (rb->collider->type == colliderType::capsule) {
-        glm::vec3 start, end;
-        start = ((Capsule*)rb->collider)->getStart();
-        end = ((Capsule*)rb->collider)->getEnd();
-        float radius = ((Capsule*)rb->collider)->radius;
-        min = glm::min(start, end) - glm::vec3(radius);
-        max = glm::max(start, end) + glm::vec3(radius);
-    }
-    c = new AABB(min, max, true);
+    c = new AABB(min, max, createMeshes);
+    resizeSelf();
 }
 BVHNode::BVHNode(BVHNode* n1, BVHNode* n2) {
     n1->parent = this;
@@ -206,13 +215,36 @@ BVHNode::~BVHNode() {
         delete r;
     }
 }
+
+void BVHNode::resizeSelf() {
+    if (isLeaf()) {
+        if (rb->collider->type == colliderType::aabb) {
+            min = ((AABB*)rb->collider)->getMin();
+            max = ((AABB*)rb->collider)->getMax();
+        }
+        else if (rb->collider->type == colliderType::sphere) {
+            max = ((Sphere*)rb->collider)->getCurrentPosition() + ((Sphere*)rb->collider)->radius;
+            min = ((Sphere*)rb->collider)->getCurrentPosition() - ((Sphere*)rb->collider)->radius;
+        }
+        else if (rb->collider->type == colliderType::capsule) {
+            glm::vec3 start, end;
+            start = ((Capsule*)rb->collider)->getStart();
+            end = ((Capsule*)rb->collider)->getEnd();
+            float radius = ((Capsule*)rb->collider)->radius;
+            min = glm::min(start, end) - glm::vec3(radius);
+            max = glm::max(start, end) + glm::vec3(radius);
+        }
+        ((AABB*)c)->refit(min, max);
+    } else {
+        min = glm::min(l->getMin(), r->getMin());
+        max = glm::max(l->getMax(), r->getMax());
+        ((AABB*)c)->refit(min, max);
+    }
+}
 void BVHNode::resizeParents() {
     BVHNode* n = parent;
     while (n) {
-        n->min = glm::min(n->l->getMin(), n->r->getMin());
-        n->max = glm::max(n->l->getMax(), n->r->getMax());
-        delete n->c;
-        n->c = new AABB(n->min, n->max, createMeshes);
+        n->resizeSelf();
         n = n->parent;
     }
 }
@@ -231,23 +263,6 @@ bool BVHNode::isLeftChild() {
 bool BVHNode::isRightChild() {
     if (isRoot()) return true;
     return parent->r == this;
-}
-void BVHNode::getCollisions(std::vector<CollisionPoint>* addHere, RigidBody* testWithMe) {
-    CollisionPoint p = testWithMe->collider->checkCollision(c);
- 
-    if (p.hasCollision) {
-        if (isLeaf()) {
-            if (rb != testWithMe) {
-                p = rb->collider->checkCollision(testWithMe->collider);
-                if (p.hasCollision)
-                    addHere->push_back(p);
-            }
-        }
-        else {
-            l->getCollisions(addHere, testWithMe);
-            r->getCollisions(addHere, testWithMe);
-        }
-    }
 }
 void BVHNode::asciiprint(int tabs) {
     for (size_t i = 0; i < tabs; i++)

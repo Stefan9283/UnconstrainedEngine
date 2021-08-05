@@ -1,3 +1,5 @@
+#define GLM_FORCE_SWIZZLE 
+#define GLM_FORCE_INLINE 
 #define USE_IMGUI_API
 #define STBI_IMAGE_IMPLEMENTATION
 //#define GLFW_INCLUDE_NONE // it's already defined somewhere
@@ -373,11 +375,11 @@ void testOctree(Mesh* mesh) {
     delete octree;
 }
 void testPhysics(std::vector<RigidBody*> rbs) {
-    PhysicsWorld physicsWorld;
+    PhysicsWorld physicsWorld(rbs);
 
-    physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
-    physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[2]));
-    physicsWorld.addConstraint(new SliderConstraint(rbs[0], rbs[1]));
+    //physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
+    //physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[2]));
+    //physicsWorld.addConstraint(new SliderConstraint(rbs[0], rbs[1]));
 //    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
 
 
@@ -393,18 +395,24 @@ void testPhysics(std::vector<RigidBody*> rbs) {
     for (auto r1 : rbs)
         for (auto r2 : rbs)
             if (r1 != r2) {
-                auto* contact = new RestingConstraint(r1, r2);
-                physicsWorld.addConstraint(contact);
+                physicsWorld.addConstraint(new RestingConstraint(r1, r2));
             } else break;
 
 
     bool runWithPhysics = false;
 
+    auto phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+    phy.get();
+
     while (!glfwWindowShouldClose(window))
     {
+        if (runWithPhysics) {
+            phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+        }
+        bool runWithPhysicsOld = runWithPhysics;
+
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-        s->setVec3("cameraPos", c->position);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -413,38 +421,46 @@ void testPhysics(std::vector<RigidBody*> rbs) {
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
         bool doOneStep = false;
+
         if (ImGui::BeginTabBar("Bar")) {
             if (ImGui::BeginTabItem("Physics")) {
                 physicsWorld.gui(rbs);
                 doOneStep = ImGui::Button("Do one simulation step");
+                if (!runWithPhysics && doOneStep) {
+                    phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+                }
                 ImGui::Checkbox("run with physics", &runWithPhysics);
                 ImGui::EndTabItem();
             }
+            
             if (ImGui::BeginTabItem("RigidBodies")) {
                 int index = 0;
                 for (auto rb : rbs)
                     rb->gui(++index);
                 doOneStep = ImGui::Button("Do one simulation step");
+                if (!runWithPhysics && doOneStep) {
+                    phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+                }
                 ImGui::Checkbox("run with physics", &runWithPhysics);
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
         }
 
-        {
-            Timer t(true, "physics step");
-            if (runWithPhysics || doOneStep)
-                physicsWorld.step(1 / 60.0f, rbs);
-        }
+
+       
         c->Move(window);
 
         s->setMat4("proj", c->getprojmatrix());
         s->setMat4("view", c->getviewmatrix());
+        s->setVec3("cameraPos", c->position);
 
         for (auto* rb : rbs) {
             s->setVec3("color", glm::vec3(0.0, 0.5, 0.1));
             rb->collider->Draw(s);
         }
+
+        physicsWorld.bvh->Draw(s);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -454,6 +470,9 @@ void testPhysics(std::vector<RigidBody*> rbs) {
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         resize(window, display_w, display_h);
+        if ((runWithPhysicsOld & runWithPhysics) || (!runWithPhysics && doOneStep)) {
+            phy.get();
+        }
     }
 }
 void testBasicCollisionWithPoints(Mesh* m1, Mesh* m2) {
@@ -594,9 +613,12 @@ void testBVH(std::vector<RigidBody*> rbs) {
         Timer t(true, "creating BVH");
         tree = new BVH(rbs);
     }
-    
+    tree->root->asciiprint();
+
     std::vector<bool> hasCollision(rbs.size());
     hasCollision.assign(hasCollision.size(), false);
+    bool continuouslyCheckForCollisions{};
+    int reinsertThisRB = 0;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -613,11 +635,19 @@ void testBVH(std::vector<RigidBody*> rbs) {
         s->setMat4("view", c->getviewmatrix());
         s->setVec3("cameraPos", c->position);
 
+        ImGui::SliderInt("Reinsert this node", &reinsertThisRB, 0, rbs.size() - 1);
+        if (ImGui::Button("reinsert rb")) {
+            BVHNode* n = tree->removeRigidBody(rbs[reinsertThisRB]);
+            n->resizeSelf();
+            tree->insertRigidBody(n);
+        }
+
         if (ImGui::Button("Rebuild")) {
             Timer t(true, "creating BVH");
             
             delete tree;
             tree = new BVH(rbs);
+
             //for (size_t i = 0; i < 100; i++) {
             //    tree->removeRigidBody(rbs[i]);
             //}
@@ -628,13 +658,15 @@ void testBVH(std::vector<RigidBody*> rbs) {
         
         std::vector<CollisionPoint> collisionPoints;
 
-        if (ImGui::Button("Get Collisions")) 
+        ImGui::Checkbox("Continuously Check For Collisions", &continuouslyCheckForCollisions);
+
+        if (ImGui::Button("Get Collisions") || continuouslyCheckForCollisions)
         {
             collisionPoints.clear();
             hasCollision.assign(hasCollision.size(), false);
 
             {
-                Timer t(true, "generating collision points");
+                //Timer t(true, "generating collision points");
                 for (size_t i = 0; i < rbs.size(); i++) {
                     size_t before = collisionPoints.size();
                     tree->getCollisions(&collisionPoints, rbs[i]);
@@ -644,12 +676,11 @@ void testBVH(std::vector<RigidBody*> rbs) {
                     }
                 }
             }
-            std::cout << collisionPoints.size() << " collision points\n";
+            //std::cout << collisionPoints.size() << " collision points\n";
         }
         
         {
             //Timer t(true, "drawing everything");
-            
             for (size_t i = 0; i < rbs.size(); i++) {
                 if (hasCollision[i])
                     s->setVec3("color", glm::vec3(1, 0, 0));
@@ -721,7 +752,6 @@ int main() {
 #pragma endregion
     s = new Shader("Dependencies/Shaders/simpleVert.glsl", "Dependencies/Shaders/simpleFrag.glsl");
     s->bind();
-
     c = new Camera(window);
     glClearColor(0, 102 / 255.f, 102 / 255.f, 1);
 #pragma region meshes
@@ -792,24 +822,24 @@ int main() {
 
     std::vector<RigidBody*> rbs;
 
-    auto* cubePhy = new RigidBody(new AABB());
+    auto* cubePhy = new RigidBody(new AABB(2, 100, 100));
     auto* spherePhy = new RigidBody(new Sphere());
     spherePhy->movable = true;
 
 
-    if (true) {
-        //spherePhy->movable = false;
-        //rbs.push_back(spherePhy);
+    if (false) {
+        spherePhy->movable = false;
+        rbs.push_back(spherePhy);
     } else {
         cubePhy->movable = false;
         rbs.push_back(cubePhy);
     }
+    /*
 
     {
         RigidBody* tmp;
-        
         for (int i = 0; i < 10; i++)
-            for (int j = 0; j < 100; j++) {
+            for (int j = 0; j < 10; j++) {
                 tmp = new RigidBody(new Sphere(glm::vec3(0), 1, true));
                 tmp->position = glm::vec3(i * 3, j * 2, 0);
                 if (j == 0)
@@ -820,28 +850,31 @@ int main() {
         rbs[0]->position = glm::vec3(5, 0, 0);
         rbs[1]->position = glm::vec3(0, 3, 0);
     }
-/*
-    for (int i = 3; i < 4; ++i) {
-        RigidBody* tmp;
-        switch (i % 2) {
-        case 0:
-            tmp = new RigidBody(new Sphere(), 1);
-            break;
-        case 1:
-            tmp = new RigidBody(new Capsule(), 1);
-            break;
-        case 2:
-            tmp = new RigidBody(new AABB(), 1);
-            break;
-        }
-        tmp->position = glm::vec3(1, 5 * i, 0);
-        rbs.push_back(tmp);
-    }
 */
-    testBVH(rbs);
-    //testPhysics(rbs);
-    for (auto* r : rbs)
+
+    for (int j = -15; j < 15; j++) {
+        for (int i = -15; i < 15; ++i) {
+            RigidBody* tmp = nullptr;
+            switch (std::abs(i) % 2) {
+            case 0:
+                tmp = new RigidBody(new Sphere(), 1);
+                break;
+            case 1:
+                tmp = new RigidBody(new AABB(3, 3, 3), 1);
+                break;
+            case 2:
+                tmp = new RigidBody(new Capsule(), 1);
+                break;
+            }
+            tmp->position = glm::vec3((i * 2) % 50 + 2, 3 + std::abs(i + j) , (j * 2) % 50 + 2);
+            rbs.push_back(tmp);
+        }
+    }
+    //testBVH(rbs);
+    testPhysics(rbs);
+    for (auto* r : rbs) {
         delete r;
+    }
 #pragma region cleanUp
 
     s->unbind();

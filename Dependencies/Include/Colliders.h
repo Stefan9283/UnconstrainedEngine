@@ -56,12 +56,13 @@ public:
     float depth; // length B - A
     bool hasCollision;
     bool wasReversed{};
-    CollisionPoint(glm::vec3 A, glm::vec3 B);
+    CollisionPoint(glm::vec3 A, glm::vec3 B, Collider* c1, Collider* c2);
     CollisionPoint();
+    CollisionPoint reversePoint();
     std::string toString();
+    Collider* c1, * c2;
+    bool operator<(const CollisionPoint& p) const;
 };
-
-CollisionPoint reverseCollisionPoint(CollisionPoint p);
 
 class Collider {
 public:
@@ -98,6 +99,15 @@ public:
     virtual CollisionPoint checkCollision(Capsule* col) = 0;
     virtual CollisionPoint checkCollision(OBB* col) = 0;
 
+    bool hasCollision(Collider* col);
+    virtual bool hasCollision(Sphere* col) = 0;
+    virtual bool hasCollision(AABB* col) = 0;
+    virtual bool hasCollision(Triangle* t) = 0;
+    virtual bool hasCollision(TriangleMesh* col) = 0;
+    virtual bool hasCollision(Ray* col) = 0;
+    virtual bool hasCollision(Capsule* col) = 0;
+    virtual bool hasCollision(OBB* col) = 0;
+
     virtual void gui(int index) {}
 
     virtual ~Collider();
@@ -117,6 +127,14 @@ public:
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
+
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
 
     void gui(int index) override;
     glm::mat4 getLocalTransform() override;
@@ -144,9 +162,19 @@ public:
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
 
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
+
     glm::vec3 getOffset();
     glm::vec3 getMin();
     glm::vec3 getMax();
+
+    void refit(glm::vec3 min, glm::vec3 max);
 
     glm::mat4 getLocalTransform() override;
     glm::mat4 getTransform() override;
@@ -182,6 +210,13 @@ public:
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
 
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
 };
 
 class TriangleMesh : public Collider {
@@ -193,6 +228,14 @@ public:
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
+
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
 
     TriangleMesh(Mesh* mesh);
     ~TriangleMesh() { body = nullptr; }
@@ -215,6 +258,14 @@ public:
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
 
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
+
     bool isInside(glm::vec3 point);
 
     Triangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 norm);
@@ -233,6 +284,14 @@ public:
     CollisionPoint checkCollision(Triangle* t) override;
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
+
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
 
     static Ray* generateRay(GLFWwindow* window, Camera* cam);
     Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh = false);
@@ -260,6 +319,14 @@ public:
     CollisionPoint checkCollision(Ray* col) override;
     CollisionPoint checkCollision(Capsule* col) override;
     CollisionPoint checkCollision(OBB* col) override;
+
+    bool hasCollision(Sphere* col) override;
+    bool hasCollision(AABB* col) override;
+    bool hasCollision(Triangle* t) override;
+    bool hasCollision(TriangleMesh* col) override;
+    bool hasCollision(Ray* col) override;
+    bool hasCollision(Capsule* col) override;
+    bool hasCollision(OBB* col) override;
 
     std::string toString() override;
 

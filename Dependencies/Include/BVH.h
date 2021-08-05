@@ -21,12 +21,10 @@ public:
     BVHNode(BVHNode* n1, BVHNode* n2);
     ~BVHNode();
 
-    void getCollisions(std::vector<CollisionPoint>* addHere, 
-                        RigidBody* testWithMe);
-
     glm::vec3& getMin();
     glm::vec3& getMax();
 
+    void resizeSelf();
     void resizeParents();
     bool isLeaf();
     bool isRoot();
@@ -51,7 +49,8 @@ public:
     BVH(std::vector<RigidBody*>& rbs);
     ~BVH();
     void getCollisions(std::vector<CollisionPoint>*  AddHere, RigidBody* rb);
-    void removeRigidBody(RigidBody* rb);
+    BVHNode* removeRigidBody(RigidBody* rb);
+    void insertRigidBody(BVHNode* node);
     void insertRigidBody(RigidBody* rb);
     static float heuristic(BVHNode* n1, BVHNode* n2);
     void gui();

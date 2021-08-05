@@ -202,14 +202,18 @@ void ColliderMesh::gui(int outIndex = 0) {
 }
 #pragma endregion
 #pragma region CollisionPoint
-CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
+CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B, Collider* c1, Collider* c2) {
     if (A == B) {
+        this->c1 = nullptr;
+        this->c2 = nullptr;
         this->hasCollision = false;
         this->normal = glm::vec3 (0);
         this->B = B;
         this->A = A;
         this->depth = 0;
     } else {
+        this->c1 = c1;
+        this->c2 = c2;
         this->B = B;
         this->A = A;
         glm::vec3 AB = B - A;
@@ -218,6 +222,7 @@ CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B) {
         this->hasCollision = true;
     }
 }
+
 CollisionPoint::CollisionPoint() {
     this->hasCollision = false;
     this->normal = glm::vec3 (0);
@@ -236,6 +241,13 @@ std::string CollisionPoint::toString() {
         s.append("collision OK");
     else s.append("collision NO");
     return s;
+}
+CollisionPoint CollisionPoint::reversePoint() {
+    std::swap(c1, c2);
+    std::swap(A, B);
+    normal = -normal;
+    wasReversed = true;
+    return *this;
 }
 
 #pragma endregion
@@ -319,10 +331,7 @@ AABB::AABB(float height, float width, float length, bool createBody) {
 }
 AABB::AABB(glm::vec3 min, glm::vec3 max, bool createBody) {
     setType(colliderType::aabb);
-    localTransform.tr = (max + min) / 2.0f;
-    this->max = glm::vec3(max - localTransform.tr);
-    this->min = -this->max;
-
+    refit(min, max);
     if (createBody)
         this->body = generateNewMesh();
 }
@@ -356,6 +365,14 @@ glm::vec3 AABB::getOffset() {
         return offs + parent->position;
     return offs;
 }
+
+
+void AABB::refit(glm::vec3 min, glm::vec3 max) {
+    localTransform.tr = (max + min) / 2.0f;
+    this->max = glm::vec3(max - localTransform.tr);
+    this->min = -this->max;
+}
+
 
 bool AABB::isInside(glm::vec3 point) {
     glm::vec3 minValues, maxValues;
@@ -534,7 +551,6 @@ std::string AABB::toString() {
     return "AABB:\n\tmin: " + glm::to_string(getMin()) + "\n\tmax: "+ glm::to_string(getMax()) + "\n";
 }
 #pragma endregion
-
 #pragma region OBB
 /*
 glm::vec3 OBB::getMin() {
@@ -589,7 +605,6 @@ std::string OBB::toString() {
 }
 
 #pragma endregion
-
 #pragma region Ray
 Ray::Ray(glm::vec3 origin, glm::vec3 direction, float length, bool createMesh) {
     setType(colliderType::ray);
@@ -805,14 +820,6 @@ std::string Capsule::toString() {
 #pragma endregion
 
 #pragma region checkCollision
-CollisionPoint reverseCollisionPoint(CollisionPoint p) {
-    glm::vec3 B = p.B;
-    p.B = p.A;
-    p.A = B;
-    p.normal = - p.normal;
-    p.wasReversed = true;
-    return p;
-}
 CollisionPoint Collider::checkCollision(Collider* col) {
     if (col->type == colliderType::sphere) {
         return checkCollision((Sphere*)col);
@@ -844,7 +851,7 @@ CollisionPoint Sphere::checkCollision(TriangleMesh *bv) {
     return collisionAlgos::checkCollision(bv, this);
 }
 CollisionPoint Sphere::checkCollision(AABB* bv) {
-    return reverseCollisionPoint(collisionAlgos::checkCollision(bv, this));
+    return (collisionAlgos::checkCollision(bv, this)).reversePoint();
 }
 CollisionPoint Sphere::checkCollision(Sphere* bv) {
     return collisionAlgos::checkCollision(this, bv);
@@ -856,11 +863,36 @@ CollisionPoint Sphere::checkCollision(Triangle *t) {
     return collisionAlgos::checkCollision(this, t);
 }
 CollisionPoint Sphere::checkCollision(Capsule *bv) {
-    return reverseCollisionPoint(collisionAlgos::checkCollision(this, bv));
+    return (collisionAlgos::checkCollision(this, bv)).reversePoint();
 }
 CollisionPoint Sphere::checkCollision(OBB* col)
 {
     return CollisionPoint();
+}
+#pragma endregion
+#pragma region Capsule
+CollisionPoint Capsule::checkCollision(TriangleMesh* col) {
+    return collisionAlgos::checkCollision(col, this);
+}
+CollisionPoint Capsule::checkCollision(Sphere* col) {
+    return collisionAlgos::checkCollision(col, this);
+}
+CollisionPoint Capsule::checkCollision(AABB* bv) {
+    return collisionAlgos::checkCollision(bv, this);
+}
+// https://wickedengine.net/2020/04/26/capsule-collision-detection/
+CollisionPoint Capsule::checkCollision(Triangle* t) {
+    return collisionAlgos::checkCollision(t, this);
+}
+CollisionPoint Capsule::checkCollision(Ray* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+// !source of inspiration: https://wickedengine.net/2020/04/26/capsule-collision-detection/
+CollisionPoint Capsule::checkCollision(Capsule* bv) {
+    return collisionAlgos::checkCollision(this, bv);
+}
+CollisionPoint Capsule::checkCollision(OBB* col) {
+    return collisionAlgos::checkCollision(col, this);
 }
 #pragma endregion
 #pragma region AABB
@@ -880,7 +912,7 @@ CollisionPoint AABB::checkCollision(Triangle *t) {
     return collisionAlgos::checkCollision(this, t);
 }
 CollisionPoint AABB::checkCollision(Capsule *bv) {
-    return reverseCollisionPoint(collisionAlgos::checkCollision(this, bv));
+    return (collisionAlgos::checkCollision(this, bv)).reversePoint();
 }
 CollisionPoint AABB::checkCollision(OBB* col)
 {
@@ -982,29 +1014,90 @@ CollisionPoint Triangle::checkCollision(Triangle *t) {
     return collisionAlgos::checkCollision(this, t);
 } 
 #pragma endregion
-#pragma region Capsule
-CollisionPoint Capsule::checkCollision(TriangleMesh *col) {
-    return collisionAlgos::checkCollision(col, this);
-}
-CollisionPoint Capsule::checkCollision(Sphere *col) {
-    return collisionAlgos::checkCollision(col, this);
-}
-CollisionPoint Capsule::checkCollision(AABB *bv) {
-    return collisionAlgos::checkCollision(bv, this);
-}
-// https://wickedengine.net/2020/04/26/capsule-collision-detection/
-CollisionPoint Capsule::checkCollision(Triangle *t) {
-    return collisionAlgos::checkCollision(t, this);
-}
-CollisionPoint Capsule::checkCollision(Ray *bv) {
-    return collisionAlgos::checkCollision(this, bv);
-}
-// !source of inspiration: https://wickedengine.net/2020/04/26/capsule-collision-detection/
-CollisionPoint Capsule::checkCollision(Capsule *bv) {
-    return collisionAlgos::checkCollision(this, bv);
-}
-CollisionPoint Capsule::checkCollision(OBB* col) {
-    return collisionAlgos::checkCollision(col, this);
-}
+
 #pragma endregion
+
+#pragma region hasCollision
+bool Collider::hasCollision(Collider* col) {
+    if (col->type == colliderType::sphere) {
+        return hasCollision((Sphere*)col);
+    }
+    if (col->type == colliderType::aabb) {
+        return hasCollision((AABB*)col);
+    }
+    if (col->type == colliderType::ray) {
+        return hasCollision((Ray*)col);
+    }
+    if (col->type == colliderType::trianglemesh) {
+        return hasCollision((TriangleMesh*)col);
+    }
+    if (col->type == colliderType::triangle) {
+        return hasCollision((Triangle*)col);
+    }
+    if (col->type == colliderType::capsule) {
+        return hasCollision((Capsule*)col);
+    }
+    if (col->type == colliderType::obb) {
+        return hasCollision((OBB*)col);
+    }
+    assert("Collider type was not identified");
+    return {};
+}
+
+bool Sphere::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(this, col); }
+bool Sphere::hasCollision(AABB* col) { return collisionAlgos::hasCollision(col, this); }
+bool Sphere::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(this, t); }
+bool Sphere::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(col, this); }
+bool Sphere::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool Sphere::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(this, col); }
+bool Sphere::hasCollision(OBB* col) { return collisionAlgos::hasCollision(col, this); }
+
+bool AABB::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(this, col); }
+bool AABB::hasCollision(AABB* col) { return collisionAlgos::hasCollision(this, col); }
+bool AABB::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(this, t); }
+bool AABB::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(col, this); }
+bool AABB::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool AABB::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(this, col); }
+bool AABB::hasCollision(OBB* col) { return collisionAlgos::hasCollision(col, this); }
+
+bool Triangle::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(col, this); }
+bool Triangle::hasCollision(AABB* col) { return collisionAlgos::hasCollision(col, this); }
+bool Triangle::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(t, this); }
+bool Triangle::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(col, this); }
+bool Triangle::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool Triangle::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(this, col); }
+bool Triangle::hasCollision(OBB* col) { return collisionAlgos::hasCollision(col, this); }
+
+bool TriangleMesh::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(this, col); }
+bool TriangleMesh::hasCollision(AABB* col) { return collisionAlgos::hasCollision(this, col); }
+bool TriangleMesh::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(this, t); }
+bool TriangleMesh::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(this, col); }
+bool TriangleMesh::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool TriangleMesh::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(this, col); }
+bool TriangleMesh::hasCollision(OBB* col) { return collisionAlgos::hasCollision(this, col); }
+
+bool Ray::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(col, this); }
+bool Ray::hasCollision(AABB* col) { return collisionAlgos::hasCollision(col, this); }
+bool Ray::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(t, this); }
+bool Ray::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(col, this); }
+bool Ray::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool Ray::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(col, this); }
+bool Ray::hasCollision(OBB* col) { return collisionAlgos::hasCollision(col, this); }
+
+bool Capsule::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(col, this); }
+bool Capsule::hasCollision(AABB* col) { return collisionAlgos::hasCollision(col, this); }
+bool Capsule::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(t, this); }
+bool Capsule::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(col, this); }
+bool Capsule::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool Capsule::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(this, col); }
+bool Capsule::hasCollision(OBB* col) { return collisionAlgos::hasCollision(col, this); }
+
+bool OBB::hasCollision(Sphere* col) { return collisionAlgos::hasCollision(this, col); }
+bool OBB::hasCollision(AABB* col) { return collisionAlgos::hasCollision(this, col); }
+bool OBB::hasCollision(Triangle* t) { return collisionAlgos::hasCollision(this, t); }
+bool OBB::hasCollision(TriangleMesh* col) { return collisionAlgos::hasCollision(col, this); }
+bool OBB::hasCollision(Ray* col) { return collisionAlgos::hasCollision(this, col); }
+bool OBB::hasCollision(Capsule* col) { return collisionAlgos::hasCollision(this, col); }
+bool OBB::hasCollision(OBB* col) { return collisionAlgos::hasCollision(this, col); }
+
 #pragma endregion

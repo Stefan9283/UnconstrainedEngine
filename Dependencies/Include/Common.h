@@ -22,6 +22,8 @@
 #include <stack>
 #include <queue>
 #include <deque>
+#include <unordered_set>
+#include <future>         // std::async, std::future
 
 #include <iomanip>
 

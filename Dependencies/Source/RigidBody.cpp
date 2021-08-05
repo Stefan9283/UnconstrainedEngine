@@ -1,6 +1,10 @@
 #include "RigidBody.h"
 
+int rbsCreated = 0;
+
 RigidBody::RigidBody(Collider* c, float m) {
+    id = rbsCreated;
+    rbsCreated++;
     collider = c;
     // mesh = nullptr;
     c->parent = this;
@@ -75,3 +79,8 @@ void RigidBody::gui(int index) {
 glm::mat3 RigidBody::getInertiaTensor() {
     return inertia;
 }
+void RigidBody::makeImmovable() {
+    movable = false;
+    sleep = true;
+}
+

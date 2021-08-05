@@ -6,6 +6,7 @@
 class RigidBody {
 public:
     // Mesh* mesh;
+    int id;
     Collider* collider;
     glm::vec3
             force{}, velocity{},
@@ -18,6 +19,7 @@ public:
 
     bool movable = true;
     bool canBeRotated = true;
+    bool sleep = false;
 
     glm::mat3 inertia = glm::mat3(1);
 
@@ -28,6 +30,7 @@ public:
     glm::mat4 getTranslationMatrix();
     glm::mat4 getRotationMatrix();
     void gui(int index);
+    void makeImmovable();
 };
 
 #endif //TRIANGLE_RIGIDBODY_H
