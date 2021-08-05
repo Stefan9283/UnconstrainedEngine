@@ -62,8 +62,8 @@ Constraint::~Constraint() {}
 #pragma region RestingConstraint
 void RestingConstraint::buildJacobian(CollisionPoint &p) {
     glm::vec3 r1, r2;
-    r1 = p.A - rb1->position;
-    r2 = p.B - rb2->position;
+    r1 = p.A - second->position;
+    r2 = p.B - second->position;
 
     glm::vec3 rot1, rot2;
     rot1 = glm::cross(r1, p.normal);
@@ -74,7 +74,7 @@ void RestingConstraint::buildJacobian(CollisionPoint &p) {
     Jacobian(0, 1) = - p.normal.y;
     Jacobian(0, 2) = - p.normal.z;
     // wa
-    if (rb1->movable) {
+    if (first->movable) {
         Jacobian(0, 3) = - rot1.x;
         Jacobian(0, 4) = - rot1.y;
         Jacobian(0, 5) = - rot1.z;
@@ -89,7 +89,7 @@ void RestingConstraint::buildJacobian(CollisionPoint &p) {
     Jacobian(0, 7) = p.normal.y;
     Jacobian(0, 8) = p.normal.z;
     // wb
-    if (rb2->movable) {
+    if (second->movable) {
         Jacobian(0,  9) = rot2.x;
         Jacobian(0, 10) = rot1.y;
         Jacobian(0, 11) = rot2.z;
@@ -105,16 +105,16 @@ void RestingConstraint::updateMassInverse() {
     invM.setZero();
     // if the rigid body is immovable then the inverse of its mass approaches infinity
     float invM1, invM2;
-    invM1 = rb1->movable ? 1 / rb1->mass : 0;
-    invM2 = rb2->movable ? 1 / rb2->mass : 0;
+    invM1 = first->movable ? 1 / first->mass : 0;
+    invM2 = second->movable ? 1 / second->mass : 0;
     for (auto i = 0; i < 3; i++) {
         invM(i, i) = invM1;
         invM(i + 6, i + 6) = invM2;
     }
 
     glm::mat3 inertia1, inertia2;
-    inertia1 = rb1->getInertiaTensor();
-    inertia2 = rb2->getInertiaTensor();
+    inertia1 = first->getInertiaTensor();
+    inertia2 = second->getInertiaTensor();
 
     for (auto i = 0; i < 3; i++)
         for (int j = 0; j < 3; ++j) {
@@ -128,10 +128,10 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
     Eigen::VectorXf velocity(12);
 
     for (auto i = 0; i < 3; i++) {
-        velocity(i) = rb1->velocity[i];
-        velocity(i + 3) = rb1->angularVel[i];
-        velocity(i + 6) = rb2->velocity[i];
-        velocity(i + 9) = rb2->angularVel[i];
+        velocity(i) = first->velocity[i];
+        velocity(i + 3) = first->angularVel[i];
+        velocity(i + 6) = second->velocity[i];
+        velocity(i + 9) = second->angularVel[i];
     }
 
     float beta = 0.7f;
@@ -142,18 +142,18 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
 
     glm::vec3 relativeVelocity;
     float closingVelocity;
-    if (rb1->movable && rb2->movable) {
+    if (first->movable && second->movable) {
         glm::vec3
-            r1 = p.A - rb1->position,
-            r2 = p.B - rb2->position;
+            r1 = p.A - first->position,
+            r2 = p.B - second->position;
 
-        relativeVelocity = -rb1->velocity + rb2->velocity
-                                     - glm::cross(r1, rb1->angularVel) + glm::cross(r2, rb2->angularVel);
+        relativeVelocity = -first->velocity + second->velocity
+                                     - glm::cross(r1, first->angularVel) + glm::cross(r2, second->angularVel);
     } else {
-        relativeVelocity = -rb1->velocity + rb2->velocity;
+        relativeVelocity = -first->velocity + second->velocity;
     }
     closingVelocity = glm::dot(relativeVelocity, p.normal);
-    biasTerm(0) += closingVelocity * rb1->restitution * rb2->restitution;
+    biasTerm(0) += closingVelocity * first->restitution * second->restitution;
 
     buildJacobian(p);
 
@@ -171,16 +171,16 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
     Eigen::VectorXf dv = invM * Jacobian.transpose() * (total_lambda - old_total_lambda);
 
     for (int j = 0; j < 3; ++j) {
-        rb1->velocity[j]   += dv[j];
-        rb1->angularVel[j] += dv[j + 3];
-        rb2->velocity[j]   += dv[j + 6];
-        rb2->angularVel[j] += dv[j + 9];
+        first->velocity[j]   += dv[j];
+        first->angularVel[j] += dv[j + 3];
+        second->velocity[j]   += dv[j + 6];
+        second->angularVel[j] += dv[j + 9];
     }
 }
 
 RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint() {
-    this->rb1 = rb1;
-    this->rb2 = rb2;
+    this->first = rb1;
+    this->second = rb2;
     this->type = constraintType::resting;
     invM.resize(12, 12);
     invM.setZero();
@@ -284,6 +284,23 @@ void BallSocketConstraint::gui(int index) {
     sndAnchor = glm::vec3(anchor[3], anchor[4], anchor[5]);
     ImGui::Checkbox(("Render"  + std::to_string(index)).c_str(), &render);
     if (render && !body) body = readObj("3D/Sphere.obj");
+
+    if (render) {
+        glm::vec3
+            r1 = glm::mat3(first->getRotationMatrix()) * fstAnchor,
+            r2 = glm::mat3(second->getRotationMatrix()) * sndAnchor;
+
+        body->localTransform.tr = first->position + r1;
+        body->localTransform.sc = glm::vec3(0.3f);
+        body->solidON = false;
+        body->wireframeON = true;
+        s->setVec3("color", glm::vec3(1, 0, 0));
+        body->Draw(s);
+
+        body->localTransform.tr = second->position + r2;
+        s->setVec3("color", glm::vec3(0, 0, 1));
+        body->Draw(s);
+    }
 }
 void BallSocketConstraint::solve(float dt) {
     if (check()) return;
@@ -320,19 +337,6 @@ void BallSocketConstraint::solve(float dt) {
         first->velocity[j]  += dv[j];
         second->velocity[j] += dv[j + 6];
     }
-
-    if (render) {
-        body->localTransform.tr = first->position + glm::vec3(dv[0], dv[1], dv[2]) * dt + r1;
-        body->localTransform.sc = glm::vec3(0.3f);
-        body->solidON = false;
-        body->wireframeON = true;
-        s->setVec3("color", glm::vec3(1, 0, 0));
-        body->Draw(s);
-
-        body->localTransform.tr = second->position + glm::vec3(dv[6], dv[7], dv[8]) * dt + r2;
-        s->setVec3("color", glm::vec3(0, 0, 1));
-        body->Draw(s);
-    }
 }
 #pragma endregion
 
@@ -368,6 +372,22 @@ void SliderConstraint::gui(int index) {
     directionAxis = glm::normalize(glm::vec3(dirAxis[0], dirAxis[1], dirAxis[2]));
     ImGui::Checkbox(("Render"  + std::to_string(index)).c_str(), &render);
     if (render && !body) body = readObj("3D/Sphere.obj");
+    if (render) {
+        glm::vec3
+            r1 = glm::mat3(first->getRotationMatrix()) * fstAnchor,
+            r2 = glm::mat3(second->getRotationMatrix()) * sndAnchor;
+
+        body->localTransform.tr = first->position  + r1;
+        body->localTransform.sc = glm::vec3(0.3f);
+        body->solidON = false;
+        body->wireframeON = true;
+        s->setVec3("color", glm::vec3(1, 0, 0));
+        body->Draw(s);
+
+        body->localTransform.tr = second->position + r2;
+        s->setVec3("color", glm::vec3(0, 0, 1));
+        body->Draw(s);
+    }
 }
 bool SliderConstraint::check() { return false; }
 void SliderConstraint::solve(float dt) {
@@ -419,20 +439,6 @@ void SliderConstraint::solve(float dt) {
         second->velocity[j]   += dvTr[j + 6];
         second->angularVel[j] += dvRot[j + 9];
     }
-
-    if (render) {
-        body->localTransform.tr = first->position + glm::vec3(dvTr[0], dvTr[1], dvTr[2]) * dt + r1;
-        body->localTransform.sc = glm::vec3(0.3f);
-        body->solidON = false;
-        body->wireframeON = true;
-        s->setVec3("color", glm::vec3(1, 0, 0));
-        body->Draw(s);
-
-        body->localTransform.tr = second->position + glm::vec3(dvTr[6], dvTr[7], dvTr[8]) * dt + r2;
-        s->setVec3("color", glm::vec3(0, 0, 1));
-        body->Draw(s);
-    }
-
 }
 void SliderConstraint::updateMassInverse() {
     invM.resize(12, 12);
@@ -507,8 +513,8 @@ DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
     this->type = constraintType::distance;
     minD = minDistance;
     maxD = maxDistance;
-    this->rb1 = rb1;
-    this->rb2 = rb2;
+    this->first = rb1;
+    this->second = rb2;
 }
 
 void DistanceConstraint::solve(float dt) {
@@ -516,29 +522,29 @@ void DistanceConstraint::solve(float dt) {
 
     float beta = 0.5;
 
-    float dist = glm::distance(rb1->position, rb2->position);
+    float dist = glm::distance(first->position, second->position);
 
     float limit = - minD + dist;
     if (dist > maxD) limit = dist - maxD;
 
-    if (rb1->movable) {
-        glm::vec3 c = limit * glm::normalize(rb1->position - rb2->position);
+    if (first->movable) {
+        glm::vec3 c = limit * glm::normalize(first->position - second->position);
         glm::vec3 v = (- beta / dt) * c;
         v *= 0.9;
-        rb1->position += v * dt;
-        rb1->velocity += v;
+        first->position += v * dt;
+        first->velocity += v;
     }
-    if (rb2->movable) {
-        glm::vec3 c = limit * glm::normalize(rb1->position - rb2->position);
+    if (second->movable) {
+        glm::vec3 c = limit * glm::normalize(first->position - second->position);
         c = -c;
         glm::vec3 v = (- beta / dt) * c;
         v *= 0.9;
-        rb2->position += v * dt;
-        rb2->velocity += v;
+        second->position += v * dt;
+        second->velocity += v;
     }
 }
 bool DistanceConstraint::check() {
-    float d = glm::distance(rb1->position, rb2->position);
+    float d = glm::distance(first->position, second->position);
     return d <= maxD && d >= minD;
 }
 void DistanceConstraint::gui(int index) {

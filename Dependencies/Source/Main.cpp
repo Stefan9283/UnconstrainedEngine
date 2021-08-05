@@ -377,10 +377,10 @@ void testOctree(Mesh* mesh) {
 void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld(rbs);
 
-    //physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
-    //physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[2]));
-    //physicsWorld.addConstraint(new SliderConstraint(rbs[0], rbs[1]));
-//    physicsWorld.addConstraint(new BallSocketConstraint(rbs[0], rbs[1]));
+    physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
+    physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
+    physicsWorld.addConstraint(new SliderConstraint(rbs[2], rbs[1]));
+    //physicsWorld.addConstraint(new BallSocketConstraint(rbs[2], rbs[1]));
 
 
 //    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
@@ -392,11 +392,11 @@ void testPhysics(std::vector<RigidBody*> rbs) {
 //    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 //    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
 //    physicsWorld.addConstraint(dist);
-    for (auto r1 : rbs)
-        for (auto r2 : rbs)
-            if (r1 != r2) {
-                physicsWorld.addConstraint(new RestingConstraint(r1, r2));
-            } else break;
+   // for (auto r1 : rbs)
+   //     for (auto r2 : rbs)
+   //         if (r1 != r2) {
+   //             physicsWorld.addConstraint(new RestingConstraint(r1, r2));
+   //         } else break;
 
 
     bool runWithPhysics = false;
@@ -412,7 +412,6 @@ void testPhysics(std::vector<RigidBody*> rbs) {
         bool runWithPhysicsOld = runWithPhysics;
 
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -834,12 +833,20 @@ int main() {
         cubePhy->movable = false;
         rbs.push_back(cubePhy);
     }
+
+    {
+        rbs.push_back(new RigidBody(new Sphere()));
+        rbs.push_back(new RigidBody(new Sphere()));
+        rbs[1]->position = glm::vec3(5, 0, 0);
+        rbs[2]->position = glm::vec3(5, 3, 0);
+    }
+
     /*
 
     {
         RigidBody* tmp;
-        for (int i = 0; i < 10; i++)
-            for (int j = 0; j < 10; j++) {
+        for (int i = 0; i < 3; i++)
+            for (int j = 1; j < 3; j++) {
                 tmp = new RigidBody(new Sphere(glm::vec3(0), 1, true));
                 tmp->position = glm::vec3(i * 3, j * 2, 0);
                 if (j == 0)
@@ -850,14 +857,13 @@ int main() {
         rbs[0]->position = glm::vec3(5, 0, 0);
         rbs[1]->position = glm::vec3(0, 3, 0);
     }
-*/
-
-    for (int j = -15; j < 15; j++) {
-        for (int i = -15; i < 15; ++i) {
+    /*
+    for (int j = -5; j < 5; j++) {
+        for (int i = -55; i < 55; ++i) {
             RigidBody* tmp = nullptr;
             switch (std::abs(i) % 2) {
             case 0:
-                tmp = new RigidBody(new Sphere(), 1);
+                tmp = new RigidBody(new Sphere(glm::vec3(0), 1), 1);
                 break;
             case 1:
                 tmp = new RigidBody(new AABB(3, 3, 3), 1);
@@ -870,6 +876,8 @@ int main() {
             rbs.push_back(tmp);
         }
     }
+    */
+
     //testBVH(rbs);
     testPhysics(rbs);
     for (auto* r : rbs) {

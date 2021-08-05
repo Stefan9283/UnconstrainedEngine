@@ -17,6 +17,7 @@ enum class constraintType {
 
 class Constraint {
 public:
+    RigidBody* first, * second;
     Eigen::MatrixXf Jacobian, invM;
     Eigen::VectorXf total_lambda;
     constraintType type;
@@ -33,8 +34,6 @@ public:
 
 class RestingConstraint : public Constraint {
 public:
-    RigidBody *rb1, *rb2;
-
     RestingConstraint(RigidBody* rb1, RigidBody* rb2);
     ~RestingConstraint();
 
@@ -45,7 +44,6 @@ public:
 
 class BallSocketConstraint : public Constraint {
 public:
-    RigidBody *first, *second;
     glm::vec3 fstAnchor, sndAnchor;
 
     bool render = false;
@@ -63,7 +61,6 @@ public:
 
 class SliderConstraint : public Constraint {
 public:
-    RigidBody *first, *second;
     glm::vec3 fstAnchor, sndAnchor,
             directionAxis;
     float minDist = 0, maxDist = 10;
@@ -88,7 +85,6 @@ public:
 
 class DistanceConstraint : public Constraint {
 public:
-    RigidBody *rb1, *rb2;
     float minD, maxD;
     
     DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
@@ -114,7 +110,6 @@ public:
 class GenericConstraint : public Constraint {
 public:
     limitConstraint angular[3]{}, linear[3]{};
-    RigidBody *first, *second;
     bool breakable; float impulseTreshold;
     glm::vec3 fstAnchor, sndAnchor;
 

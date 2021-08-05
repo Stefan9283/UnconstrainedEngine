@@ -7,7 +7,7 @@ extern Shader *s;
 PhysicsWorld::~PhysicsWorld() {
     delete bvh;
 
-    for (auto c : restingConstraints)
+    for (auto& c : restingConstraints)
         delete c.second;
     for (auto v : constraints)
         for (auto* c : v.second)
@@ -64,8 +64,6 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
     std::cout << collisionPoints.size() << " collision points\n";
 
     for (auto& collisionPoint : collisionPoints) {
-       //std::cout << collisionPoint.c1->parent->id << " ";
-       //std::cout << collisionPoint.c2->parent->id << "\n";
         collisionPoint.c1->parent->sleep = false;
         collisionPoint.c2->parent->sleep = false;
     }
@@ -81,16 +79,16 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
                 constraint->solve(point, dt);
             }
         }
-        /*
-        for (auto c : constraints) {
-            if (c->type == constraintType::ballsocket) {
-                c->solve(dt);
-            }
-            else if (c->type == constraintType::slider) {
-                c->solve(dt);
+        for (auto pair : constraints) {
+            for (auto c : pair.second) {
+                if (c->type == constraintType::ballsocket) {
+                    c->solve(dt);
+                }
+                else if (c->type == constraintType::slider) {
+                    c->solve(dt);
+                }
             }
         }
-        */
     }
 
     uint16_t sleep = 0;
@@ -143,14 +141,24 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
     //    }
 }
 PhysicsWorld* PhysicsWorld::addConstraint(Constraint* c) {
-    if (c->type == constraintType::resting) {
-        auto first = ((RestingConstraint*)c)->rb1;
-        auto second = ((RestingConstraint*)c)->rb2;
-        if (first->id > second->id)
-            std::swap(first, second);
-        auto key = std::make_pair(first, second);
-        restingConstraints[key] = (RestingConstraint*)c;
-    } else {
+    auto first = c->first;
+    auto second = c->second;
+    if (first->id > second->id)
+        std::swap(first, second);
+    auto key = std::make_pair(first, second);
+    switch (c->type)
+    {
+        case constraintType::resting:
+        {
+            restingConstraints[key] = (RestingConstraint*)c;
+            break;
+        }
+        case constraintType::slider:
+        case constraintType::ballsocket:
+        case constraintType::generic:
+        case constraintType::distance:
+            constraints[key].push_back(c);
+            break;
 
     }
     return this;
@@ -169,6 +177,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
 
     int toBeRemoved = -1;
 
+
     ImGui::SliderInt("Number of iterations velocity solver", &NUM_OF_ITERATIONS_IMPULSE, 1, 10);
     ImGui::SliderInt("Number of iterations position solver", &NUM_OF_ITERATIONS_POSITION, 1, 10);
     ImGui::SliderFloat("Timestep", &timestep, 0.01, 1);
@@ -176,76 +185,76 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
     bvh->gui();
 
     // TODO
-    /*
     if (ImGui::TreeNode("Constraints")) {
-        for (size_t i = 0; i < constraints.size(); ++i) {
-            if (ImGui::TreeNode(("Constraint" + std::to_string(i)).c_str())) {
-                // TODO
-                //constraints[i]->gui(i);
-                if (ImGui::Button("Remove Constraint? WIP"))
-                    toBeRemoved = i;
-                ImGui::TreePop();
-            }
+        for (auto pair : constraints) {
+            int index = 0;
+            for (auto c : pair.second)
+                if (ImGui::TreeNode(("Constraint" + std::to_string(c->first->id * 100 + c->second->id * 10 + index)).c_str())) {
+                    c->gui(index);
+                    index++;
+                    if (ImGui::Button("Remove Constraint? WIP"))
+                        toBeRemoved = index;
+                    ImGui::TreePop();
+                }
+            if (toBeRemoved != -1)
+                pair.second.erase(pair.second.begin() + toBeRemoved);
         }
+        
         if (ImGui::TreeNode("Add Constraint?")) {
             ImGui::Combo("Type", &selectedType, Constraints,
-                IM_ARRAYSIZE(Constraints), 4);
+                    IM_ARRAYSIZE(Constraints), 4);
             if (selectedType != -1) {
-                if (ImGui::BeginCombo("RigidBody1", rb1str.c_str())) {
-                    bool selected = false;
-                    int index = 0;
-                    for (auto rb : rbs) {
-                        std::string s = std::to_string(index) + typeid(rb).name();
-                        if (ImGui::Selectable(s.c_str(), &selected)) {
-                            rb1str = s;
-                            rb1 = index;
+                    if (ImGui::BeginCombo("RigidBody1", rb1str.c_str())) {
+                        bool selected = false;
+                        int index = 0;
+                        for (auto rb : rbs) {
+                            std::string s = std::to_string(index) + typeid(rb).name();
+                            if (ImGui::Selectable(s.c_str(), &selected)) {
+                                rb1str = s;
+                                rb1 = index;
+                            }
+                            index++;
                         }
-                        index++;
+                        ImGui::EndCombo();
                     }
-                    ImGui::EndCombo();
-                }
-                if (ImGui::BeginCombo("RigidBody2", rb2str.c_str())) {
-                    bool selected = false;
-                    int index = 0;
-                    for (auto rb : rbs) {
-                        std::string s = std::to_string(index) + typeid(rb).name();
-                        if (ImGui::Selectable(s.c_str(), &selected)) {
-                            rb2str = s;
-                            rb2 = index;
+                    if (ImGui::BeginCombo("RigidBody2", rb2str.c_str())) {
+                        bool selected = false;
+                        int index = 0;
+                        for (auto rb : rbs) {
+                            std::string s = std::to_string(index) + typeid(rb).name();
+                            if (ImGui::Selectable(s.c_str(), &selected)) {
+                                rb2str = s;
+                                rb2 = index;
+                            }
+                            index++;
                         }
-                        index++;
+                        ImGui::EndCombo();
                     }
-                    ImGui::EndCombo();
-                }
 
-                if (rb1 != -1 && rb2 != -1)
-                    if (ImGui::Button("Add Constraint")) {
-                        std::string type = std::string(Constraints[selectedType]);
-                        Constraint* c;
-                        if (type == "Distance")
-                            c = new DistanceConstraint(rbs[rb1], rbs[rb2], 0, 1);
-                        if (type == "ContactPoint")
-                            c = new RestingConstraint(rbs[rb1], rbs[rb2]);
-                        if (type == "Generic")
-                            c = new GenericConstraint(rbs[rb1], rbs[rb2]);
-                        if (type == "BallSocket")
-                            c = new BallSocketConstraint(rbs[rb1], rbs[rb2]);
-                        if (type == "Slider")
-                            c = new SliderConstraint(rbs[rb1], rbs[rb2]);
-                        addConstraint(c);
-                        rb1 = -1;
-                        rb2 = -1;
-                        rb1str = "";
-                        rb2str = "";
-                        selectedType = -1;
-                    }
-            }
+                    if (rb1 != -1 && rb2 != -1)
+                        if (ImGui::Button("Add Constraint")) {
+                            std::string type = std::string(Constraints[selectedType]);
+                            Constraint* c;
+                            if (type == "Distance")
+                                c = new DistanceConstraint(rbs[rb1], rbs[rb2], 0, 1);
+                            if (type == "ContactPoint")
+                                c = new RestingConstraint(rbs[rb1], rbs[rb2]);
+                            if (type == "Generic")
+                                c = new GenericConstraint(rbs[rb1], rbs[rb2]);
+                            if (type == "BallSocket")
+                                c = new BallSocketConstraint(rbs[rb1], rbs[rb2]);
+                            if (type == "Slider")
+                                c = new SliderConstraint(rbs[rb1], rbs[rb2]);
+                            addConstraint(c);
+                            rb1 = -1;
+                            rb2 = -1;
+                            rb1str = "";
+                            rb2str = "";
+                            selectedType = -1;
+                        }
+                }
             ImGui::TreePop();
         }
         ImGui::TreePop();
-    }*/
-    if (toBeRemoved != -1) {
-        //constraints.erase(constraints.begin() + toBeRemoved);
-        std::cout << "TODO Rewrite after implementing unordered_map for constraints\n";
     }
 }
