@@ -5,8 +5,6 @@
 #include "Mesh.h"
 #include "RigidBody.h"
 
-extern Shader *s;
-
 #pragma region utilities
 glm::vec2 getPointOnRectangle(glm::vec2 leftDownCorner, glm::vec2 rightUpCorner, glm::vec2 point) {
     // Corners
@@ -224,11 +222,13 @@ CollisionPoint::CollisionPoint(glm::vec3 A, glm::vec3 B, Collider* c1, Collider*
 }
 
 CollisionPoint::CollisionPoint() {
-    this->hasCollision = false;
-    this->normal = glm::vec3 (0);
-    this->B = glm::vec3 (0);
-    this->A = glm::vec3 (0);
-    this->depth = 0;
+    hasCollision = false;
+    normal = glm::vec3 (0);
+    B = glm::vec3 (0);
+    A = glm::vec3 (0);
+    depth = 0;
+    c1 = nullptr;
+    c2 = nullptr;
 }
 std::string CollisionPoint::toString() {
     std::string s = "";
@@ -270,13 +270,15 @@ Sphere::Sphere(glm::vec3 pos, float radius, bool createBody) {
     }
 }
 Sphere::Sphere(Mesh *mesh, bool createBody) {
+    radius = 0;
+
     setType(colliderType::sphere);
 
     pos = glm::vec3(0);
-    for (Vertex v : mesh->vertices)
+    for (Vertex& v : mesh->vertices)
         pos = pos + v.Position;
     pos = pos / (float)mesh->vertices.size();
-    for (auto v : mesh->vertices) {
+    for (auto& v : mesh->vertices) {
         float currentRadius = glm::length(pos - v.Position);
         if (currentRadius > radius) radius = currentRadius;
     }
@@ -340,7 +342,7 @@ AABB::AABB(Mesh* mesh, bool createBody) {
     min = mesh->vertices[0].Position;
     max = mesh->vertices[0].Position;
 
-    for (auto v : mesh->vertices) {
+    for (auto& v : mesh->vertices) {
         if (min.x > v.Position.x) min.x = v.Position.x;
         if (min.y > v.Position.y) min.y = v.Position.y;
         if (min.z > v.Position.z) min.z = v.Position.z;
@@ -500,7 +502,7 @@ ColliderMesh* AABB::generateNewMesh() {
 
     auto body = new ColliderMesh();
 
-    for (auto v : verticesPos)
+    for (auto& v : verticesPos)
         body->vertices.push_back(v);
 
     body->indices = {
@@ -722,7 +724,7 @@ void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
 
     glm::mat4 scaleMatrixTube = glm::scale(glm::mat4(1), glm::vec3(radius, diff/2, radius));
 
-    for (auto & vertice : body->vertices)
+    for (auto& vertice : body->vertices)
         vertice.Position = getTransformedVertex(scaleMatrixTube, vertice.Position);
 
     glm::mat4 scaleMatrixHalfSphere = glm::scale(glm::mat4(1), glm::vec3(radius));
@@ -735,7 +737,7 @@ void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
 
     size_t indicesCount = Tube->indices.size();
 
-    for (auto & vertice : halfSphere->vertices) {
+    for (auto& vertice : halfSphere->vertices) {
         Vertex v{ getTransformedVertex(modelEnd, vertice.Position), vertice.Normal};
         body->vertices.push_back(v);
     }
@@ -745,7 +747,7 @@ void Capsule::createBody(glm::vec3 start, glm::vec3 end, float radius) {
 
     indicesCount = body->indices.size();
 
-    for (auto & vertice : halfSphere->vertices) {
+    for (auto& vertice : halfSphere->vertices) {
         Vertex v{ getTransformedVertex(modelStart, vertice.Position), vertice.Normal};
         body->vertices.push_back(v);
     }
@@ -772,7 +774,7 @@ Capsule::Capsule(Mesh *mesh) {
     max = mesh->vertices[0].Position;
 
     auto center = glm::vec3(0);
-    for (auto v : mesh->vertices) {
+    for (auto& v : mesh->vertices) {
         center = center + v.Position;
         min = glm::min(v.Position, min);
         max = glm::max(v.Position, max);

@@ -42,10 +42,9 @@ public:
     std::vector<BVHNode*> leafs;
 
     bool drawEverything = true;
-    int levelDrawn = 0;
     bool drawNothing = false;
+    int levelDrawn = 0;
 
-    void* BVHNodeMaker;
     BVH(std::vector<RigidBody*>& rbs);
     ~BVH();
     void getCollisions(std::vector<CollisionPoint>*  AddHere, RigidBody* rb);

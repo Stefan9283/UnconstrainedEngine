@@ -2,9 +2,6 @@
 #include "Mesh.h"
 #include "Camera.h"
 
-
-
-
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
 // TODO modifica sa ia ca parametru glm::vec3 si sa nu mai faca decompose
@@ -34,7 +31,7 @@ void EditTransform(Camera* cam, glm::mat4* cameraView, glm::mat4* cameraProjecti
     ///ImGui::SameLine();
     ///if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
     ///    mCurrentGizmoOperation = ImGuizmo::SCALE;
-    float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+    float matrixTranslation[3]{}, matrixRotation[3]{}, matrixScale[3]{};
 
     matrixTranslation[0] = mesh->localTransform.tr[0];
     matrixTranslation[1] = mesh->localTransform.tr[1];
@@ -131,7 +128,6 @@ void Timer::unpause() {
         paused = false;
     }
 }
-
 
 Timer::Timer(bool printElapsedTimeInDestructor = false, std::string label = "") {
     this->label = label;

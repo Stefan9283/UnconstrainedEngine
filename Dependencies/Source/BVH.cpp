@@ -9,7 +9,7 @@
 
 #pragma region BVH
 
-BVH::BVH(std::vector<RigidBody*>& rbs) { // TODO use the smallest surface heuristic
+BVH::BVH(std::vector<RigidBody*>& rbs) {
     leafs.resize(rbs.size());
 
     std::deque<BVHNode*> tree;
@@ -27,7 +27,7 @@ BVH::BVH(std::vector<RigidBody*>& rbs) { // TODO use the smallest surface heuris
         uint32_t bestNeigh = -1;
         float bestScore = 0;
 
-        for (size_t i = 0; i < tree.size(); i++) {
+        for (int i = 0; i < tree.size(); i++) {
             BVHNode* node = tree[i];
             float currentScore = heuristic(node, n1);
             if (currentScore > bestScore) {
@@ -37,18 +37,6 @@ BVH::BVH(std::vector<RigidBody*>& rbs) { // TODO use the smallest surface heuris
         }
         tree.push_front(new BVHNode(n1, tree[bestNeigh]));
         tree.erase(tree.begin() + bestNeigh + 1);
-
-        /*
-        size_t size = tree.size();
-        for (size_t i = 0; i < size; i += 2) {
-            BVHNode* n1, * n2;
-            n1 = tree.back();
-            
-            n2 = tree.back();
-            tree.pop_back();
-            auto node = new BVHNode(n1, n2);
-            tree.push_front(node);
-        }*/
     }
     this->root = tree[0];
 }
@@ -95,8 +83,9 @@ BVHNode* BVH::removeRigidBody(RigidBody* rb) {
             return node;
         }
     }
+    return nullptr;
 }
-void BVH::insertRigidBody(RigidBody* rb) { // TODO
+void BVH::insertRigidBody(RigidBody* rb) {
     BVHNode* rbNode = new BVHNode(rb);
     insertRigidBody(rbNode);
 }

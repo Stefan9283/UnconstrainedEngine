@@ -17,11 +17,12 @@ enum class constraintType {
 
 class Constraint {
 public:
-    RigidBody* first, * second;
+    RigidBody *first = nullptr, 
+              *second = nullptr;
+    constraintType type = constraintType::dontKnow;
     Eigen::MatrixXf Jacobian, invM;
     Eigen::VectorXf total_lambda;
-    constraintType type;
-    Constraint();
+    bool render = false;
     virtual void solve(float dt) {};
     virtual void gui(int index) {};
     virtual void updateMassInverse() {};
@@ -29,7 +30,8 @@ public:
     virtual void buildTrJacobian() {};
     virtual void buildRotJacobian() {};
     virtual void buildJacobian(CollisionPoint& p) {};
-    virtual ~Constraint();
+    virtual ~Constraint() {}
+    virtual void Draw(Shader* s) {}
 };
 
 class RestingConstraint : public Constraint {
@@ -46,7 +48,6 @@ class BallSocketConstraint : public Constraint {
 public:
     glm::vec3 fstAnchor, sndAnchor;
 
-    bool render = false;
     Mesh* body = nullptr;
 
     BallSocketConstraint(RigidBody *fst, RigidBody *snd);
@@ -57,6 +58,7 @@ public:
     void solve(float dt) override;
     void updateMassInverse() override;
     void buildJacobian();
+    void Draw(Shader* s) override;
 };
 
 class SliderConstraint : public Constraint {
@@ -64,8 +66,6 @@ public:
     glm::vec3 fstAnchor, sndAnchor,
             directionAxis;
     float minDist = 0, maxDist = 10;
-
-    bool render = false;
     Mesh* body = nullptr;
 
 
@@ -79,6 +79,7 @@ public:
     bool check();
     void solve(float dt) override;
     void updateMassInverse() override;
+    void Draw(Shader* s) override;
 
     std::vector<glm::vec3> getOrthogonalVectors();
 };

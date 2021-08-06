@@ -1,35 +1,15 @@
 #include "PhysicsWorld.h"
 #include "Mesh.h"
 
-extern Shader *s;
-
-
 PhysicsWorld::~PhysicsWorld() {
     delete bvh;
 
     for (auto& c : restingConstraints)
         delete c.second;
-    for (auto v : constraints)
+    for (auto& v : constraints)
         for (auto* c : v.second)
             delete c;
 }
-
-std::vector<CollisionPoint> PhysicsWorld::getCollisionPoints(const std::vector<RigidBody *>& rb) {
-    std::vector<CollisionPoint> collisionPoints;
-    // get all collision points
-    /*
-    for (auto c : constraints) {
-        if (c->type == constraintType::resting) {
-            auto* constr = ((RestingConstraint*)c);
-            CollisionPoint p = constr->rb1->collider->checkCollision(constr->rb2->collider);
-            if (p.hasCollision) {
-                collisionPoints.push_back(p);
-            }
-        }
-    }*/
-    return collisionPoints;
-}
-
 
 PhysicsWorld::PhysicsWorld(std::vector<RigidBody*>& rb) {
     delete bvh;
@@ -72,15 +52,15 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
 
     // sequential impulse solver
     for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++) {
-        for (auto point : collisionPoints) {
+        for (auto& point : collisionPoints) {
             auto key = std::make_pair(point.c1->parent, point.c2->parent);
             if (restingConstraints.find(key) != restingConstraints.end()) {
                 auto constraint = restingConstraints[key];
                 constraint->solve(point, dt);
             }
         }
-        for (auto pair : constraints) {
-            for (auto c : pair.second) {
+        for (auto& pair : constraints) {
+            for (auto& c : pair.second) {
                 if (c->type == constraintType::ballsocket) {
                     c->solve(dt);
                 }
@@ -99,14 +79,14 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
         if (r->movable && !r->sleep) {
             glm::vec3 oldPos = r->position;
             r->position += r->velocity * dt;
-            if (glm::length(r->velocity) < 0.1f)
-                r->sleep = true;
-        }// else r->velocity = glm::vec3(0);
+            //if (glm::length(r->velocity) < 0.1f)
+            //    r->sleep = true;
+        } else r->velocity = glm::vec3(0);
         if (r->canBeRotated) {
             r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
             r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
             r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
-        } //else r->angularVel = glm::vec3(0);
+        } else r->angularVel = glm::vec3(0);
 
         r->force = glm::vec3(0);
 
@@ -140,12 +120,16 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
     //
     //    }
 }
-PhysicsWorld* PhysicsWorld::addConstraint(Constraint* c) {
-    auto first = c->first;
-    auto second = c->second;
-    if (first->id > second->id)
-        std::swap(first, second);
-    auto key = std::make_pair(first, second);
+void PhysicsWorld::addConstraint(Constraint* c) {
+    //std::cout << c->first->id << " " << c->second->id << "\n";
+    auto key = std::make_pair(c->first, c->second);
+    if (key.first->id > key.second->id) {
+        std::swap(key.first, key.second);
+    }
+    else {
+        if (c->type == constraintType::resting)
+            std::swap(c->first, c->second);
+    }
     switch (c->type)
     {
         case constraintType::resting:
@@ -161,7 +145,6 @@ PhysicsWorld* PhysicsWorld::addConstraint(Constraint* c) {
             break;
 
     }
-    return this;
 }
 
 const char* Constraints[] = {"Distance", "ContactPoint", "BallSocket", "Slider", "Generic"};
@@ -177,25 +160,40 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
 
     int toBeRemoved = -1;
 
-
     ImGui::SliderInt("Number of iterations velocity solver", &NUM_OF_ITERATIONS_IMPULSE, 1, 10);
     ImGui::SliderInt("Number of iterations position solver", &NUM_OF_ITERATIONS_POSITION, 1, 10);
     ImGui::SliderFloat("Timestep", &timestep, 0.01, 1);
 
     bvh->gui();
 
-    // TODO
     if (ImGui::TreeNode("Constraints")) {
-        for (auto pair : constraints) {
+        for (auto& pair : constraints) {
             int index = 0;
-            for (auto c : pair.second)
-                if (ImGui::TreeNode(("Constraint" + std::to_string(c->first->id * 100 + c->second->id * 10 + index)).c_str())) {
+            for (auto c : pair.second) {
+                std::string type;
+                switch (c->type)
+                {
+                case constraintType::ballsocket:
+                    type = "BallSocket";
+                    break;
+                case constraintType::slider:
+                    type = "Slider";
+                    break;
+                case constraintType::distance:
+                    type = "Distance";
+                    break;
+                case constraintType::generic:
+                    type = "Generic";
+                    break;
+                }
+                if (ImGui::TreeNode((type + " Constraint " + std::to_string(c->first->id * 100 + c->second->id * 10 + index)).c_str())) {
                     c->gui(index);
                     index++;
                     if (ImGui::Button("Remove Constraint? WIP"))
                         toBeRemoved = index;
                     ImGui::TreePop();
                 }
+            }
             if (toBeRemoved != -1)
                 pair.second.erase(pair.second.begin() + toBeRemoved);
         }
@@ -234,7 +232,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
                     if (rb1 != -1 && rb2 != -1)
                         if (ImGui::Button("Add Constraint")) {
                             std::string type = std::string(Constraints[selectedType]);
-                            Constraint* c;
+                            Constraint* c = nullptr;
                             if (type == "Distance")
                                 c = new DistanceConstraint(rbs[rb1], rbs[rb2], 0, 1);
                             if (type == "ContactPoint")
@@ -257,4 +255,11 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
         }
         ImGui::TreePop();
     }
+}
+
+void PhysicsWorld::DrawConstraints(Shader* s) {
+    for (auto& pair : constraints)
+        for (auto& c : pair.second)
+            if (c->render)
+                c->Draw(s);
 }

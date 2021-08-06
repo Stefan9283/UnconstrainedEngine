@@ -392,11 +392,11 @@ void testPhysics(std::vector<RigidBody*> rbs) {
 //    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 //    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
 //    physicsWorld.addConstraint(dist);
-   // for (auto r1 : rbs)
-   //     for (auto r2 : rbs)
-   //         if (r1 != r2) {
-   //             physicsWorld.addConstraint(new RestingConstraint(r1, r2));
-   //         } else break;
+  //for (auto r1 : rbs)
+  //    for (auto r2 : rbs)
+  //        if (r1 != r2) {
+  //            physicsWorld.addConstraint(new RestingConstraint(r1, r2));
+  //        } else break;
 
 
     bool runWithPhysics = false;
@@ -460,6 +460,7 @@ void testPhysics(std::vector<RigidBody*> rbs) {
         }
 
         physicsWorld.bvh->Draw(s);
+        physicsWorld.DrawConstraints(s);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -469,7 +470,7 @@ void testPhysics(std::vector<RigidBody*> rbs) {
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         resize(window, display_w, display_h);
-        if ((runWithPhysicsOld & runWithPhysics) || (!runWithPhysics && doOneStep)) {
+        if ((runWithPhysicsOld && runWithPhysics) || (!runWithPhysics && doOneStep)) {
             phy.get();
         }
     }
@@ -822,6 +823,7 @@ int main() {
     std::vector<RigidBody*> rbs;
 
     auto* cubePhy = new RigidBody(new AABB(2, 100, 100));
+    cubePhy->position = glm::vec3(0, 0, 0);
     auto* spherePhy = new RigidBody(new Sphere());
     spherePhy->movable = true;
 
@@ -837,8 +839,8 @@ int main() {
     {
         rbs.push_back(new RigidBody(new Sphere()));
         rbs.push_back(new RigidBody(new Sphere()));
-        rbs[1]->position = glm::vec3(5, 0, 0);
-        rbs[2]->position = glm::vec3(5, 3, 0);
+        rbs[1]->position = glm::vec3(5, 3, 0);
+        rbs[2]->position = glm::vec3(5, 6, 0);
     }
 
     /*
@@ -857,7 +859,6 @@ int main() {
         rbs[0]->position = glm::vec3(5, 0, 0);
         rbs[1]->position = glm::vec3(0, 3, 0);
     }
-    /*
     for (int j = -5; j < 5; j++) {
         for (int i = -55; i < 55; ++i) {
             RigidBody* tmp = nullptr;

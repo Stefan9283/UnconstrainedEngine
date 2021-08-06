@@ -34,14 +34,14 @@ public:
     //std::vector<Constraint*> constraints;
 
     PhysicsWorld(std::vector<RigidBody*>& rb);
+    
     void addRigidBody(RigidBody* rb);
-
-
-    PhysicsWorld* addConstraint(Constraint* c);
+    void addConstraint(Constraint* c);
 
     void step(float dt, std::vector<RigidBody*>& rb);
-    std::vector<CollisionPoint> getCollisionPoints(const std::vector<RigidBody *>& rb);
+    
     void gui(std::vector<RigidBody*> rbs);
+    void DrawConstraints(Shader* s);
 
     ~PhysicsWorld();
 };
