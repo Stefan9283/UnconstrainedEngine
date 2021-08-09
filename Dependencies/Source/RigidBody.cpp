@@ -31,7 +31,7 @@ glm::mat4 RigidBody::getRotationMatrix() {
 }
 
 void RigidBody::gui(int index) {
-    std::string name = "RigidBody " + std::to_string(index) + " Settings";
+    std::string name = "RigidBody " + std::to_string(id) + " Settings";
     if (ImGui::TreeNode(name.c_str())) {
         ImGui::Checkbox("Movable", &movable);
         ImGui::SameLine();
@@ -67,7 +67,7 @@ void RigidBody::gui(int index) {
         }
 
         if (collider)
-            collider->gui(index);
+            collider->gui(id);
 
         ImGui::TreePop();
     }

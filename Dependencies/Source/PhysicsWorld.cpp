@@ -59,16 +59,9 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
                 constraint->solve(point, dt);
             }
         }
-        for (auto& pair : constraints) {
-            for (auto& c : pair.second) {
-                if (c->type == constraintType::ballsocket) {
-                    c->solve(dt);
-                }
-                else if (c->type == constraintType::slider) {
-                    c->solve(dt);
-                }
-            }
-        }
+        for (auto& pair : constraints) 
+            for (auto& c : pair.second) 
+                c->solve(dt);
     }
 
     uint16_t sleep = 0;
@@ -92,33 +85,7 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
 
     }
 
-    std::cout << sleep << "\n";
-
-    //    // sequential position solver
-    //    for (int l = 0; l < NUM_OF_ITERATIONS_POSITION; l++)
-    //        for (auto c : constraints) {
-    //            if (dynamic_cast<DistanceConstraint *>(c))
-    //                ((DistanceConstraint *) c)->solve(dt);
-    ////            else if (dynamic_cast<GenericConstraint *>(c))
-    ////                ((GenericConstraint*)c)->solve(dt);
-    //            else if (dynamic_cast<BallSocketConstraint *>(c))
-    //                ((BallSocketConstraint*)c)->solve(dt);
-    //        }
-    //
-    //    // calculate final positions and rotations
-    //    for (auto* r : rb) {
-    //        if (r->movable) {
-    //            r->position += r->velocity * dt;
-    //        } else r->velocity = glm::vec3(0);
-    //        if (r->canBeRotated) {
-    //            r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
-    //            r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
-    //            r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
-    //        } else r->angularVel = glm::vec3(0);
-    //
-    //        r->force = glm::vec3(0);
-    //
-    //    }
+    std::cout << sleep << " asleep\n";
 }
 void PhysicsWorld::addConstraint(Constraint* c) {
     //std::cout << c->first->id << " " << c->second->id << "\n";
@@ -137,10 +104,11 @@ void PhysicsWorld::addConstraint(Constraint* c) {
             restingConstraints[key] = (RestingConstraint*)c;
             break;
         }
-        case constraintType::slider:
-        case constraintType::ballsocket:
-        case constraintType::generic:
-        case constraintType::distance:
+        default:
+        //case constraintType::slider:
+        //case constraintType::ballsocket:
+        //case constraintType::generic:
+        //case constraintType::distance:
             constraints[key].push_back(c);
             break;
 
@@ -171,22 +139,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
             int index = 0;
             for (auto c : pair.second) {
                 std::string type;
-                switch (c->type)
-                {
-                case constraintType::ballsocket:
-                    type = "BallSocket";
-                    break;
-                case constraintType::slider:
-                    type = "Slider";
-                    break;
-                case constraintType::distance:
-                    type = "Distance";
-                    break;
-                case constraintType::generic:
-                    type = "Generic";
-                    break;
-                }
-                if (ImGui::TreeNode((type + " Constraint " + std::to_string(c->first->id * 100 + c->second->id * 10 + index)).c_str())) {
+                if (ImGui::TreeNode((c->typeName() + " Constraint " + std::to_string(c->first->id) +  " "  + std::to_string(c->second->id) + " " + std::to_string(index)).c_str())) {
                     c->gui(index);
                     index++;
                     if (ImGui::Button("Remove Constraint? WIP"))

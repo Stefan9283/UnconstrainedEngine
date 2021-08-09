@@ -10,7 +10,9 @@ enum class constraintType {
     resting,
     ballsocket,
     distance,
+    fixeddistance,
     slider,
+    hinge,
     generic,
     dontKnow
 };
@@ -25,11 +27,14 @@ public:
     bool render = false;
     virtual void solve(float dt) {};
     virtual void gui(int index) {};
-    virtual void updateMassInverse() {};
+    virtual std::string typeName() = 0;
+    virtual void updateMassInverse();
     virtual void buildJacobian() {};
     virtual void buildTrJacobian() {};
     virtual void buildRotJacobian() {};
     virtual void buildJacobian(CollisionPoint& p) {};
+    virtual Eigen::VectorXf buildVelocityVector();
+
     virtual ~Constraint() {}
     virtual void Draw(Shader* s) {}
 };
@@ -38,10 +43,15 @@ class RestingConstraint : public Constraint {
 public:
     RestingConstraint(RigidBody* rb1, RigidBody* rb2);
     ~RestingConstraint();
+    std::string typeName() override;
 
     void solve(CollisionPoint& p, float dt);
     void buildJacobian(CollisionPoint& p);
-    void updateMassInverse();
+};
+
+// TODO
+class FrictionConstraint : public Constraint {
+public:
 };
 
 class BallSocketConstraint : public Constraint {
@@ -53,10 +63,10 @@ public:
     BallSocketConstraint(RigidBody *fst, RigidBody *snd);
     ~BallSocketConstraint();
     void gui(int index) override;
+    std::string typeName() override;
 
     bool check();
     void solve(float dt) override;
-    void updateMassInverse() override;
     void buildJacobian();
     void Draw(Shader* s) override;
 };
@@ -72,16 +82,35 @@ public:
     SliderConstraint(RigidBody *fst, RigidBody *snd);
     ~SliderConstraint();
     void gui(int index) override;
+    std::string typeName() override;
 
     void buildTrJacobian() override;
     void buildRotJacobian() override;
 
-    bool check();
-    void solve(float dt) override;
-    void updateMassInverse() override;
-    void Draw(Shader* s) override;
+    bool check(); // TODO maybe remove
 
-    std::vector<glm::vec3> getOrthogonalVectors();
+    void solve(float dt) override;
+    void Draw(Shader* s) override;
+};
+
+class HingeConstraint : public Constraint {
+public:
+    glm::vec3 fstAnchor, sndAnchor,
+        directionAxis;
+    float minDist = 0, maxDist = 10;
+    Mesh* body = nullptr;
+
+
+    HingeConstraint(RigidBody* fst, RigidBody* snd);
+    ~HingeConstraint();
+    void gui(int index) override;
+    std::string typeName() override;
+
+    void buildTrJacobian() override;
+    void buildRotJacobian() override;
+
+    void solve(float dt) override;
+    void Draw(Shader* s) override;
 };
 
 class DistanceConstraint : public Constraint {
@@ -91,13 +120,22 @@ public:
     DistanceConstraint(RigidBody* rb1, RigidBody* rb2,
                 float minDistance, float maxDistance);
     void gui(int index) override;
+    std::string typeName() override;
 
     bool check();
     void solve(float dt) override;
 };
 
+class FixedDistanceConstraint : public Constraint {
+public:
+    float d;
 
-
+    FixedDistanceConstraint(RigidBody* rb1, RigidBody* rb2, float distance);
+    void buildJacobian() override;
+    void gui(int index) override;
+    std::string typeName() override;
+    void solve(float dt) override;
+};
 
 class limitConstraint {
 public:
@@ -119,6 +157,8 @@ public:
     void solve(float dt) override;
     bool check();
     void gui(int index) override;
+    std::string typeName() override;
+
 };
 
 #endif //TRIANGLE_CONSTRAINT_H

@@ -377,9 +377,15 @@ void testOctree(Mesh* mesh) {
 void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld(rbs);
 
-    physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
-    physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
-    physicsWorld.addConstraint(new SliderConstraint(rbs[2], rbs[1]));
+    for (size_t i = 0; i < rbs.size(); i += 2) {
+        physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[i], rbs[i + 1], 5));
+    }
+
+    //physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
+    //physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
+    //physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[1], rbs[2], 6));
+    //physicsWorld.addConstraint(new HingeConstraint(rbs[2], rbs[1]));
+    //physicsWorld.addConstraint(new SliderConstraint(rbs[2], rbs[1]));
     //physicsWorld.addConstraint(new BallSocketConstraint(rbs[2], rbs[1]));
 
 
@@ -392,11 +398,11 @@ void testPhysics(std::vector<RigidBody*> rbs) {
 //    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 //    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
 //    physicsWorld.addConstraint(dist);
-  //for (auto r1 : rbs)
-  //    for (auto r2 : rbs)
-  //        if (r1 != r2) {
-  //            physicsWorld.addConstraint(new RestingConstraint(r1, r2));
-  //        } else break;
+      for (auto r1 : rbs)
+          for (auto r2 : rbs)
+              if (r1 != r2) {
+                  physicsWorld.addConstraint(new RestingConstraint(r1, r2));
+              } else break;
 
 
     bool runWithPhysics = false;
@@ -822,8 +828,20 @@ int main() {
 
     std::vector<RigidBody*> rbs;
 
+    for (int i = -5; i < 5; i++) {
+        RigidBody* top = new RigidBody(new Sphere);
+        top->movable = false;
+        top->position = glm::vec3(i * 2, 10, 0);
+        RigidBody* bottom= new RigidBody(new Sphere);
+        bottom->position = glm::vec3(2 * i, 5, 0);
+        rbs.push_back(top);
+        rbs.push_back(bottom);
+    }
+
+    /*
+
     auto* cubePhy = new RigidBody(new AABB(2, 100, 100));
-    cubePhy->position = glm::vec3(0, 0, 0);
+    cubePhy->position = glm::vec3(0, -10, 0);
     auto* spherePhy = new RigidBody(new Sphere());
     spherePhy->movable = true;
 
@@ -843,7 +861,6 @@ int main() {
         rbs[2]->position = glm::vec3(5, 6, 0);
     }
 
-    /*
 
     {
         RigidBody* tmp;
