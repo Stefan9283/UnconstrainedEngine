@@ -374,19 +374,22 @@ void testOctree(Mesh* mesh) {
     }
     delete octree;
 }
+
+#define TIMESTEP 1 / 60.f
+
 void testPhysics(std::vector<RigidBody*> rbs) {
     PhysicsWorld physicsWorld(rbs);
+    
+    //for (size_t i = 0; i < rbs.size(); i += 2) {
+    //    physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[i], rbs[i + 1], 5));
+    //}
 
-    for (size_t i = 0; i < rbs.size(); i += 2) {
-        physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[i], rbs[i + 1], 5));
-    }
-
-    //physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
-    //physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
+   //physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
+   //physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
     //physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[1], rbs[2], 6));
-    //physicsWorld.addConstraint(new HingeConstraint(rbs[2], rbs[1]));
     //physicsWorld.addConstraint(new SliderConstraint(rbs[2], rbs[1]));
     //physicsWorld.addConstraint(new BallSocketConstraint(rbs[2], rbs[1]));
+    physicsWorld.addConstraint(new HingeConstraint(rbs[1], rbs[2]));
 
 
 //    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
@@ -398,22 +401,21 @@ void testPhysics(std::vector<RigidBody*> rbs) {
 //    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 //    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
 //    physicsWorld.addConstraint(dist);
-      for (auto r1 : rbs)
-          for (auto r2 : rbs)
-              if (r1 != r2) {
-                  physicsWorld.addConstraint(new RestingConstraint(r1, r2));
-              } else break;
+      //for (auto r1 : rbs)
+      //    for (auto r2 : rbs)
+      //        if (r1 != r2) {
+      //            physicsWorld.addConstraint(new RestingConstraint(r1, r2));
+      //        } else break;
 
 
     bool runWithPhysics = false;
 
-    auto phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
-    phy.get();
+    std::future<void> phy;
 
     while (!glfwWindowShouldClose(window))
     {
         if (runWithPhysics) {
-            phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+            phy = std::async(&PhysicsWorld::step, &physicsWorld, TIMESTEP, rbs);
         }
         bool runWithPhysicsOld = runWithPhysics;
 
@@ -432,7 +434,7 @@ void testPhysics(std::vector<RigidBody*> rbs) {
                 physicsWorld.gui(rbs);
                 doOneStep = ImGui::Button("Do one simulation step");
                 if (!runWithPhysics && doOneStep) {
-                    phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+                    phy = std::async(&PhysicsWorld::step, &physicsWorld, TIMESTEP, rbs);
                 }
                 ImGui::Checkbox("run with physics", &runWithPhysics);
                 ImGui::EndTabItem();
@@ -444,7 +446,7 @@ void testPhysics(std::vector<RigidBody*> rbs) {
                     rb->gui(++index);
                 doOneStep = ImGui::Button("Do one simulation step");
                 if (!runWithPhysics && doOneStep) {
-                    phy = std::async(&PhysicsWorld::step, &physicsWorld, 1 / 60.0f, rbs);
+                    phy = std::async(&PhysicsWorld::step, &physicsWorld, TIMESTEP, rbs);
                 }
                 ImGui::Checkbox("run with physics", &runWithPhysics);
                 ImGui::EndTabItem();
@@ -452,7 +454,7 @@ void testPhysics(std::vector<RigidBody*> rbs) {
             ImGui::EndTabBar();
         }
 
-
+        
        
         c->Move(window);
 
@@ -827,6 +829,7 @@ int main() {
     // testBasicCollisionWithPoints(sphere, cube3); // Sphere OBB
 
     std::vector<RigidBody*> rbs;
+    /*
 
     for (int i = -5; i < 5; i++) {
         RigidBody* top = new RigidBody(new Sphere);
@@ -838,8 +841,7 @@ int main() {
         rbs.push_back(bottom);
     }
 
-    /*
-
+    */
     auto* cubePhy = new RigidBody(new AABB(2, 100, 100));
     cubePhy->position = glm::vec3(0, -10, 0);
     auto* spherePhy = new RigidBody(new Sphere());
@@ -857,11 +859,13 @@ int main() {
     {
         rbs.push_back(new RigidBody(new Sphere()));
         rbs.push_back(new RigidBody(new Sphere()));
-        rbs[1]->position = glm::vec3(5, 3, 0);
-        rbs[2]->position = glm::vec3(5, 6, 0);
+        rbs[1]->movable = false;
+        //rbs[2]->movable = false;
+        rbs[1]->position = glm::vec3(-2, 3, 1);
+        rbs[2]->position = glm::vec3(2, 3, -1);
     }
 
-
+    /*
     {
         RigidBody* tmp;
         for (int i = 0; i < 3; i++)

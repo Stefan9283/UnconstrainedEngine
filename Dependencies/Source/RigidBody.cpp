@@ -71,9 +71,6 @@ void RigidBody::gui(int index) {
 
         ImGui::TreePop();
     }
-
-
-
 }
 
 glm::mat3 RigidBody::getInertiaTensor() {

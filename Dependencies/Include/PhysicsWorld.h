@@ -23,7 +23,7 @@ class Constraint;
 class PhysicsWorld {
 public:
     glm::vec3 gravity{0, -9.81, 0};
-    int NUM_OF_ITERATIONS_IMPULSE = 4;
+    int NUM_OF_ITERATIONS_IMPULSE = 1;
     int NUM_OF_ITERATIONS_POSITION = 4;
     float timestep = 1 / 60.f;
     BVH* bvh = nullptr;

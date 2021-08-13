@@ -23,7 +23,7 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
     Timer t(true, "physics step");
 
     for (auto* r : rb) {
-        if (r->movable && !r->sleep) {
+        if (r->movable) {
             // add gravity
             r->force += r->mass * gravity;
             r->velocity += r->force / r->mass * dt;
@@ -38,17 +38,15 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
     std::vector<CollisionPoint> collisionPoints;
 
     for (auto* r : rb)
-        if (r->movable && !r->sleep)
+        if (r->movable)
             bvh->getCollisions(&collisionPoints, r);
 
-    std::cout << collisionPoints.size() << " collision points\n";
+    //std::cout << collisionPoints.size() << " collision points\n";
 
-    for (auto& collisionPoint : collisionPoints) {
-        collisionPoint.c1->parent->sleep = false;
-        collisionPoint.c2->parent->sleep = false;
-    }
-
-    //bvh->Draw(s);
+    //for (auto& collisionPoint : collisionPoints) {
+    //    collisionPoint.c1->parent->sleep = false;
+    //    collisionPoint.c2->parent->sleep = false;
+    //}
 
     // sequential impulse solver
     for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++) {
@@ -59,33 +57,24 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
                 constraint->solve(point, dt);
             }
         }
-        for (auto& pair : constraints) 
-            for (auto& c : pair.second) 
-                c->solve(dt);
     }
 
-    uint16_t sleep = 0;
-    //   calculate final positions and rotations
+    for (int l = 0; l < NUM_OF_ITERATIONS_IMPULSE; l++) {
+        for (auto& pair : constraints)
+            for (auto& c : pair.second) {
+                c->solve(dt);
+            }
+    }
+
+    // calculate final positions and rotations
     for (auto* r : rb) {
-        if (r->sleep)
-            sleep++;
-        if (r->movable && !r->sleep) {
-            glm::vec3 oldPos = r->position;
+        if (r->movable) {
             r->position += r->velocity * dt;
-            //if (glm::length(r->velocity) < 0.1f)
-            //    r->sleep = true;
         } else r->velocity = glm::vec3(0);
         if (r->canBeRotated) {
-            r->rotation = glm::rotate(r->rotation, r->angularVel.x * dt, glm::vec3(1, 0, 0));
-            r->rotation = glm::rotate(r->rotation, r->angularVel.y * dt, glm::vec3(0, 1, 0));
-            r->rotation = glm::rotate(r->rotation, r->angularVel.z * dt, glm::vec3(0, 0, 1));
+            r->rotation = glm::quat(r->angularVel * dt) * r->rotation;
         } else r->angularVel = glm::vec3(0);
-
-        r->force = glm::vec3(0);
-
     }
-
-    std::cout << sleep << " asleep\n";
 }
 void PhysicsWorld::addConstraint(Constraint* c) {
     //std::cout << c->first->id << " " << c->second->id << "\n";
@@ -128,7 +117,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
 
     int toBeRemoved = -1;
 
-    ImGui::SliderInt("Number of iterations velocity solver", &NUM_OF_ITERATIONS_IMPULSE, 1, 10);
+    ImGui::SliderInt("Number of iterations velocity solver", &NUM_OF_ITERATIONS_IMPULSE, 1, 1000);
     ImGui::SliderInt("Number of iterations position solver", &NUM_OF_ITERATIONS_POSITION, 1, 10);
     ImGui::SliderFloat("Timestep", &timestep, 0.01, 1);
 
@@ -141,17 +130,18 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
                 std::string type;
                 if (ImGui::TreeNode((c->typeName() + " Constraint " + std::to_string(c->first->id) +  " "  + std::to_string(c->second->id) + " " + std::to_string(index)).c_str())) {
                     c->gui(index);
-                    index++;
                     if (ImGui::Button("Remove Constraint? WIP"))
                         toBeRemoved = index;
+                    index++;
                     ImGui::TreePop();
                 }
             }
             if (toBeRemoved != -1)
                 pair.second.erase(pair.second.begin() + toBeRemoved);
         }
-        
-        if (ImGui::TreeNode("Add Constraint?")) {
+        // TODO
+        /*
+        if (ImGui::TreeNode("Add Constraint? WIP")) {
             ImGui::Combo("Type", &selectedType, Constraints,
                     IM_ARRAYSIZE(Constraints), 4);
             if (selectedType != -1) {
@@ -206,6 +196,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
                 }
             ImGui::TreePop();
         }
+        */
         ImGui::TreePop();
     }
 }

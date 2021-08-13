@@ -24,9 +24,12 @@ public:
     constraintType type = constraintType::dontKnow;
     Eigen::MatrixXf Jacobian, invM;
     Eigen::VectorXf total_lambda;
+    float beta = 1.f;
     bool render = false;
     virtual void solve(float dt) {};
-    virtual void gui(int index) {};
+    virtual void gui(int index) {
+        ImGui::SliderFloat(("Beta" + std::to_string(index)).c_str(), &beta, 0, 1);
+    };
     virtual std::string typeName() = 0;
     virtual void updateMassInverse();
     virtual void buildJacobian() {};
@@ -96,7 +99,8 @@ public:
 class HingeConstraint : public Constraint {
 public:
     glm::vec3 fstAnchor, sndAnchor,
-        directionAxis;
+                fstDirAxis, sndDirAxis,
+                sndOrthoAxis1, sndOrthoAxis2;
     float minDist = 0, maxDist = 10;
     Mesh* body = nullptr;
 
@@ -106,8 +110,7 @@ public:
     void gui(int index) override;
     std::string typeName() override;
 
-    void buildTrJacobian() override;
-    void buildRotJacobian() override;
+    void buildJacobian() override;
 
     void solve(float dt) override;
     void Draw(Shader* s) override;
