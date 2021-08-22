@@ -157,7 +157,6 @@ glm::vec3 getMidPoint(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
 }
 #pragma endregion
 
-
 namespace collisionAlgos {
     CollisionPoint checkCollision(Sphere* bv1, Sphere* bv2) {
         glm::vec3 center2centerVec = bv1->getCurrentPosition() - bv2->getCurrentPosition();
@@ -688,8 +687,6 @@ namespace collisionAlgos {
 
             if (a + (c1 + c3) != 0) {
                 // No intersection at all
-                std::cout << "BUna sera0\n";
-
                 if (d - (c2 - c4))
                     return {};
 
@@ -1318,8 +1315,6 @@ namespace collisionAlgos {
             c4 = c * (z1 * y0 - z0 * y1) / (z1 - z0);
 
             if (c + c1 + c3 != 0) {
-                std::cout << "BUna sera-2\n";
-
                 // No intersection at all
                 if (d - c2 - c4 != 0)
                     return {};

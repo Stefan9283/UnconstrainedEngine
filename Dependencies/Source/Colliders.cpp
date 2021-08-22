@@ -669,6 +669,7 @@ TriangleMesh::TriangleMesh(Mesh *mesh) {
     setType(colliderType::trianglemesh);
     Mesh* m = new Mesh(*mesh);
     body = convertMesh2ColliderMesh(m);
+    this->localTransform = m->localTransform;
 }
 
 std::string TriangleMesh::toString() {

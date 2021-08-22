@@ -8,56 +8,88 @@ class CollisionPoint;
 
 enum class constraintType {
     resting,
-    ballsocket,
+    friction,
+    
     distance,
     fixeddistance,
     slider,
+    ballsocket,
     hinge,
     generic,
-    dontKnow
+
+    dontKnow,
+    dontKnow1, // SingleBody
+    dontKnow2  // TwoBodies
 };
 
 class Constraint {
 public:
-    RigidBody *first = nullptr, 
-              *second = nullptr;
     constraintType type = constraintType::dontKnow;
     Eigen::MatrixXf Jacobian, invM;
-    Eigen::VectorXf total_lambda;
-    float beta = 1.f;
+    float beta = 1.f, gamma = 0.f;
     bool render = false;
-    virtual void solve(float dt) {};
-    virtual void gui(int index) {
-        ImGui::SliderFloat(("Beta" + std::to_string(index)).c_str(), &beta, 0, 1);
-    };
+    virtual ~Constraint() {}
     virtual std::string typeName() = 0;
-    virtual void updateMassInverse();
+    virtual void updateMassInverse() = 0;
     virtual void buildJacobian() {};
     virtual void buildTrJacobian() {};
     virtual void buildRotJacobian() {};
-    virtual void buildJacobian(CollisionPoint& p) {};
-    virtual Eigen::VectorXf buildVelocityVector();
-
-    virtual ~Constraint() {}
+    virtual Eigen::VectorXf buildVelocityVector() = 0;
+    virtual void solve(float dt) {};
+    virtual void gui(int index) {
+        ImGui::SliderFloat(("Beta" + std::to_string(index)).c_str(), &beta, 0, 1);
+        ImGui::SliderFloat(("Gamma" + std::to_string(index)).c_str(), &gamma, 0, 1);
+    };
     virtual void Draw(Shader* s) {}
 };
 
-class RestingConstraint : public Constraint {
+#pragma region SingleBodyConstraints
+
+class SingleBodyConstraint : public Constraint {
+    RigidBody* rigidbody;
+    Eigen::VectorXf buildVelocityVector() override;
+    void updateMassInverse() override;
+};
+
+#pragma endregion
+
+#pragma region TwoBodiesConstraints
+
+class TwoBodiesConstraint : public Constraint {
 public:
+    RigidBody *first = nullptr, 
+              *second = nullptr;
+    
+    Eigen::VectorXf buildVelocityVector() override;
+    void updateMassInverse() override;
+};
+
+#pragma region ContactConstraints
+
+class ContactConstraint : public TwoBodiesConstraint {
+public:
+    virtual void buildJacobian(CollisionPoint& p) = 0;
+    virtual void solve(CollisionPoint& p, float dt) = 0;
+};
+
+class RestingConstraint : public ContactConstraint {
+public:
+    Eigen::VectorXf total_lambda;
     RestingConstraint(RigidBody* rb1, RigidBody* rb2);
     ~RestingConstraint();
     std::string typeName() override;
 
-    void solve(CollisionPoint& p, float dt);
+    void solve(CollisionPoint& p, float dt) override;
     void buildJacobian(CollisionPoint& p);
 };
 
 // TODO
-class FrictionConstraint : public Constraint {
+class FrictionConstraint : public ContactConstraint {
 public:
 };
+#pragma endregion
 
-class BallSocketConstraint : public Constraint {
+class BallSocketConstraint : public TwoBodiesConstraint {
 public:
     glm::vec3 fstAnchor, sndAnchor;
 
@@ -74,7 +106,7 @@ public:
     void Draw(Shader* s) override;
 };
 
-class SliderConstraint : public Constraint {
+class SliderConstraint : public TwoBodiesConstraint {
 public:
     glm::vec3 fstAnchor, sndAnchor,
             directionAxis;
@@ -96,7 +128,7 @@ public:
     void Draw(Shader* s) override;
 };
 
-class HingeConstraint : public Constraint {
+class HingeConstraint : public TwoBodiesConstraint {
 public:
     glm::vec3 fstAnchor, sndAnchor,
                 fstDirAxis, sndDirAxis,
@@ -116,7 +148,7 @@ public:
     void Draw(Shader* s) override;
 };
 
-class DistanceConstraint : public Constraint {
+class DistanceConstraint : public TwoBodiesConstraint {
 public:
     float minD, maxD;
     
@@ -129,7 +161,7 @@ public:
     void solve(float dt) override;
 };
 
-class FixedDistanceConstraint : public Constraint {
+class FixedDistanceConstraint : public TwoBodiesConstraint {
 public:
     float d;
 
@@ -149,7 +181,7 @@ public:
     bool check(float dist);
 };
 
-class GenericConstraint : public Constraint {
+class GenericConstraint : public TwoBodiesConstraint {
 public:
     limitConstraint angular[3]{}, linear[3]{};
     bool breakable; float impulseTreshold;
@@ -163,5 +195,8 @@ public:
     std::string typeName() override;
 
 };
+
+#pragma endregion
+
 
 #endif //TRIANGLE_CONSTRAINT_H

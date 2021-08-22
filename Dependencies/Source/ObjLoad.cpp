@@ -32,12 +32,6 @@ Mesh* readObj(const char* filepath) {
                     &i[1].pos, &i[1].tex, &i[1].norm,
                     &i[2].pos, &i[2].tex, &i[2].norm);
 
-            //std::cout << line << " ";
-            //std::cout << " "
-            //<< i[0].pos << "/" << i[0].tex << "/" << i[0].norm << " "
-            //<< i[1].pos << "/" << i[1].tex << "/" << i[1].norm << " "
-            //<< i[2].pos << "/" << i[2].tex << "/" << i[2].norm << "\n\n";
-
             objvert.push_back(i[0]);
             objvert.push_back(i[1]);
             objvert.push_back(i[2]);

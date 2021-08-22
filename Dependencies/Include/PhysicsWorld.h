@@ -29,14 +29,14 @@ public:
     BVH* bvh = nullptr;
 
     std::unordered_map<std::pair<RigidBody*, RigidBody*>, RestingConstraint*> restingConstraints;
-    std::unordered_map<std::pair<RigidBody*, RigidBody*>, std::vector<Constraint*>> constraints;
+    std::unordered_map<std::pair<RigidBody*, RigidBody*>, std::vector<TwoBodiesConstraint*>> constraints;
 
     //std::vector<Constraint*> constraints;
 
     PhysicsWorld(std::vector<RigidBody*>& rb);
     
     void addRigidBody(RigidBody* rb);
-    void addConstraint(Constraint* c);
+    void addConstraint(TwoBodiesConstraint* c);
 
     void step(float dt, std::vector<RigidBody*>& rb);
     

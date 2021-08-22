@@ -29,6 +29,7 @@ public:
     glm::mat4 getTransform();
     glm::mat4 getTranslationMatrix();
     glm::mat4 getRotationMatrix();
+    glm::mat3 getInverseMassMatrix();
     void gui(int index);
     void makeImmovable();
 };

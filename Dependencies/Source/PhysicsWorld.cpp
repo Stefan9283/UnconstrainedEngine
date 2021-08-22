@@ -76,7 +76,7 @@ void PhysicsWorld::step(float dt, std::vector<RigidBody*>& rb) {
         } else r->angularVel = glm::vec3(0);
     }
 }
-void PhysicsWorld::addConstraint(Constraint* c) {
+void PhysicsWorld::addConstraint(TwoBodiesConstraint* c) {
     //std::cout << c->first->id << " " << c->second->id << "\n";
     auto key = std::make_pair(c->first, c->second);
     if (key.first->id > key.second->id) {
@@ -119,7 +119,7 @@ void PhysicsWorld::gui(std::vector<RigidBody*> rbs) {
 
     ImGui::SliderInt("Number of iterations velocity solver", &NUM_OF_ITERATIONS_IMPULSE, 1, 1000);
     ImGui::SliderInt("Number of iterations position solver", &NUM_OF_ITERATIONS_POSITION, 1, 10);
-    ImGui::SliderFloat("Timestep", &timestep, 0.01, 1);
+    ImGui::SliderFloat("Timestep", &timestep, 0.01f, 1.f);
 
     bvh->gui();
 

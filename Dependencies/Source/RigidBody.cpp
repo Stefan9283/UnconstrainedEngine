@@ -19,7 +19,6 @@ RigidBody::RigidBody(Collider* c, float m) {
     rotation = glm::quat(1, 0, 0, 0);
     position = glm::vec3(0);
 }
-
 glm::mat4 RigidBody::getTransform() {
     return getTranslationMatrix() * getRotationMatrix();
 }
@@ -29,7 +28,6 @@ glm::mat4 RigidBody::getTranslationMatrix() {
 glm::mat4 RigidBody::getRotationMatrix() {
     return glm::toMat4(rotation);
 }
-
 void RigidBody::gui(int index) {
     std::string name = "RigidBody " + std::to_string(id) + " Settings";
     if (ImGui::TreeNode(name.c_str())) {
@@ -72,12 +70,15 @@ void RigidBody::gui(int index) {
         ImGui::TreePop();
     }
 }
-
 glm::mat3 RigidBody::getInertiaTensor() {
     return inertia;
+}
+glm::mat3 RigidBody::getInverseMassMatrix() {
+    if (movable)
+        return glm::mat3(1) / mass;
+    return glm::mat3(0);
 }
 void RigidBody::makeImmovable() {
     movable = false;
     sleep = true;
 }
-

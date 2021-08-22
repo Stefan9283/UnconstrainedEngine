@@ -66,10 +66,13 @@ std::vector<glm::vec3> getOrthogonalVectors(glm::vec3 reference) {
     return ortho;
 }
 
-
-
-Eigen::VectorXf generalDVSolver(Eigen::MatrixXf& invMass, Eigen::MatrixXf& Jacobian, Eigen::VectorXf velocity, Eigen::VectorXf& total_lambda, Eigen::VectorXf& BiasTerm, float beta) {
+Eigen::VectorXf generalDVSolver(Eigen::MatrixXf& invMass, Eigen::MatrixXf& Jacobian,
+        Eigen::VectorXf velocity, Eigen::VectorXf& total_lambda, Eigen::VectorXf& BiasTerm,
+        float gammaOVERdt) {
     Eigen::MatrixXf effectiveMass = Jacobian * invMass * Jacobian.transpose();
+
+    for (int i = 0; i < effectiveMass.rows(); i++)
+        effectiveMass(i, i) = effectiveMass(i, i) + gammaOVERdt;
 
     effectiveMass = effectiveMass.inverse();
 
@@ -83,8 +86,13 @@ Eigen::VectorXf generalDVSolver(Eigen::MatrixXf& invMass, Eigen::MatrixXf& Jacob
 
     return dv;
 }
-Eigen::VectorXf generalDVSolver(Eigen::MatrixXf& invMass, Eigen::MatrixXf& Jacobian, Eigen::VectorXf velocity, Eigen::VectorXf& BiasTerm, float beta) {
+Eigen::VectorXf generalDVSolver(Eigen::MatrixXf& invMass, Eigen::MatrixXf& Jacobian,
+        Eigen::VectorXf velocity, Eigen::VectorXf& BiasTerm, float gammaOVERdt) {
     Eigen::MatrixXf effectiveMass = Jacobian * invMass * Jacobian.transpose();
+
+    for (int i = 0; i < effectiveMass.rows(); i++)
+        effectiveMass(i, i) = effectiveMass(i, i) + gammaOVERdt;
+
     effectiveMass = effectiveMass.inverse();
     Eigen::VectorXf lambda = effectiveMass * (-(Jacobian * velocity + BiasTerm));
     return invMass * Jacobian.transpose() * lambda;
@@ -99,7 +107,34 @@ void addDeltaVelocities(RigidBody* rb1, RigidBody* rb2, Eigen::VectorXf dv) {
 }
 #pragma endregion
 
-void Constraint::updateMassInverse() {
+void SingleBodyConstraint::updateMassInverse() {
+    invM.resize(6, 6);
+    invM.setZero();
+    // if the rigid body is immovable then the inverse of its mass approaches 0
+    float invM1;
+    invM1 = rigidbody->movable ? 1 / rigidbody->mass : 0;
+    for (size_t i = 0; i < 3; i++) {
+        invM(i, i) = invM1;
+    }
+
+    glm::mat3 inertia1;
+    inertia1 = glm::inverse(rigidbody->getInertiaTensor());
+
+    for (auto i = 0; i < 3; i++)
+        for (auto j = 0; j < 3; ++j) {
+            invM(i + 3, j + 3) = inertia1[i][j];
+        }
+}
+Eigen::VectorXf SingleBodyConstraint::buildVelocityVector() {
+    Eigen::VectorXf velocity(6);
+    for (auto i = 0; i < 3; i++) {
+        velocity(i) = rigidbody->velocity[i];
+        velocity(i + 3) = rigidbody->angularVel[i];
+    }
+    return velocity;
+}
+
+void TwoBodiesConstraint::updateMassInverse() {
     invM.resize(12, 12);
     invM.setZero();
     // if the rigid body is immovable then the inverse of its mass approaches 0
@@ -121,7 +156,7 @@ void Constraint::updateMassInverse() {
             invM(i + 9, j + 9) = inertia2[i][j];
         }
 }
-Eigen::VectorXf Constraint::buildVelocityVector() {
+Eigen::VectorXf TwoBodiesConstraint::buildVelocityVector() {
     Eigen::VectorXf velocity(12);
     for (auto i = 0; i < 3; i++) {
         velocity(i) = first->velocity[i];
@@ -200,16 +235,14 @@ void RestingConstraint::solve(CollisionPoint& p, float dt) {
     buildJacobian(p);
     updateMassInverse();
 
-    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, total_lambda, biasTerm, beta);
+    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, total_lambda, biasTerm, gamma/dt);
 
     addDeltaVelocities(first, second, dv);
 }
-RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) : Constraint() {
+RestingConstraint::RestingConstraint(RigidBody* rb1, RigidBody* rb2) {
     this->first = rb1;
     this->second = rb2;
     this->type = constraintType::resting;
-   
-    updateMassInverse();
 
     Jacobian.resize(1, 12);
 
@@ -230,10 +263,6 @@ BallSocketConstraint::BallSocketConstraint(RigidBody *fst, RigidBody *snd) {
     anchor /= 2.0f;
     fstAnchor = glm::inverse(glm::mat3(first->getRotationMatrix())) * (anchor - first->position);
     sndAnchor = glm::inverse(glm::mat3(second->getRotationMatrix())) * (anchor - second->position);
-    total_lambda.resize(3);
-    total_lambda.setZero();
-    body = readObj("3D/Sphere.obj");
-    render = true;
 }
 BallSocketConstraint::~BallSocketConstraint() {
     delete body;
@@ -298,7 +327,7 @@ void BallSocketConstraint::solve(float dt) {
     updateMassInverse();
     buildJacobian();
     
-    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, biasTerm, beta);
+    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, biasTerm, gamma/dt);
     addDeltaVelocities(first, second, dv);
 }
 
@@ -338,8 +367,6 @@ SliderConstraint::SliderConstraint(RigidBody *fst, RigidBody *snd) {
     sndAnchor = glm::inverse(snd->getTransform()) * glm::vec4(anchor, 1);
     directionAxis = glm::normalize(snd->position - fst->position);
     updateMassInverse();
-    total_lambda.resize(5);
-    total_lambda.setZero();
 }
 SliderConstraint::~SliderConstraint() {
     delete body;
@@ -377,30 +404,24 @@ void SliderConstraint::solve(float dt) {
             x2 = second->position;
     std::vector<glm::vec3> ortho = getOrthogonalVectors(directionAxis);
 
-    glm::vec3 biasRot = glm::eulerAngles(glm::inverse(second->rotation) * first->rotation);
+    glm::vec3 biasRot = glm::eulerAngles(second->rotation * glm::inverse(first->rotation));
     biasTermTr(0) = glm::dot((x2 + r2 - x1 - r1), ortho[0]);
     biasTermTr(1) = glm::dot((x2 + r2 - x1 - r1), ortho[1]);
     biasTermTr = biasTermTr * (beta / dt);
 
 
     for (auto i = 0; i < 3; i++) 
-        biasTermRot(i) =  - beta / dt * biasRot[i];
+        biasTermRot(i) =  (beta / dt) * biasRot[i];
 
     Eigen::VectorXf dvTr, dvRot;
 
     buildTrJacobian();
-    dvTr = generalDVSolver(invM, Jacobian, velocity, total_lambda, biasTermTr, beta); //invM * Jacobian.transpose() * lambda;
+    dvTr = generalDVSolver(invM, Jacobian, velocity, biasTermTr, gamma/dt); //invM * Jacobian.transpose() * lambda;
 
     buildRotJacobian();
-    dvRot = generalDVSolver(invM, Jacobian, velocity, total_lambda, biasTermRot, beta); //invM * Jacobian.transpose() * lambda;
+    dvRot = generalDVSolver(invM, Jacobian, velocity, biasTermRot, gamma/dt); //invM * Jacobian.transpose() * lambda;
 
-
-    for (auto j = 0; j < 3; ++j) {
-        first->velocity[j]    += dvTr[j];
-        first->angularVel[j]  += dvRot[j + 3];
-        second->velocity[j]   += dvTr[j + 6];
-        second->angularVel[j] += dvRot[j + 9];
-    }
+    addDeltaVelocities(first, second, dvRot + dvTr);
 }
 void SliderConstraint::buildTrJacobian() {
     Jacobian.resize(2, 12);
@@ -484,9 +505,6 @@ HingeConstraint::HingeConstraint(RigidBody* fst, RigidBody* snd) {
     sndOrthoAxis1 = rb2WorldToLocalRot * ortho[0];
     sndOrthoAxis2 = rb2WorldToLocalRot * ortho[1];
 */
-    // TODO remove later
-    this->render = true;
-    body = readObj("3D/Sphere.obj");
 }
 HingeConstraint::~HingeConstraint() { delete body;  }
 void HingeConstraint::gui(int index) {
@@ -551,43 +569,6 @@ void HingeConstraint::buildJacobian() {
         Jacobian(4, i + 3) = - cr_ca[i];
         Jacobian(4, i + 9) =   cr_ca[i];
     }
-    /*Jacobian.resize(5, 12);
-    Jacobian.setZero();
-
-    glm::mat3 rb1LocalRotToWorld = glm::mat3(first->getRotationMatrix());
-    glm::mat3 rb2LocalRotToWorld = glm::mat3(second->getRotationMatrix());
-
-    glm::vec3
-        r1 = rb1LocalRotToWorld * fstAnchor,
-        r2 = rb2LocalRotToWorld * sndAnchor;
-    glm::mat3
-        skew1 = crossProductSkewMatrix(r1),
-        skew2 = crossProductSkewMatrix(r2);
-    for (auto i = 0; i < 3; i++) {
-        Jacobian(i, i) = -1;
-        Jacobian(i, i + 6) = 1;
-        for (auto j = 0; j < 3; ++j) {
-            Jacobian(i, j + 3) = skew1[i][j];
-            Jacobian(i, j + 9) = -skew2[i][j];
-        }
-    }
-
-    glm::vec3 a1 = rb1LocalRotToWorld * fstDirAxis;
-    glm::vec3 a2 = rb2LocalRotToWorld * sndDirAxis;
-
-    glm::vec3
-        b2 = rb2LocalRotToWorld * sndOrthoAxis1,
-        c2 = rb2LocalRotToWorld * sndOrthoAxis2;
-
-    glm::vec3
-        cr_ba = glm::cross(b2, a1),
-        cr_ca = glm::cross(c2, a1);
-    for (size_t i = 0; i < 3; i++) {
-        Jacobian(3, i + 3) = - cr_ba[i];
-        Jacobian(3, i + 9) =   cr_ba[i];
-        Jacobian(4, i + 3) = - cr_ca[i];
-        Jacobian(4, i + 9) =   cr_ca[i];
-    }*/
 }
 void HingeConstraint::solve(float dt) {
     Eigen::VectorXf velocity = buildVelocityVector();
@@ -608,9 +589,6 @@ void HingeConstraint::solve(float dt) {
             x1 = first->position,
             x2 = second->position;
 
-
-    //std::cout << glm::to_string(x1 + r1) << glm::to_string(x2 + r2) << "\n";
-
     glm::vec3 biasVec = (x2 + r2) - (x1 + r1);
     for (auto i = 0; i < 3; i++)
         biasTerm(i) = biasVec[i];
@@ -625,58 +603,8 @@ void HingeConstraint::solve(float dt) {
 
     biasTerm = (beta / dt) * biasTerm;
 
-    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, biasTerm, beta);
+    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, biasTerm, gamma/dt);
     addDeltaVelocities(first, second, dv);
-
-    /*
-    Eigen::VectorXf velocity = buildVelocityVector();
-    
-    updateMassInverse();
-
-    glm::mat3 rb1LocalRotToWorld = glm::mat3(first->getRotationMatrix());
-    glm::mat3 rb2LocalRotToWorld = glm::mat3(second->getRotationMatrix());
-
-    glm::vec3
-        r1 = rb1LocalRotToWorld * fstAnchor,
-        r2 = rb2LocalRotToWorld * sndAnchor,
-        x1 = first->position,
-        x2 = second->position;
-
-    Eigen::VectorXf biasTerm(5);
-
-    for (auto i = 0; i < 3; i++)
-        biasTerm(i) = (x1[i] + r1[i] - x2[i] - r2[i]);
-
-    // PROBLEMA AICI (SAU CONSTRUCTOR)
-
-    glm::vec3 a1 = rb1LocalRotToWorld * fstDirAxis;
-    glm::vec3 a2 = rb2LocalRotToWorld * sndDirAxis;
-
-    glm::vec3
-        b2 = rb2LocalRotToWorld * sndOrthoAxis1,
-        c2 = rb2LocalRotToWorld * sndOrthoAxis2;
-
-    biasTerm(3) = glm::dot(b2, a1);
-    biasTerm(4) = - glm::dot(c2, a1);
-    
-    std::cout << biasTerm.transpose() << "\n";
-
-    biasTerm = biasTerm * (- beta / dt);
-
-    buildJacobian();
-    // PROBLEMA AICI
-
-    std::cout << biasTerm.transpose() << "\n";
-
-    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, biasTerm, beta);
-
-    for (auto j = 0; j < 3; j++) {
-        first->velocity[j] += dv[j];
-        first->angularVel[j] += dv[j + 3];
-        second->velocity[j] += dv[j + 6];
-        second->angularVel[j] += dv[j + 9];
-    }
-    */
 }
 void HingeConstraint::Draw(Shader* s) {
     if (render && body) {
@@ -729,13 +657,9 @@ void FixedDistanceConstraint::solve(float dt) {
     Eigen::VectorXf biasTerm(1);
     biasTerm(0) = (glm::length(first->position - second->position) - d) * beta / dt;
 
-    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, total_lambda, biasTerm, beta);
-    for (auto j = 0; j < 3; ++j) {
-        first->velocity[j] += dv[j];
-        //first->angularVel[j] += dv[j + 3];
-        second->velocity[j] += dv[j + 6];
-        //second->angularVel[j] += dv[j + 9];
-    }
+    Eigen::VectorXf dv = generalDVSolver(invM, Jacobian, velocity, biasTerm, gamma/dt);
+
+    addDeltaVelocities(first, second, dv);
 }
 std::string FixedDistanceConstraint::typeName() { return "FixedDistance"; }
 
@@ -745,7 +669,7 @@ std::string FixedDistanceConstraint::typeName() { return "FixedDistance"; }
 
 #pragma region DistanceConstraint
 DistanceConstraint::DistanceConstraint(RigidBody* rb1, RigidBody* rb2, 
-                                    float minDistance, float maxDistance) : Constraint() {
+                                    float minDistance, float maxDistance) {
     this->type = constraintType::distance;
     minD = minDistance;
     maxD = maxDistance;

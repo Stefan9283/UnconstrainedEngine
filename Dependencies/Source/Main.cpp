@@ -229,7 +229,6 @@ void testRayMeshIntersection(Mesh* mesh) {
 
         s->setFloat("flatColorsON", 0);
 
-
         s->setFloat("flatColorsON", 1);
 
         if (r) r->Draw(s);
@@ -384,12 +383,12 @@ void testPhysics(std::vector<RigidBody*> rbs) {
     //    physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[i], rbs[i + 1], 5));
     //}
 
-   //physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
-   //physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
-    //physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[1], rbs[2], 6));
-    //physicsWorld.addConstraint(new SliderConstraint(rbs[2], rbs[1]));
-    //physicsWorld.addConstraint(new BallSocketConstraint(rbs[2], rbs[1]));
-    physicsWorld.addConstraint(new HingeConstraint(rbs[1], rbs[2]));
+//    physicsWorld.addConstraint(new RestingConstraint(rbs[0], rbs[2]));
+//    physicsWorld.addConstraint(new RestingConstraint(rbs[1], rbs[0]));
+//    physicsWorld.addConstraint(new FixedDistanceConstraint(rbs[1], rbs[2], 6));
+    physicsWorld.addConstraint(new SliderConstraint(rbs[2], rbs[1]));
+//    physicsWorld.addConstraint(new BallSocketConstraint(rbs[2], rbs[1]));
+//    physicsWorld.addConstraint(new HingeConstraint(rbs[1], rbs[2]));
 
 
 //    auto* generic = new GenericConstraint(rbs[0], rbs[1]);
@@ -401,12 +400,11 @@ void testPhysics(std::vector<RigidBody*> rbs) {
 //    rbs[0]->angularVel = glm::vec3(1, 0, 0);
 //    auto* dist = new DistanceConstraint(rbs[0], rbs[1], 0, 10);
 //    physicsWorld.addConstraint(dist);
-      //for (auto r1 : rbs)
-      //    for (auto r2 : rbs)
-      //        if (r1 != r2) {
-      //            physicsWorld.addConstraint(new RestingConstraint(r1, r2));
-      //        } else break;
-
+      for (auto r1 : rbs)
+          for (auto r2 : rbs)
+              if (r1 != r2) {
+                  physicsWorld.addConstraint(new RestingConstraint(r1, r2));
+              } else break;
 
     bool runWithPhysics = false;
 
@@ -813,7 +811,7 @@ int main() {
     // testBasicCollision(meshes);
 
     // TODO FIX IT
-    // testRayMeshIntersection(Triangle);
+//    testRayMeshIntersection(Triangle);
 
     //testBasicCollisionWithPoints(&ray, Mercy); // Ray Sphere
     // testBasicCollisionWithPoints(&ray, cube); // Ray AABB
